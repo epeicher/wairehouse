@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reprint — Push command (design sketch)</title>
+<style>
+  :root{
+    --ink:#0c1322;
+    --ink-2:#1b2536;
+    --paper:#f7f8fb;
+    --card:#ffffff;
+    --line:#e3e7ef;
+    --line-2:#d4dae6;
+    --text:#1e2533;
+    --muted:#5b6679;
+    --accent:#2f6df6;
+    --accent-2:#0fb5a8;
+    --violet:#7c5cfc;
+    --amber:#e8901a;
+    --rose:#e25563;
+    --code-bg:#0e1626;
+    --code-text:#d7e0f4;
+    --radius:14px;
+    --maxw:1180px;
+    --sidew:280px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .shell{display:flex;max-width:var(--maxw);margin:0 auto}
+  nav.toc{position:sticky;top:0;align-self:flex-start;width:var(--sidew);min-width:var(--sidew);height:100vh;overflow-y:auto;padding:26px 18px 60px 22px;border-right:1px solid var(--line);background:linear-gradient(180deg,#0c1322,#111a2c)}
+  nav.toc .brand{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  nav.toc .brand .logo{width:34px;height:34px;border-radius:9px;flex:0 0 auto;background:linear-gradient(135deg,var(--amber),var(--rose));display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;box-shadow:0 6px 18px rgba(232,144,26,.35)}
+  nav.toc .brand .name{color:#fff;font-weight:700;font-size:18px;letter-spacing:.2px}
+  nav.toc .brand .sub{color:#8a96ad;font-size:11.5px;margin-top:1px}
+  nav.toc .status{display:inline-block;margin:6px 0 14px;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#ffd9a8;background:rgba(232,144,26,.16);border:1px solid rgba(232,144,26,.4);padding:3px 9px;border-radius:999px}
+  nav.toc h4{color:#6f7c95;font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin:22px 0 8px}
+  nav.toc a{display:block;color:#aeb9cf;font-size:13.5px;padding:5px 10px;border-radius:7px;border-left:2px solid transparent}
+  nav.toc a:hover{background:rgba(255,255,255,.05);color:#fff;text-decoration:none}
+
+  main{flex:1;min-width:0;padding:0 0 120px}
+  .wrap{padding:0 46px}
+
+  header.hero{padding:58px 46px 42px;color:#fff;position:relative;overflow:hidden;background:radial-gradient(1100px 480px at 82% -10%,rgba(232,144,26,.22),transparent 60%),radial-gradient(900px 480px at 8% 0%,rgba(226,85,99,.22),transparent 55%),linear-gradient(135deg,#0b1220 0%,#142036 100%),#0b1220;background-color:#0b1220}
+  header.hero .eyebrow{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:#ffce93;font-weight:600}
+  header.hero h1{font-size:44px;line-height:1.05;margin:14px 0 10px;font-weight:800;letter-spacing:-.5px}
+  header.hero h1 .grad{background:linear-gradient(90deg,#ffb35e,#ff7e8f);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header.hero p.lede{font-size:18px;color:#c4cfe4;max-width:740px;margin:0 0 20px}
+  header.hero .pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:6px}
+  header.hero .pill{font-size:12.5px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe4f5;padding:6px 12px;border-radius:999px}
+  header.hero .pill b{color:#fff}
+
+  section{padding-top:30px}
+  h2{font-size:27px;font-weight:780;letter-spacing:-.3px;margin:38px 0 6px;padding-top:14px;scroll-margin-top:14px}
+  h2 .num{color:var(--amber);font-weight:800;margin-right:10px;font-variant-numeric:tabular-nums}
+  h3{font-size:19px;font-weight:700;margin:28px 0 6px;scroll-margin-top:14px}
+  h4{font-size:15.5px;font-weight:700;margin:18px 0 4px;color:var(--ink-2)}
+  p{margin:10px 0}
+  .section-intro{color:var(--muted);font-size:16.5px;max-width:840px}
+  hr.div{border:none;border-top:1px solid var(--line);margin:46px 0 0}
+
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  strong{color:var(--ink)}
+
+  code{font-family:var(--mono);font-size:.86em;background:#eef1f7;color:#1f3b66;padding:1.5px 6px;border-radius:5px;border:1px solid #e2e7f1}
+  pre{background:var(--code-bg);color:var(--code-text);padding:18px 20px;border-radius:12px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.6;border:1px solid #1d2942}
+  pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin:16px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .grid{display:grid;gap:16px}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:1080px){.grid.cols-3{grid-template-columns:repeat(2,1fr)}}
+
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative}
+  .tile .ico{font-size:20px;margin-bottom:6px;display:block}
+  .tile h4{margin:0 0 4px}
+  .tile p{margin:0;color:var(--muted);font-size:14px}
+
+  .callout{border-left:4px solid var(--accent);background:#f0f5ff;border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0;font-size:14.5px}
+  .callout.teal{border-color:var(--accent-2);background:#eafaf8}
+  .callout.amber{border-color:var(--amber);background:#fdf4e6}
+  .callout.violet{border-color:var(--violet);background:#f3effe}
+  .callout.rose{border-color:var(--rose);background:#fdeef0}
+  .callout .tag{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.08em;display:block;margin-bottom:3px;color:var(--accent)}
+  .callout.amber .tag{color:#a8650a}
+  .callout.teal .tag{color:#0a857b}
+  .callout.violet .tag{color:#5b3fd6}
+  .callout.rose .tag{color:#b23344}
+
+  .diagram{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 18px;margin:20px 0;overflow-x:auto}
+  .diagram .cap{font-size:12.5px;color:var(--muted);text-align:center;margin-top:12px;font-style:italic}
+  .mermaid{display:flex;justify-content:center;min-height:40px}
+  .diagram.seqlight pre.mermaid{background:#ffffff;border:1px solid var(--line);color:var(--text)}
+
+  .tablewrap{overflow-x:auto;margin:16px 0}
+  table{border-collapse:collapse;width:100%;font-size:13.6px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f1f4fa;font-weight:700;color:var(--ink-2);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+  td code{font-size:12px}
+  .tablewrap.zebra tr:nth-child(even) td{background:#fafbfe}
+
+  .new{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:#fdeef0;border:1px solid #f3b9c1;color:#b23344}
+  .reuse{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:#eafaf8;border:1px solid #a6e2db;color:#0a857b}
+  .endpoint{font-family:var(--mono);font-weight:600;color:var(--violet)}
+
+  footer{border-top:1px solid var(--line);margin-top:50px;padding:24px 46px;color:var(--muted);font-size:13px}
+  .muted{color:var(--muted)}
+
+  @media(max-width:880px){
+    nav.toc{display:none}
+    .wrap,header.hero,footer{padding-left:22px;padding-right:22px}
+    .grid.cols-2,.grid.cols-3{grid-template-columns:1fr}
+    header.hero h1{font-size:33px}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc">
+  <div class="brand">
+    <div class="logo">↑</div>
+    <div>
+      <div class="name">Push</div>
+      <div class="sub">Reprint — design sketch</div>
+    </div>
+  </div>
+  <span class="status">● Proposal · not built</span>
+  <h4>The problem</h4>
+  <a href="#asymmetry">Why Push ≠ reverse Pull</a>
+  <a href="#inversion">Role inversion</a>
+  <a href="#free">What we get for free</a>
+  <h4>The design</h4>
+  <a href="#arch">Proposed architecture</a>
+  <a href="#endpoints">New remote endpoints</a>
+  <a href="#safety">The safety model</a>
+  <a href="#db">Database push</a>
+  <a href="#fileflow">File push flow</a>
+  <h4>Delivery</h4>
+  <a href="#cli">CLI surface</a>
+  <a href="#phasing">Phasing roadmap</a>
+  <a href="#questions">Open questions</a>
+</nav>
+
+<main>
+  <header class="hero">
+    <div class="eyebrow">Proposal · design sketch · not yet implemented</div>
+    <h1>The <span class="grad">Push</span> command</h1>
+    <p class="lede">Sync <em>local</em> changes — files and/or database — up to a <em>remote</em> WordPress site. The inverse direction of <code>pull</code>, built on the same streaming, cursor, and HMAC machinery, but governed by a much stricter safety model because the target is live.</p>
+    <div class="pills">
+      <span class="pill">Inverts the <b>producer ↔ consumer</b> roles</span>
+      <span class="pill">Reuses transport &amp; auth</span>
+      <span class="pill"><b>New</b> remote write endpoints</span>
+      <span class="pill">Backup · staging · rollback</span>
+      <span class="pill"><b>dry-run</b> first</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+  <div class="callout rose" style="margin-top:26px">
+    <span class="tag">Read this first</span>
+    The <code>push</code> command <strong>does not exist yet</strong>. This is a design sketch showing how it could be built on top of Reprint's existing Pull architecture. Items marked <span class="new">NEW</span> are unbuilt; items marked <span class="reuse">reuse</span> already ship today.
+  </div>
+
+  <!-- ASYMMETRY -->
+  <section id="asymmetry">
+    <h2><span class="num">01</span>Why Push is not "Pull in reverse"</h2>
+    <p class="section-intro">Pull works because the remote is a <strong>source of truth</strong> you only <em>read</em>, and the local target is <strong>disposable</strong> — a half-finished import just gets re-run. Push inverts every one of those properties, which is why it's fundamentally a <strong>safety and authorization</strong> problem rather than a transport problem.</p>
+    <div class="tablewrap zebra">
+      <table>
+        <thead><tr><th></th><th>Pull (today)</th><th>Push (proposed)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Data flows</strong></td><td>remote → local</td><td>local → remote</td></tr>
+          <tr><td><strong>Producer</strong> (has the data)</td><td><strong>remote</strong> plugin</td><td><strong>local</strong> CLI</td></tr>
+          <tr><td><strong>Consumer</strong> (applies it)</td><td><strong>local</strong> CLI (full engine)</td><td><strong>remote</strong> plugin (thin, budgeted)</td></tr>
+          <tr><td><strong>Target is…</strong></td><td>disposable, offline</td><td><strong>live, irreplaceable</strong> prod/staging</td></tr>
+          <tr><td><strong>Failure cost</strong></td><td>just re-run</td><td>could break a live site</td></tr>
+          <tr><td><strong>Conflicts</strong></td><td>none (local overwritten wholesale)</td><td>remote may have changed (orders, comments)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout teal">
+      <span class="tag">The leverage point</span>
+      The streaming / cursor / budget / HMAC machinery ports over almost unchanged. The hard parts are (a) giving the remote <em>write</em> capability without turning it into a foot-gun, and (b) not destroying remote-only data.
+    </div>
+  </section>
+
+  <!-- INVERSION -->
+  <section id="inversion">
+    <h2><span class="num">02</span>Role inversion</h2>
+    <p class="section-intro">The local CLI must now <em>produce</em> a dump + file tree, and the remote plugin must <em>apply</em> them. The producer code already exists; the remote apply engine is what's new.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart TB
+  subgraph PULL["PULL — today"]
+    direction LR
+    RP["remote plugin<br/>PRODUCES (read-only)"]:::rem -->|"streams down"| LC["local CLI<br/>CONSUMES + APPLIES"]:::loc
+  end
+  subgraph PUSH["PUSH — proposed"]
+    direction LR
+    LP["local CLI<br/>PRODUCES"]:::loc -->|"uploads up"| RC["remote plugin<br/>CONSUMES + APPLIES (NEW)"]:::rem
+  end
+  classDef rem fill:#f3effe,stroke:#c0adfb,color:#46329b;
+  classDef loc fill:#eafaf8,stroke:#7fd8cf,color:#0a6b62;
+      </pre>
+      <div class="cap">Same wire, reversed direction — but the consumer is now a thin, budgeted WordPress plugin instead of a full CLI.</div>
+    </div>
+  </section>
+
+  <!-- FREE -->
+  <section id="free">
+    <h2><span class="num">03</span>What today's code gives us for free</h2>
+    <p class="section-intro">Three facts (verified in the source) make Push much cheaper than it looks — the transport and auth for sending bytes <em>up</em> to the remote are already solved.</p>
+    <div class="grid cols-3">
+      <div class="tile">
+        <span class="ico">📖</span>
+        <h4>Remote is read-only today</h4>
+        <p>All five endpoints (<code>file_index</code>, <code>file_fetch</code>, <code>sql_chunk</code>, <code>db_index</code>, <code>preflight</code>) only read. No write path to fight — we add new endpoints cleanly.</p>
+      </div>
+      <div class="tile">
+        <span class="ico">📤</span>
+        <h4>Uploads already work</h4>
+        <p><code>file_fetch</code> already accepts a client-uploaded <code>$_FILES["file_list"]</code> via multipart POST. Sending bytes up is a solved transport.</p>
+      </div>
+      <div class="tile">
+        <span class="ico">🔐</span>
+        <h4>Uploads are already signed</h4>
+        <p>The HMAC server's <code>get_received_content()</code> hashes concatenated <code>$_FILES</code> contents in deterministic order. Authenticated uploads are already correct.</p>
+      </div>
+    </div>
+    <p>So what's missing is write <em>endpoints</em>, a remote <em>apply engine</em>, and a <em>safety model</em> — not transport.</p>
+  </section>
+
+  <hr class="div">
+
+  <!-- ARCH -->
+  <section id="arch">
+    <h2><span class="num">04</span>Proposed architecture</h2>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+  subgraph LOCAL["LOCAL — reprint.phar push"]
+    direction TB
+    PO["Push orchestrator<br/>(mirror of Pull)"]:::core
+    PROD["local producers<br/>MySQLDumpProducer · FileTreeProducer"]:::reuse
+    DIFF["diff merge-join →<br/>UPLOAD + DELETE lists"]:::reuse
+    REW["URL rewrite<br/>localhost → prod"]:::reuse
+    PO --> PROD --> DIFF --> REW
+  end
+  subgraph REMOTE["REMOTE plugin — NEW write endpoints (capability-gated)"]
+    direction TB
+    GATE["push capability gate<br/>default OFF"]:::new
+    FW["file_write<br/>atomic staging"]:::new
+    FD["file_delete"]:::new
+    SA["sql_apply engine<br/>(shared, factored from importer)"]:::new
+    SNAP["snapshot begin / commit / abort<br/>+ pre-push backup"]:::new
+    GATE --> FW
+    GATE --> FD
+    GATE --> SA
+    GATE --> SNAP
+  end
+  REW == "multipart upload · HMAC-signed<br/>(plumbing already exists)" ==> GATE
+  classDef core fill:#0c1322,stroke:#0c1322,color:#fff;
+  classDef reuse fill:#eafaf8,stroke:#7fd8cf,color:#0a6b62;
+  classDef new fill:#fdeef0,stroke:#f0b6bd,color:#a23440;
+      </pre>
+      <div class="cap">Green = reused as-is. Red = new and must be built. The local side is mostly assembly of existing parts; the remote side is where the engineering lives.</div>
+    </div>
+
+    <h3>Reusable vs. new vs. inverted</h3>
+    <div class="grid cols-3">
+      <div class="card">
+        <h4><span class="reuse">reuse</span> Almost as-is</h4>
+        <p class="muted" style="font-size:14px">HMAC auth incl. multipart uploads · <code>multipart/mixed</code> transport · <code>X-Cursor</code> conventions · <code>ResourceBudget</code> · AIMD tuner · the diff merge-join · the remote <code>file_index</code> endpoint · the URL-rewrite pipeline (direction-agnostic) · the query-stream splitter · external-merge-sort · state files + exit-code-2 resumption.</p>
+      </div>
+      <div class="card">
+        <h4><span class="new">NEW</span> Must be built</h4>
+        <p class="muted" style="font-size:14px">Remote write endpoints · a remote-side SQL apply engine (factored from the importer into a shared package) · atomic file writer + backup/staging · the authorization/capability gate · conflict/fingerprint tracking · the <code>push</code> orchestrator + <code>files-push</code>/<code>db-push</code> sub-commands.</p>
+      </div>
+      <div class="card">
+        <h4>↔ Inverted</h4>
+        <p class="muted" style="font-size:14px">The producer now runs locally; consumer logic now (partly) runs inside the remote plugin, under the same budget constraints the importer faces today.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENDPOINTS -->
+  <section id="endpoints">
+    <h2><span class="num">05</span>New remote endpoints</h2>
+    <p class="section-intro">Added to <code>Site_Export_HTTP_Server::default_handlers()</code>, all gated behind the push capability, all resumable via cursor + budget exactly like the read endpoints.</p>
+    <div class="tablewrap zebra">
+      <table>
+        <thead><tr><th>Endpoint</th><th>Role</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><span class="endpoint">file_write</span> <span class="new">NEW</span></td><td>Receive uploaded file chunks → write to disk</td><td>Atomic: write to <code>*.reprint-tmp</code> then rename. Resumable by <code>{path, offset}</code> cursor for large files. Reuses the existing <code>$_FILES</code> + HMAC content-hash plumbing.</td></tr>
+          <tr><td><span class="endpoint">file_delete</span> <span class="new">NEW</span></td><td>Remove files deleted locally</td><td>Only within allowlisted roots; logged to the audit log.</td></tr>
+          <tr><td><span class="endpoint">sql_apply</span> <span class="new">NEW</span></td><td>Execute pushed SQL against the remote DB</td><td>Statement-offset cursor, idempotent (<code>DROP TABLE IF EXISTS</code> + INSERT), budget-bounded — the importer's <code>db-apply</code> shape, now running server-side.</td></tr>
+          <tr><td><span class="endpoint">snapshot_*</span> <span class="new">NEW</span></td><td><code>begin</code> / <code>commit</code> / <code>abort</code> — two-phase staging + rollback</td><td>Captures a pre-push backup; commit swaps staging → live; abort restores.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><code>preflight</code> is extended to report <strong>push capability</strong> (enabled? writable roots? free disk? DB privileges?) so the client fails fast.</p>
+  </section>
+
+  <!-- SAFETY -->
+  <section id="safety">
+    <h2><span class="num">06</span>The safety model — the crux</h2>
+    <p class="section-intro">Push writes to a live site, so this is where most of the engineering goes and where the design must be conservative.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart TD
+  START["push request (capability ON)"]:::core --> DRY{--dry-run?}:::q
+  DRY -->|yes| PLAN["print plan, write nothing"]:::safe
+  DRY -->|no| CONF{remote drifted<br/>vs sync marker?}:::q
+  CONF -->|"yes and not --force"| ABORT1["abort: non-fast-forward"]:::stop
+  CONF -->|no / forced| BK["snapshot_begin:<br/>backup DB + overwritten files"]:::safe
+  BK --> STAGE["write to staging<br/>(*.reprint-tmp)"]:::n
+  STAGE --> OK{all chunks applied<br/>within budget?}:::q
+  OK -->|yes| COMMIT["commit:<br/>atomic rename / table swap"]:::safe
+  OK -->|"error / interrupt"| ROLL["abort:<br/>restore from backup"]:::stop
+  classDef core fill:#0c1322,stroke:#0c1322,color:#fff;
+  classDef q fill:#fff4e6,stroke:#f0c182,color:#8a5410;
+  classDef safe fill:#eafaf8,stroke:#7fd8cf,color:#0a6b62;
+  classDef n fill:#f1f4fa,stroke:#cdd6e6,color:#37445c;
+  classDef stop fill:#fdeef0,stroke:#f0b6bd,color:#a23440;
+      </pre>
+      <div class="cap">Nothing is written until a backup exists and conflicts are cleared; an interrupt at any point restores the last good state.</div>
+    </div>
+    <ol>
+      <li><strong>Explicit, separate authorization.</strong> The read secret must <strong>not</strong> silently grant write. Push requires a distinct, default-<strong>off</strong> capability (e.g. a <code>reprint_push_enabled</code> option in the plugin admin UI, ideally with its own scope/secret). Never enabled implicitly.</li>
+      <li><strong>Backup before apply.</strong> Before any write, snapshot the remote DB and back up files about to be overwritten — <em>using the existing export producers</em> (the remote can dump itself). Store under a restore handle.</li>
+      <li><strong>Atomicity + rollback.</strong> Files: write to staging, atomic-rename on commit so the site is never half-broken (critical for core/plugin files that would fatal mid-write). DB: apply within a transaction or to shadow tables, swap on commit. <code>snapshot_abort</code> restores from backup.</li>
+      <li><strong><code>--dry-run</code> first.</strong> Compute and print the full plan (files to add/update/delete, tables/rows affected, URL rewrites) <strong>without writing anything</strong>. High value, zero risk, reuses the entire diff path.</li>
+      <li><strong>Conflict detection.</strong> Refuse to clobber a remote that changed unexpectedly unless <code>--force</code> (see §07).</li>
+      <li><strong>Path guardrails.</strong> Hard allowlist of writable roots (default <code>wp-content/</code> only); refuse <code>wp-config.php</code>, refuse core unless <code>--allow-core</code>, refuse traversal (reuse <code>path_is_within_root</code>).</li>
+      <li><strong>Preserve remote-only data.</strong> Default to <em>not</em> deleting remote files outside the push scope (user uploads) and <em>not</em> replacing high-churn tables — the inverse of pull's <code>preserve-local</code>.</li>
+    </ol>
+  </section>
+
+  <!-- DB -->
+  <section id="db">
+    <h2><span class="num">07</span>Database push — the hardest part</h2>
+    <p class="section-intro">A full dump-and-replace (what pull does) is usually <strong>wrong</strong> for push: it would wipe remote-only rows (orders, comments, sessions). Offer escalating modes.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+  N["--db=none<br/>(default)<br/>files only"]:::a --> T["--db=tables:…<br/>named tables only"]:::b
+  T --> R["--db=replace<br/>full DROP+CREATE+INSERT"]:::c
+  R --> F["(future)<br/>row-level diff"]:::d
+  classDef a fill:#eafaf8,stroke:#7fd8cf,color:#0a6b62;
+  classDef b fill:#eef4ff,stroke:#9bb8f0,color:#1c3a6e;
+  classDef c fill:#fff4e6,stroke:#f0c182,color:#8a5410;
+  classDef d fill:#f1f4fa,stroke:#cdd6e6,color:#7a8499;
+      </pre>
+      <div class="cap">Destructiveness increases left → right. Backup is mandatory from <code>replace</code> onward.</div>
+    </div>
+    <ul>
+      <li><code>--db=none</code> (default) — push files only.</li>
+      <li><code>--db=tables:wp_options,wp_postmeta,…</code> — push only named tables (e.g. theme/options/content, never users/orders). The pragmatic 80% case.</li>
+      <li><code>--db=replace</code> — full DROP+CREATE+INSERT. Simple, destructive; fine for staging or when local is authoritative. <strong>Backup mandatory.</strong></li>
+      <li><em>(future)</em> row-level structured diff — out of scope for v1.</li>
+    </ul>
+    <div class="callout violet">
+      <span class="tag">Reverse URL rewriting comes for free</span>
+      Pass <code>--rewrite-url http://localhost:8881 https://prod.example.com</code> and the existing pipeline rewrites serialized PHP / JSON / block markup correctly on the way out — it's direction-agnostic.
+    </div>
+    <div class="callout amber">
+      <span class="tag">Conflict fingerprint</span>
+      At the end of every pull/push, record a marker (remote index snapshot + a DB fingerprint, e.g. per-table <code>max(id)</code> / row-count / checksum). Before a push, re-index the remote and compare; if it drifted, behave like git's non-fast-forward — <code>--on-conflict=abort|force|backup</code>.
+    </div>
+  </section>
+
+  <!-- FILE FLOW -->
+  <section id="fileflow">
+    <h2><span class="num">08</span>File push flow</h2>
+    <p class="section-intro">A mirror of <code>files-pull</code>, with the diff's output inverted.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+  IDX["① index<br/>local + remote<br/>(reuse file_index)"]:::st --> DF["② diff<br/>invert →<br/>upload + delete lists"]:::st
+  DF --> UP["③ upload<br/>→ file_write<br/>(resumable)"]:::st
+  UP --> DEL["④ delete<br/>→ file_delete"]:::st
+  DEL --> VF["⑤ verify<br/>re-fingerprint +<br/>record marker"]:::st
+  classDef st fill:#eafaf8,stroke:#7fd8cf,color:#0a6b62;
+      </pre>
+      <div class="cap">Where pull builds a <em>download</em> list of remote-newer files, push builds an <em>upload</em> list of local-newer files plus a guarded <em>delete</em> list.</div>
+    </div>
+  </section>
+
+  <hr class="div">
+
+  <!-- CLI -->
+  <section id="cli">
+    <h2><span class="num">09</span>CLI surface</h2>
+    <pre><code>php reprint.phar push &lt;remote-url&gt; --state-dir=… --fs-root=… --secret=… \
+    [--dry-run] [--db=none|replace|tables:…] \
+    [--rewrite-url http://localhost:8881 https://prod.example.com] \
+    [--delete] [--on-conflict=abort|force|backup] [--allow-core]</code></pre>
+    <p>Plus low-level <code>files-push</code> and <code>db-push</code>, same <code>0</code> / <code>1</code> / <code>2</code> exit-code contract as pull, wrapped by a <code>Push</code> orchestrator (mirror of <code>Pull::run_until_complete</code>).</p>
+  </section>
+
+  <!-- PHASING -->
+  <section id="phasing">
+    <h2><span class="num">10</span>Phasing roadmap</h2>
+    <p class="section-intro">Each milestone is independently shippable; risk increases with each step, so safety infrastructure lands before destructive capability.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+  M1["M1 · push --dry-run<br/>zero writes"]:::m --> M2["M2 · file push<br/>file_write/delete<br/>+ staging"]:::m
+  M2 --> M3["M3 · db push (replace)<br/>sql_apply + backup<br/>+ rewrite"]:::m
+  M3 --> M4["M4 · safety hardening<br/>conflicts, rollback,<br/>allowlists"]:::m
+  M4 --> M5["M5 · push orchestrator<br/>+ UI integration"]:::m
+  classDef m fill:#2f6df6,stroke:#2455c7,color:#fff;
+      </pre>
+    </div>
+    <div class="grid cols-2">
+      <div class="tile"><span class="ico">①</span><h4>M1 — <code>push --dry-run</code></h4><p>Index + diff + plan output, <em>zero writes</em>. Reuses ~everything; proves the inverted-role model at no risk. Highest value-to-effort.</p></div>
+      <div class="tile"><span class="ico">②</span><h4>M2 — file push</h4><p><code>file_write</code> + <code>file_delete</code> + atomic staging + file backup + capability gate. No DB.</p></div>
+      <div class="tile"><span class="ico">③</span><h4>M3 — db push (replace)</h4><p>Factor the shared apply engine, add <code>sql_apply</code>, pre-push DB backup, reverse URL rewrite.</p></div>
+      <div class="tile"><span class="ico">④</span><h4>M4 — safety hardening</h4><p>Conflict fingerprints, selective tables, <code>snapshot_abort</code> rollback, allowlists.</p></div>
+      <div class="tile"><span class="ico">⑤</span><h4>M5 — orchestrator + UI</h4><p>The <code>push</code> orchestrator and Studio / Playground-UI integration.</p></div>
+      <div class="tile" style="background:#f0f5ff;border-color:#c5d6f7"><span class="ico">⭐</span><h4>Recommended first step</h4><p><strong>M1 writes nothing</strong> and reuses the entire existing diff / transport / auth stack — validate the model before building a single write endpoint.</p></div>
+    </div>
+  </section>
+
+  <!-- QUESTIONS -->
+  <section id="questions">
+    <h2><span class="num">11</span>Open questions to settle first</h2>
+    <ul>
+      <li><strong>Authorization:</strong> is a shared secret enough to grant <em>write to production</em>, or do we want a separate push secret plus an explicit per-push confirmation token?</li>
+      <li><strong>Where does the local producer run</strong> — bundle the exporter producers into <code>reprint.phar</code> (it currently bundles the importer + SQLite), or shell out to a local export?</li>
+      <li><strong>Live-site consistency:</strong> maintenance mode during the DB swap? How big a write window is acceptable?</li>
+      <li><strong>Bootability invariant:</strong> guaranteeing the remote stays bootable if a push is interrupted mid-file-swap (core/plugin files).</li>
+      <li><strong>Scope of "push":</strong> files + DB only — explicitly <em>exclude</em> runtime/host config (you don't push your local dev <code>runtime.php</code> to prod).</li>
+    </ul>
+  </section>
+
+  </div><!-- /.wrap -->
+
+  <footer>
+    <strong>Reprint — Push command (design sketch).</strong> A proposal, not shipped behavior. Companion to the Reprint Architecture &amp; System Analysis document. Claims about today's code (read-only endpoints, existing upload/HMAC plumbing) are verified against the source; everything about <code>push</code> itself is a proposal open to revision.
+  </footer>
+</main>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    securityLevel: 'loose',
+    fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif',
+    themeVariables: {
+      primaryColor: '#eef4ff',
+      primaryBorderColor: '#9bb8f0',
+      primaryTextColor: '#1c3a6e',
+      lineColor: '#7d8aa3',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', htmlLabels: true, padding: 14 }
+  });
+</script>
+<!-- ── Diagram lightbox: click any diagram to expand, zoom, pan, or open in a new tab ── -->
+<style>
+  .diagram:has(svg){position:relative;cursor:zoom-in}
+  .diagram:has(svg)::after{
+    content:"\2922  Expand";
+    position:absolute;top:8px;right:10px;z-index:2;
+    font:600 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:var(--muted,#5b6470);
+    background:rgba(255,255,255,.9);
+    border:1px solid var(--line,#e2e6ee);
+    border-radius:999px;padding:2px 9px;
+    opacity:0;transition:opacity .15s ease;pointer-events:none;
+  }
+  .diagram:has(svg):hover::after{opacity:1}
+
+  .dgm-lightbox{
+    position:fixed;inset:0;z-index:99999;
+    background:rgba(17,20,24,.86);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+    display:flex;flex-direction:column;
+  }
+  .dgm-lightbox[hidden]{display:none}
+  .dgm-bar{display:flex;align-items:center;gap:8px;justify-content:center;padding:10px;flex:0 0 auto}
+  .dgm-btn{
+    appearance:none;border:1px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.08);color:#f5f7fa;
+    font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    min-width:38px;height:34px;padding:0 12px;border-radius:9px;cursor:pointer;
+    transition:background .12s ease;
+  }
+  .dgm-btn:hover{background:rgba(255,255,255,.2)}
+  .dgm-zoom{color:#cfd6df;font:600 12px ui-monospace,Menlo,monospace;min-width:52px;text-align:center}
+  .dgm-stage{flex:1 1 auto;overflow:hidden;position:relative;cursor:grab;touch-action:none}
+  .dgm-stage.dragging{cursor:grabbing}
+  .dgm-content{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+  .dgm-content svg{display:block;max-width:none;max-height:none;background:#fff;border-radius:8px}
+  .dgm-hint{flex:0 0 auto;text-align:center;color:#aeb6c0;font:500 12px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:8px 10px 14px}
+</style>
+<script>
+(function(){
+  if(window.__dgmLightbox) return; window.__dgmLightbox=true;
+  var MIN=0.2, MAX=14;
+  var overlay=document.createElement('div');
+  overlay.className='dgm-lightbox';
+  overlay.setAttribute('hidden','');
+  overlay.innerHTML=
+    '<div class="dgm-bar">'+
+      '<button class="dgm-btn" data-act="zoomout" title="Zoom out (−)">−</button>'+
+      '<span class="dgm-zoom">100%</span>'+
+      '<button class="dgm-btn" data-act="zoomin" title="Zoom in (+)">+</button>'+
+      '<button class="dgm-btn" data-act="reset" title="Reset view (0)">Reset</button>'+
+      '<button class="dgm-btn" data-act="newtab" title="Open in a new tab">Open ↗</button>'+
+      '<button class="dgm-btn" data-act="close" title="Close (Esc)">✕ Close</button>'+
+    '</div>'+
+    '<div class="dgm-stage"><div class="dgm-content"></div></div>'+
+    '<div class="dgm-hint">Scroll to zoom · drag to pan · double-click to zoom in · Esc to close</div>';
+  document.body.appendChild(overlay);
+
+  var stage=overlay.querySelector('.dgm-stage');
+  var content=overlay.querySelector('.dgm-content');
+  var zoomLabel=overlay.querySelector('.dgm-zoom');
+  var scale=1, tx=0, ty=0, source=null;
+
+  function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+  function apply(){
+    content.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+    zoomLabel.textContent=Math.round(scale*100)+'%';
+  }
+  function center(){
+    scale=1; tx=0; ty=0; apply();
+    var sr=stage.getBoundingClientRect(), cr=content.getBoundingClientRect();
+    tx=Math.max(0,(sr.width-cr.width)/2);
+    ty=Math.max(0,(sr.height-cr.height)/2);
+    apply();
+  }
+  function open(svg){
+    source=svg;
+    var rect=svg.getBoundingClientRect();
+    var vb=(svg.viewBox&&svg.viewBox.baseVal&&svg.viewBox.baseVal.width)?svg.viewBox.baseVal:null;
+    var natW=vb?vb.width:(rect.width||800);
+    var natH=vb?vb.height:(rect.height||600);
+    var k=Math.min(window.innerWidth*0.92/natW, window.innerHeight*0.82/natH);
+    if(!isFinite(k)||k<=0) k=1;
+    var clone=svg.cloneNode(true);
+    clone.removeAttribute('style');
+    clone.style.width=(natW*k)+'px';
+    clone.style.height=(natH*k)+'px';
+    content.innerHTML='';
+    content.appendChild(clone);
+    overlay.removeAttribute('hidden');
+    document.documentElement.style.overflow='hidden';
+    requestAnimationFrame(center);
+  }
+  function close(){
+    overlay.setAttribute('hidden','');
+    content.innerHTML=''; source=null;
+    document.documentElement.style.overflow='';
+  }
+  function zoomAt(px,py,factor){
+    var ns=clamp(scale*factor,MIN,MAX);
+    if(ns===scale) return;
+    var wx=(px-tx)/scale, wy=(py-ty)/scale;
+    scale=ns; tx=px-wx*scale; ty=py-wy*scale;
+    apply();
+  }
+  function openNewTab(){
+    if(!source) return;
+    var styles='', sheets=document.querySelectorAll('style'), i;
+    for(i=0;i<sheets.length;i++){ styles+=sheets[i].textContent+'\n'; }
+    var c=source.cloneNode(true);
+    c.removeAttribute('style');
+    if(!c.getAttribute('xmlns')) c.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>Diagram</title><style>'+
+      styles+
+      'html,body{margin:0;background:#fff}'+
+      'body{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}'+
+      'svg{max-width:100%;height:auto}'+
+      '</style></head><body>'+new XMLSerializer().serializeToString(c)+'</body></html>';
+    var url=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+    window.open(url,'_blank');
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+  }
+
+  document.addEventListener('click',function(e){
+    if(!overlay.hasAttribute('hidden')) return;
+    if(!e.target.closest) return;
+    var dg=e.target.closest('.diagram');
+    if(!dg || e.target.closest('a')) return;
+    var svg=dg.querySelector('svg');
+    if(!svg) return;
+    e.preventDefault(); open(svg);
+  });
+
+  overlay.querySelector('.dgm-bar').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    var sr=stage.getBoundingClientRect(), cx=sr.width/2, cy=sr.height/2;
+    var act=b.getAttribute('data-act');
+    if(act==='zoomin') zoomAt(cx,cy,1.25);
+    else if(act==='zoomout') zoomAt(cx,cy,1/1.25);
+    else if(act==='reset') center();
+    else if(act==='close') close();
+    else if(act==='newtab') openNewTab();
+  });
+
+  stage.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var sr=stage.getBoundingClientRect();
+    zoomAt(e.clientX-sr.left, e.clientY-sr.top, e.deltaY<0?1.12:1/1.12);
+  },{passive:false});
+
+  stage.addEventListener('dblclick',function(e){
+    var sr=stage.getBoundingClientRect();
+    zoomAt(e.clientX-sr.left, e.clientY-sr.top, 1.6);
+  });
+
+  var dragging=false, moved=false, lx=0, ly=0;
+  stage.addEventListener('pointerdown',function(e){
+    dragging=true; moved=false; lx=e.clientX; ly=e.clientY;
+    stage.classList.add('dragging');
+    try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  stage.addEventListener('pointermove',function(e){
+    if(!dragging) return;
+    var dx=e.clientX-lx, dy=e.clientY-ly;
+    if(Math.abs(dx)>2||Math.abs(dy)>2) moved=true;
+    tx+=dx; ty+=dy; lx=e.clientX; ly=e.clientY; apply();
+  });
+  function endDrag(){ dragging=false; stage.classList.remove('dragging'); }
+  stage.addEventListener('pointerup',endDrag);
+  stage.addEventListener('pointercancel',endDrag);
+
+  stage.addEventListener('click',function(e){
+    if(e.target===stage && !moved) close();
+  });
+
+  document.addEventListener('keydown',function(e){
+    if(overlay.hasAttribute('hidden')) return;
+    var sr=stage.getBoundingClientRect();
+    if(e.key==='Escape') close();
+    else if(e.key==='+'||e.key==='=') zoomAt(sr.width/2,sr.height/2,1.25);
+    else if(e.key==='-'||e.key==='_') zoomAt(sr.width/2,sr.height/2,1/1.25);
+    else if(e.key==='0') center();
+  });
+})();
+</script>
+</body>
+</html>
