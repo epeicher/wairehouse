@@ -187,12 +187,7 @@
   header.hero .edition i{color:#6c6453;font-style:normal}
   header.hero h1{font-family:var(--display);font-weight:600;font-size:clamp(38px,6vw,60px);line-height:1.03;
     letter-spacing:-.015em;margin:18px 0 16px;color:var(--press-ink)}
-  header.hero .spot{position:relative;isolation:isolate;color:var(--press-ink);font-style:italic}
-  header.hero .spot::before,header.hero .spot::after{content:attr(data-word);position:absolute;inset:0;z-index:-1;pointer-events:none}
-  header.hero .spot::before{color:var(--magenta-bright);animation:reg-m .8s cubic-bezier(.2,.75,.2,1) both}
-  header.hero .spot::after{color:var(--cyan-bright);animation:reg-c .8s cubic-bezier(.2,.75,.2,1) both}
-  @keyframes reg-c{from{transform:translate(6px,4px);opacity:.85}to{transform:translate(1.5px,0);opacity:.4}}
-  @keyframes reg-m{from{transform:translate(-6px,-4px);opacity:.85}to{transform:translate(-1.5px,0);opacity:.4}}
+  header.hero .spot{color:var(--spot-bright);font-style:italic}
   header.hero .lede{font-size:18px;line-height:1.55;color:var(--press-dim);max-width:680px;margin:0}
   header.hero .colophon{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:28px 0 0;border-top:1px solid rgba(242,238,228,.2)}
   header.hero .colophon>div{padding:11px 18px 11px 0}
@@ -247,8 +242,6 @@
 
   @media(prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
-    header.hero .spot::after{animation:none;transform:translate(1.5px,0);opacity:.4}
-    header.hero .spot::before{animation:none;transform:translate(-1.5px,0);opacity:.4}
   }
   @media(max-width:900px){header.hero .proofmark{display:none}}
 </style>
