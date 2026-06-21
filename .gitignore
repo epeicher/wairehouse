@@ -141,3 +141,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Claude Code: commit shared project config in this repo, even though
+# the global ~/.gitignore ignores the .claude directory. Keep the
+# user-local settings.local.json out of version control.
+!.claude/
+.claude/*
+!.claude/settings.json
+.claude/settings.local.json
