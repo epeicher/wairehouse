@@ -40,6 +40,47 @@ if [ "$COUNT" -eq 0 ]; then
   CARDS="      <p class=\"empty\">No plans yet. Add an .html file to docs/ and re-run this script.</p>"
 fi
 
+# ---- subfolder groups: each subdirectory of docs/ becomes its own sub-index ----
+# (the top-level loop above only scans docs/*.html, so nested folders such as
+#  docs/previews/<name>/ are listed here as separate, labelled card lists.)
+SECTIONS=""
+while IFS= read -r d; do
+  [ -n "$d" ] || continue
+  rel="${d#"$DOCS"/}"
+  subfiles=$( (cd "$d" && ls -1 *.html 2>/dev/null || true) | grep -vx 'index.html' | sort || true )
+  [ -n "$subfiles" ] || continue
+  name=$(basename "$rel")
+  pretty=$(printf '%s' "$name" | sed 's/[-_]/ /g' | awk '{for(i=1;i<=NF;i++)$i=toupper(substr($i,1,1)) substr($i,2)}1')
+  if [ -f "$d/index.html" ]; then
+    heading="<a href=\"./${rel}/index.html\">${pretty}</a>"
+  else
+    heading="${pretty}"
+  fi
+  SUB=""
+  while IFS= read -r sf; do
+    [ -n "$sf" ] || continue
+    stitle=$(grep -o '<title>[^<]*</title>' "$d/$sf" | head -1 | sed 's/<[^>]*>//g; s/^[[:space:]]*//; s/[[:space:]]*$//')
+    [ -n "$stitle" ] || stitle="$sf"
+    sbytes=$(wc -c < "$d/$sf")
+    skb=$(( (sbytes + 1023) / 1024 ))
+    sdate=$(git log -1 --format=%ad --date=short -- "$d/$sf" 2>/dev/null || true)
+    [ -n "$sdate" ] || sdate=$(date '+%Y-%m-%d')
+    SUB+="      <a class=\"card\" href=\"./${rel}/${sf}\">
+        <div class=\"ct\">${stitle}</div>
+        <div class=\"cf\">${rel}/${sf}</div>
+        <div class=\"cm\">${skb} KB &middot; ${sdate}</div>
+        <span class=\"go\">Open &#8599;</span>
+      </a>
+"
+  done <<< "$subfiles"
+  SECTIONS+="    <section class=\"group\">
+      <h2 class=\"group-title\">${heading} <span class=\"group-path\">${rel}/</span></h2>
+      <div class=\"grid\">
+${SUB}      </div>
+    </section>
+"
+done < <( find "$DOCS" -mindepth 1 -type d | sort )
+
 cat > "$DOCS/index.html" <<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -71,6 +112,12 @@ cat > "$DOCS/index.html" <<HTML
   .go{position:absolute;top:18px;right:18px;font-size:12px;font-weight:700;color:var(--accent2);
     background:#eafaf8;border:1px solid #b7e7e1;border-radius:999px;padding:3px 10px}
   .empty{color:var(--muted);text-align:center;padding:40px}
+  .group{margin-top:8px}
+  .group-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:44px 0 16px;padding-top:26px;
+    border-top:1px solid var(--line);font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+  .group-title a{color:var(--ink);text-decoration:none}
+  .group-title a:hover{color:var(--accent);text-decoration:underline}
+  .group-path{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--accent);letter-spacing:0}
   footer{max-width:880px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:12.5px;text-align:center}
   @media(max-width:560px){header h1{font-size:30px}.grid{grid-template-columns:1fr}}
 </style>
@@ -84,7 +131,7 @@ cat > "$DOCS/index.html" <<HTML
   <main>
     <div class="grid">
 ${CARDS}    </div>
-  </main>
+${SECTIONS}  </main>
   <footer>${COUNT} document(s) &middot; auto-generated index &middot; <a href="${PAGES_URL}">${PAGES_URL}</a></footer>
 </body>
 </html>
