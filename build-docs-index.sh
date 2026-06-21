@@ -27,9 +27,11 @@ while IFS= read -r f; do
   date=$(git log -1 --format=%ad --date=short -- "$DOCS/$f" 2>/dev/null || true)
   [ -n "$date" ] || date=$(date '+%Y-%m-%d')
   CARDS+="      <a class=\"card\" href=\"./${f}\">
-        <div class=\"ct\">${title}</div>
-        <div class=\"cf\">${f}</div>
-        <div class=\"cm\">${kb} KB &middot; ${date}</div>
+        <div class=\"cbody\">
+          <div class=\"ct\">${title}</div>
+          <div class=\"cf\">${f}</div>
+          <div class=\"cm\">${kb} KB &middot; ${date}</div>
+        </div>
         <span class=\"go\">Open &#8599;</span>
       </a>
 "
@@ -47,39 +49,75 @@ cat > "$DOCS/index.html" <<HTML
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plans &mdash; index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-  :root{--ink:#0c1322;--paper:#f7f8fb;--card:#fff;--line:#e3e7ef;--text:#1e2533;--muted:#5b6679;--accent:#2f6df6;--accent2:#0fb5a8;
-        --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;}
+  :root{
+    --blue:#2D6CDF;--blue-bright:#5E9BFF;--green-bright:#33E0B6;
+    --ink:#14212E;--ink-2:#33475A;--muted:#5E7184;--ground:#ECF1F7;--grid:rgba(45,108,223,.05);
+    --card:#FFFFFF;--panel:#F4F7FB;--rule:#D3DCE8;--rule-2:#BCC9DA;--term:#0B1622;--term-ink:#DCE6F2;--term-dim:#8FA3B8;
+    --spot:var(--blue);--spot-bright:var(--blue-bright);
+    --display:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
-  header{padding:64px 24px 40px;color:#fff;text-align:center;
-    background:radial-gradient(900px 420px at 80% -20%,rgba(15,181,168,.28),transparent 60%),
-               radial-gradient(700px 420px at 10% 0%,rgba(47,109,246,.30),transparent 55%),
-               linear-gradient(135deg,#0b1220,#142036),#0b1220;}
-  header .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7fe3da;font-weight:600;margin-bottom:10px}
-  header h1{margin:0;font-size:40px;font-weight:800;letter-spacing:-.5px}
-  header p{margin:10px 0 0;color:#c4cfe4;font-size:16px}
-  main{max-width:880px;margin:0 auto;padding:34px 22px 90px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
-  .card{display:block;position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;
-    padding:20px 22px 18px;text-decoration:none;color:inherit;box-shadow:0 1px 2px rgba(16,24,40,.05);
-    transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
-  .card:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(16,24,40,.10);border-color:#c7d3ec}
-  .ct{font-size:17px;font-weight:700;color:var(--ink);padding-right:60px;line-height:1.3}
-  .cf{font-family:var(--mono);font-size:11.5px;color:var(--accent);margin-top:8px;word-break:break-all}
-  .cm{font-size:12.5px;color:var(--muted);margin-top:8px}
-  .go{position:absolute;top:18px;right:18px;font-size:12px;font-weight:700;color:var(--accent2);
-    background:#eafaf8;border:1px solid #b7e7e1;border-radius:999px;padding:3px 10px}
-  .empty{color:var(--muted);text-align:center;padding:40px}
-  footer{max-width:880px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:12.5px;text-align:center}
-  @media(max-width:560px){header h1{font-size:30px}.grid{grid-template-columns:1fr}}
+  body{margin:0;color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;
+    background-color:var(--ground);
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:24px 24px}
+  a{color:var(--spot)}
+  ::selection{background:var(--spot);color:#fff}
+  :focus-visible{outline:2px solid var(--spot);outline-offset:2px}
+  header{position:relative;overflow:hidden;color:var(--term-ink);border-bottom:1px solid var(--ink);
+    background-color:var(--term);
+    background-image:linear-gradient(rgba(94,155,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(94,155,255,.08) 1px,transparent 1px);
+    background-size:26px 26px}
+  header .termbar{display:flex;align-items:center;gap:8px;padding:11px 18px;border-bottom:1px solid rgba(124,155,190,.22);background:rgba(7,14,22,.55)}
+  header .termbar .dot{width:11px;height:11px;border-radius:50%}
+  header .d1{background:#ff5f57}
+  header .d2{background:#febc2e}
+  header .d3{background:#28c840}
+  header .termbar .tpath{margin-left:10px;font-family:var(--mono);font-size:11.5px;color:var(--term-dim)}
+  header .inner{max-width:880px;margin:0 auto;padding:34px 26px 40px}
+  header .prompt{margin:0 0 14px;font-family:var(--mono);font-size:13.5px;color:var(--term-dim)}
+  header .prompt .usr{color:var(--green-bright)}
+  header .prompt .pun{color:#6c8198}
+  header .prompt .cmd{color:var(--term-ink)}
+  header .prompt .cur{display:inline-block;margin-left:1px;color:var(--green-bright);animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  header h1{margin:0;font-family:var(--display);font-weight:600;font-size:clamp(32px,6vw,48px);letter-spacing:-.02em;line-height:1.04;color:#fff}
+  header h1 .hl{color:var(--spot-bright)}
+  header p{margin:14px 0 0;color:#b6c6d8;font-size:16px;max-width:600px}
+  main{max-width:880px;margin:0 auto;padding:8px 26px 90px}
+  .grid{display:flex;flex-direction:column;counter-reset:entry;border-top:1px solid var(--rule);margin-top:30px}
+  .card{display:flex;align-items:baseline;gap:18px;padding:22px 4px;border-bottom:1px solid var(--rule);text-decoration:none;color:inherit}
+  .card::before{counter-increment:entry;content:counter(entry,decimal-leading-zero);font-family:var(--mono);font-size:13px;color:var(--spot);flex:0 0 auto;padding-top:4px}
+  .card .cbody{flex:1 1 auto;min-width:0}
+  .ct{font-family:var(--display);font-weight:600;font-size:21px;color:var(--ink);line-height:1.2}
+  .cf{font-family:var(--mono);font-size:11.5px;color:var(--spot);margin-top:8px;word-break:break-all}
+  .cm{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:4px}
+  .go{flex:0 0 auto;align-self:center;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink);border:1px solid var(--rule-2);padding:7px 11px;white-space:nowrap}
+  .card:hover{background:var(--panel)}
+  .card:hover .ct{text-decoration:underline;text-underline-offset:3px}
+  .card:hover .go{border-color:var(--spot);color:var(--spot)}
+  .empty{color:var(--muted);text-align:center;padding:50px}
+  footer{max-width:880px;margin:0 auto;padding:0 26px 60px;color:var(--muted);font-family:var(--mono);font-size:11.5px;text-align:center}
+  footer a{color:var(--spot)}
+  @media(max-width:560px){.card{flex-wrap:wrap}.card .go{order:3;margin-left:30px}}
+  @media(prefers-reduced-motion:reduce){header .prompt .cur{animation:none}}
 </style>
 </head>
 <body>
   <header>
-    <div class="eyebrow">wairehouse &middot; plans &amp; specs</div>
-    <h1>Plans</h1>
-    <p>Tap any card to open it &mdash; works great on mobile, diagrams zoom.</p>
+    <div class="termbar"><span class="dot d1"></span><span class="dot d2"></span><span class="dot d3"></span><span class="tpath">wairehouse — docs/</span></div>
+    <div class="inner">
+      <p class="prompt"><span class="usr">wairehouse</span> <span class="pun">~</span> <span class="pun">%</span> <span class="cmd">ls docs/*.html</span><span class="cur">_</span></p>
+      <h1>Plans <span class="hl">index</span></h1>
+      <p>Self-contained HTML plans &mdash; mobile-friendly, with diagrams that zoom. Select an entry to open it.</p>
+    </div>
   </header>
   <main>
     <div class="grid">
