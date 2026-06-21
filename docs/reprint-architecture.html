@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reprint — Architecture &amp; System Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
   :root{
     --ink:#0c1322;          /* near-black ink */
@@ -153,6 +156,133 @@
     header.hero h1{font-size:34px}
   }
 </style>
+<style id="press">
+  /* ============================================================
+     Press & Proof — editorial identity for the Reprint docs.
+     Ink-on-paper · offset-print registration · folio numbering.
+     This sheet loads after the base styles and overrides them;
+     legacy tokens are remapped so untouched rules adopt the
+     new palette automatically.
+     ============================================================ */
+  :root{
+    --cyan:#0E7C8B;    --cyan-bright:#3FBDCB;
+    --magenta:#B5305F; --magenta-bright:#E8608C;
+    --yellow:#B07D10;  --yellow-bright:#F0B429;
+    --ink:#1B1710; --ink-2:#43392C; --muted:#5F584B;
+    --paper:#F2EEE4; --paper-2:#FBF8F1; --card:#FCFAF4;
+    --rule:#DCD4C3; --rule-2:#C8BDA7;
+    --press:#16120B; --press-ink:#F2EEE4; --press-dim:#CFC7B6;
+    --spot:var(--cyan); --spot-bright:var(--cyan-bright);
+    --display:"Fraunces",Georgia,"Times New Roman",serif;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    /* remap legacy tokens */
+    --accent:var(--cyan); --accent-2:var(--cyan); --violet:#6B53C0; --amber:var(--yellow); --rose:var(--magenta);
+    --line:var(--rule); --line-2:var(--rule-2); --text:var(--ink); --code-bg:var(--press); --code-text:#E7E0D0; --radius:10px;
+  }
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.66;counter-reset:fig}
+  a{color:var(--spot)}
+  a:hover{text-underline-offset:2px}
+  ::selection{background:var(--spot);color:#fff}
+  :focus-visible{outline:2px solid var(--spot);outline-offset:2px}
+
+  /* ---- sidebar: a printed table of contents ---- */
+  nav.toc{background:var(--paper-2);border-right:1px solid var(--rule);padding:30px 22px 64px 26px;counter-reset:folio}
+  nav.toc .brand{margin-bottom:6px}
+  nav.toc .brand .logo{background:var(--press);color:var(--press-ink);border:1px solid var(--ink);border-radius:6px;
+    font-family:var(--display);font-weight:600;font-size:20px;box-shadow:2.5px 2.5px 0 var(--spot)}
+  nav.toc .brand .name{font-family:var(--display);font-weight:600;color:var(--ink)}
+  nav.toc .brand .sub{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  nav.toc .status{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;color:var(--magenta);
+    background:none;border:1px solid var(--magenta);border-radius:0;padding:4px 9px;margin:10px 0 14px}
+  nav.toc h4{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--muted);
+    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--rule)}
+  nav.toc a[href^="#"]{display:flex;align-items:baseline;color:var(--ink-2);font-size:14px;padding:5px 2px;border-left:0;border-radius:0}
+  nav.toc a[href^="#"]::before{content:"";order:1;flex:1 1 auto;margin:0 8px 5px;border-bottom:1px dotted var(--rule-2)}
+  nav.toc a[href^="#"]::after{counter-increment:folio;content:counter(folio,decimal-leading-zero);order:2;
+    font-family:var(--mono);font-size:11px;color:var(--spot)}
+  nav.toc a[href^="#"]:hover{background:none;color:var(--ink)}
+  nav.toc a[href^="#"]:hover::before{border-bottom-color:var(--spot)}
+  nav.toc a[href^="#"]:hover::after{color:var(--ink)}
+  nav.toc a code{font-family:var(--mono);background:none;border:0;color:inherit;padding:0}
+
+  /* ---- masthead: ink stock with offset registration marks ---- */
+  header.hero{color:var(--press-ink);padding:54px 46px 38px;border-bottom:1px solid var(--ink);position:relative;overflow:hidden;
+    background-color:var(--press);
+    background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='30'%20height='30'%3E%3Cg%20fill='none'%20stroke='%23F2EEE4'%20stroke-opacity='.42'%20stroke-width='1'%3E%3Ccircle%20cx='15'%20cy='15'%20r='6'/%3E%3Cpath%20d='M15%200v30M0%2015h30'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='30'%20height='30'%3E%3Cg%20fill='none'%20stroke='%23F2EEE4'%20stroke-opacity='.42'%20stroke-width='1'%3E%3Ccircle%20cx='15'%20cy='15'%20r='6'/%3E%3Cpath%20d='M15%200v30M0%2015h30'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='30'%20height='30'%3E%3Cg%20fill='none'%20stroke='%23F2EEE4'%20stroke-opacity='.42'%20stroke-width='1'%3E%3Ccircle%20cx='15'%20cy='15'%20r='6'/%3E%3Cpath%20d='M15%200v30M0%2015h30'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='30'%20height='30'%3E%3Cg%20fill='none'%20stroke='%23F2EEE4'%20stroke-opacity='.42'%20stroke-width='1'%3E%3Ccircle%20cx='15'%20cy='15'%20r='6'/%3E%3Cpath%20d='M15%200v30M0%2015h30'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:18px 18px,right 18px top 18px,left 18px bottom 18px,right 18px bottom 18px}
+  header.hero .masthead{position:relative;z-index:1;max-width:760px}
+  header.hero .edition{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:0;
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--spot-bright)}
+  header.hero .edition i{color:#6c6453;font-style:normal}
+  header.hero h1{font-family:var(--display);font-weight:600;font-size:clamp(38px,6vw,60px);line-height:1.03;
+    letter-spacing:-.015em;margin:18px 0 16px;color:var(--press-ink)}
+  header.hero .spot{position:relative;isolation:isolate;color:var(--press-ink);font-style:italic}
+  header.hero .spot::before,header.hero .spot::after{content:attr(data-word);position:absolute;inset:0;z-index:-1;pointer-events:none}
+  header.hero .spot::before{color:var(--magenta-bright);animation:reg-m .8s cubic-bezier(.2,.75,.2,1) both}
+  header.hero .spot::after{color:var(--cyan-bright);animation:reg-c .8s cubic-bezier(.2,.75,.2,1) both}
+  @keyframes reg-c{from{transform:translate(6px,4px);opacity:.85}to{transform:translate(1.5px,0);opacity:.4}}
+  @keyframes reg-m{from{transform:translate(-6px,-4px);opacity:.85}to{transform:translate(-1.5px,0);opacity:.4}}
+  header.hero .lede{font-size:18px;line-height:1.55;color:var(--press-dim);max-width:680px;margin:0}
+  header.hero .colophon{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:28px 0 0;border-top:1px solid rgba(242,238,228,.2)}
+  header.hero .colophon>div{padding:11px 18px 11px 0}
+  header.hero .colophon dt{margin:0 0 3px;font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--spot-bright)}
+  header.hero .colophon dd{margin:0;font-size:13.5px;color:#dcd5c6}
+
+  /* ---- sections: display headings, folio markers ---- */
+  h2{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.1;letter-spacing:-.012em;color:var(--ink);margin:44px 0 8px}
+  h2 .num{font-family:var(--mono);font-weight:500;font-size:12.5px;color:var(--spot);margin-right:14px;
+    border:1px solid var(--rule-2);border-radius:0;padding:3px 7px;vertical-align:middle;position:relative;top:-3px}
+  h3{font-family:var(--display);font-weight:600;font-size:20px;color:var(--ink);margin:32px 0 6px}
+  h4{font-family:var(--sans);font-weight:600;font-size:14.5px;color:var(--ink-2)}
+  .section-intro{color:var(--ink-2);font-size:16.5px}
+  hr.div{border-top:1px solid var(--rule);margin:50px 0 0}
+  strong{color:var(--ink);font-weight:600}
+
+  /* ---- code ---- */
+  code{font-family:var(--mono);font-size:.84em;background:#ECE5D6;color:#4A3D2A;border:1px solid var(--rule);border-radius:4px;padding:1.5px 6px}
+  pre{background:var(--press);color:#E7E0D0;border:1px solid var(--ink);border-radius:8px;font-family:var(--mono);font-size:13px;line-height:1.6}
+  pre code{background:none;border:0;color:inherit;padding:0}
+
+  /* ---- cards / tiles / callouts ---- */
+  .card{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);box-shadow:none}
+  .tile{background:var(--card);border:1px solid var(--rule);border-radius:var(--radius)}
+  .tile .ico{font-size:18px;opacity:.85}
+  .tile .file{font-family:var(--mono);color:var(--spot)}
+  .callout{border-left:3px solid var(--spot);background:var(--paper-2);border-radius:0 8px 8px 0}
+  .callout .tag{font-family:var(--mono);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.1em;color:var(--spot)}
+  .callout.teal{border-left-color:var(--cyan)} .callout.teal .tag{color:var(--cyan)}
+  .callout.amber{border-left-color:var(--yellow)} .callout.amber .tag{color:#8A6608}
+  .callout.violet{border-left-color:#6B53C0} .callout.violet .tag{color:#5b3fd6}
+  .callout.rose{border-left-color:var(--magenta)} .callout.rose .tag{color:var(--magenta)}
+
+  /* ---- tables ---- */
+  .tablewrap{border:1px solid var(--rule);border-radius:8px;overflow:auto hidden}
+  table{border:0;border-radius:0;background:var(--card)}
+  th{background:var(--paper-2);font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.05em;color:var(--ink-2)}
+  th,td{border-bottom:1px solid var(--rule)}
+  .tablewrap.zebra tr:nth-child(even) td{background:rgba(27,23,16,.022)}
+  .endpoint{font-family:var(--mono);font-weight:600;color:var(--magenta)}
+  .badge{font-family:var(--mono);background:var(--paper-2);border:1px solid var(--rule-2);color:var(--ink-2);border-radius:0}
+  .new{font-family:var(--mono);font-size:10px;font-weight:600;background:none;border:1px solid var(--magenta);color:var(--magenta);border-radius:0;padding:1px 7px}
+  .reuse{font-family:var(--mono);font-size:10px;font-weight:600;background:none;border:1px solid var(--cyan);color:var(--cyan);border-radius:0;padding:1px 7px}
+
+  /* ---- figures: auto-numbered plates ---- */
+  .diagram{background:var(--card);border:1px solid var(--rule);border-radius:8px;counter-increment:fig}
+  .diagram pre.mermaid{background:transparent;border:0;padding:0}
+  .diagram .cap{font-style:normal;color:var(--muted)}
+  .diagram .cap::before{content:"Fig. " counter(fig,decimal-leading-zero) " \2014 ";font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:var(--spot)}
+
+  /* ---- footer ---- */
+  footer{border-top:1px solid var(--rule);color:var(--muted)}
+  footer strong{font-family:var(--display);font-weight:600;color:var(--ink)}
+
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    header.hero .spot::after{animation:none;transform:translate(1.5px,0);opacity:.4}
+    header.hero .spot::before{animation:none;transform:translate(-1.5px,0);opacity:.4}
+  }
+</style>
 </head>
 <body>
 <div class="shell">
@@ -195,16 +325,18 @@
 <!-- ============ MAIN ============ -->
 <main>
   <header class="hero">
-    <div class="eyebrow">WordPress site migration · streaming · resumable</div>
-    <h1>How <span class="grad">Reprint</span> works</h1>
-    <p class="lede">Reprint clones an entire WordPress site — files, database, and server configuration — over plain HTTP, in resumable streaming chunks designed to survive the tightest shared-hosting limits. This document maps every block of the repo and the patterns that hold them together.</p>
-    <div class="pills">
-      <span class="pill">Producer&nbsp;↔&nbsp;consumer over HTTP</span>
-      <span class="pill"><b>Cursor-based</b> resumption</span>
-      <span class="pill"><b>multipart/mixed</b> streaming</span>
-      <span class="pill">HMAC-SHA256 auth</span>
-      <span class="pill">URL rewriting on import</span>
-      <span class="pill">MySQL <b>or</b> SQLite targets</span>
+    <div class="masthead">
+      <p class="edition"><span>Reprint</span><i>·</i><span>Technical edition</span><i>·</i><span>Resumable by design</span></p>
+      <h1>How <span class="spot" data-word="Reprint">Reprint</span> works</h1>
+      <p class="lede">Reprint clones an entire WordPress site — files, database, and server configuration — over plain HTTP, in resumable streaming chunks designed to survive the tightest shared-hosting limits. This document maps every block of the repo and the patterns that hold them together.</p>
+      <dl class="colophon">
+        <div><dt>Model</dt><dd>Producer ↔ consumer over HTTP</dd></div>
+        <div><dt>Resumption</dt><dd>Cursor-based, every chunk</dd></div>
+        <div><dt>Transport</dt><dd>multipart/mixed, gzipped</dd></div>
+        <div><dt>Authentication</dt><dd>HMAC-SHA256</dd></div>
+        <div><dt>On import</dt><dd>Structure-aware URL rewriting</dd></div>
+        <div><dt>Targets</dt><dd>MySQL or SQLite</dd></div>
+      </dl>
     </div>
   </header>
 
@@ -949,7 +1081,7 @@ flowchart LR
     startOnLoad: true,
     theme: 'base',
     securityLevel: 'loose',
-    fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif',
+    fontFamily: '"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
     themeVariables: {
       primaryColor: '#eef4ff',
       primaryBorderColor: '#9bb8f0',
