@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reprint — Dispatch-Free Prepend Artifact (native-PHP runtime fix)</title>
+<style>
+  :root{
+    --ink:#0c1322; --ink-2:#1b2536; --paper:#f7f8fb; --card:#ffffff;
+    --line:#e3e7ef; --line-2:#d4dae6; --text:#1e2533; --muted:#5b6679;
+    --accent:#2f6df6; --accent-2:#0fb5a8; --violet:#7c5cfc; --amber:#e8901a; --rose:#e25563;
+    --code-bg:#0e1626; --code-text:#d7e0f4; --radius:14px; --maxw:900px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  main{max-width:var(--maxw);margin:0 auto;padding:0 0 120px}
+  .wrap{padding:0 28px}
+  @media(max-width:640px){.wrap{padding:0 18px}}
+
+  header.hero{
+    padding:60px 28px 40px;color:#fff;position:relative;overflow:hidden;
+    background:radial-gradient(1100px 500px at 80% -10%,rgba(15,181,168,.25),transparent 60%),
+               radial-gradient(800px 500px at 10% 0%,rgba(124,92,252,.25),transparent 55%),
+               linear-gradient(135deg,#0b1220 0%,#142036 100%),#0b1220;
+  }
+  header.hero .eyebrow{font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;color:#7fe3da;font-weight:600}
+  header.hero h1{font-size:38px;line-height:1.08;margin:14px 0 12px;font-weight:800;letter-spacing:-.5px}
+  header.hero h1 .grad{background:linear-gradient(90deg,#5ea2ff,#5ff0e0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header.hero p.lede{font-size:17.5px;color:#c4cfe4;max-width:720px;margin:0 0 22px}
+  header.hero .pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px}
+  header.hero .pill{font-size:12.5px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe4f5;padding:6px 12px;border-radius:999px}
+  header.hero .pill b{color:#fff}
+  @media(max-width:640px){header.hero h1{font-size:29px}}
+
+  section{padding-top:8px}
+  h2{font-size:25px;font-weight:780;letter-spacing:-.3px;margin:42px 0 6px;padding-top:10px;scroll-margin-top:14px}
+  h2 .num{color:var(--accent);font-weight:800;margin-right:10px;font-variant-numeric:tabular-nums}
+  h3{font-size:18px;font-weight:700;margin:26px 0 6px}
+  p{margin:11px 0}
+  .lede-sub{color:var(--muted);font-size:16.5px;max-width:760px}
+  hr.div{border:none;border-top:1px solid var(--line);margin:40px 0 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  strong{color:var(--ink)}
+
+  code{font-family:var(--mono);font-size:.86em;background:#eef1f7;color:#1f3b66;padding:1.5px 6px;border-radius:5px;border:1px solid #e2e7f1}
+  pre{background:var(--code-bg);color:var(--code-text);padding:16px 18px;border-radius:12px;overflow:auto;font-family:var(--mono);font-size:12.8px;line-height:1.6;border:1px solid #1d2942;margin:14px 0}
+  pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
+  pre .c{color:#7c89a8}            /* comment */
+  pre .err{color:#ff9aa6}          /* error text */
+
+  .callout{border-left:4px solid var(--accent);background:#f0f5ff;border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0;font-size:14.8px}
+  .callout.teal{border-color:var(--accent-2);background:#eafaf8}
+  .callout.amber{border-color:var(--amber);background:#fdf4e6}
+  .callout.rose{border-color:var(--rose);background:#fdeef0}
+  .callout.violet{border-color:var(--violet);background:#f3effe}
+  .callout .tag{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.08em;display:block;margin-bottom:4px;color:var(--accent)}
+  .callout.teal .tag{color:#0a857b}
+  .callout.amber .tag{color:#a8650a}
+  .callout.rose .tag{color:#bc2c3c}
+  .callout.violet .tag{color:#5b3fd6}
+  .callout p{margin:6px 0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:16px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .filelist{font-family:var(--mono);font-size:12.8px}
+  .filelist b{color:var(--accent);font-weight:600}
+  .muted{color:var(--muted)}
+  .footer{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
+  .step{display:flex;gap:10px;margin:6px 0}
+  .step .n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:2px}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">Reprint · Runtime applier fix</div>
+    <h1>Emit a <span class="grad">dispatch-free prepend</span> artifact for host-routed PHP runtimes</h1>
+    <p class="lede">WordPress Studio's native-PHP <code style="background:rgba(255,255,255,.12);color:#dbe4f5;border-color:rgba(255,255,255,.18)">pull-reprint</code> boots pulled sites with its own <code style="background:rgba(255,255,255,.12);color:#dbe4f5;border-color:rgba(255,255,255,.18)">php&nbsp;-S</code> router and injects reprint's <code style="background:rgba(255,255,255,.12);color:#dbe4f5;border-color:rgba(255,255,255,.18)">runtime.php</code> via <code style="background:rgba(255,255,255,.12);color:#dbe4f5;border-color:rgba(255,255,255,.18)">auto_prepend_file</code>. Because that file is a full <em>router</em>, WordPress falls back to MySQL and the site fails to start. The fix is small — and reprint already has the pieces.</p>
+    <div class="pills">
+      <span class="pill">Repo <b>WordPress/reprint</b></span>
+      <span class="pill">Applier <b>class-php-builtin-applier.php</b></span>
+      <span class="pill">Triggered by <b>Automattic/studio#3881</b></span>
+      <span class="pill">Status <b>Prototype proven downstream</b></span>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <section id="context">
+      <h2><span class="num">1</span>Context</h2>
+      <p>WordPress Studio is adding native-PHP support to <code>studio pull-reprint</code>
+      (Automattic/studio#3881, branch <code>stu-1814-make-pull-reprint-work-with-native-php</code>).
+      For native PHP it runs:</p>
+      <pre><code>reprint pull … --runtime=php-builtin --start-runtime=none</code></pre>
+      <p>…and then boots the pulled site with <strong>its own</strong> PHP server: a pool of
+      <code>php -S … router.php</code> workers, injecting reprint's generated
+      <code>runtime.php</code> via <code>-d auto_prepend_file=runtime.php</code>.</p>
+      <p>This <strong>fails</strong>: every pulled site dies at startup with WordPress's
+      <em>"Error establishing a database connection"</em> (it falls back to MySQL) and the
+      PHP worker exits 1.</p>
+    </section>
+
+    <section id="root-cause">
+      <h2><span class="num">2</span>Root cause</h2>
+      <p>The <strong>php-builtin</strong> applier generates <code>runtime.php</code> as a
+      <strong>complete standalone <code>php -S</code> router</strong>, not a passive prepend.
+      It concatenates two parts.</p>
+      <p class="muted"><code>class-php-builtin-applier.php</code> · <code>apply()</code> (~line&nbsp;26–30):</p>
+      <pre><code>$runtime  = generate_runtime_php($manifest, $fs_root);    <span class="c">// base layers: constants, SQLite $wpdb shim, uploads proxy</span>
+$runtime .= $this-&gt;generate_cli_server_routing($options); <span class="c">// ← "// CLI-server routing (php -S only)." tail: require()s index.php</span>
+write_runtime_file($runtime_path, $runtime);</code></pre>
+      <p>The tail (<code>generate_cli_server_routing()</code>, ~line&nbsp;57) resolves the request
+      path and <strong>dispatches WordPress itself</strong> (<code>require …/index.php</code>).
+      That is correct when reprint owns the server (<code>bash start.sh</code> →
+      <code>php -S … runtime.php</code>).</p>
+      <div class="callout rose">
+        <span class="tag">The mismatch</span>
+        <p>When a host injects this file as <code>auto_prepend_file</code> and runs its
+        <strong>own</strong> router, the file dispatches WordPress during the prepend phase
+        and/or in the wrong scope, so the SQLite <code>$wpdb</code> shim no longer governs the
+        request that actually serves the page → WordPress instantiates the real MySQL
+        <code>wpdb</code> → <span class="err">"Error establishing a database connection"</span>
+        → worker exits 1.</p>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <h2><span class="num">3</span>Evidence (verified against a live pull)</h2>
+      <ul>
+        <li>The native PHP binary has <code>pdo_sqlite</code>/<code>sqlite3</code> — not an extension gap.</li>
+        <li>Run as designed (<code>runtime.php</code> as the <code>php -S</code> script), the site renders fine on SQLite.</li>
+        <li><strong>Prototype fix proven on the Studio side:</strong> feeding PHP only the part of
+        <code>runtime.php</code> <em>before</em> the <code>// CLI-server routing (php -S only).</code>
+        marker (constants + SQLite shim + uploads proxy) as <code>auto_prepend_file</code>, and
+        letting Studio's <code>router.php</code> dispatch, makes the site start and serve correctly:
+          <ul>
+            <li><code>php -S … -d auto_prepend_file=&lt;stripped&gt; router.php</code> → <code>GET /wp-login.php</code> → <code>200 OK</code>, renders the real WP login page, <strong>no DB error</strong>.</li>
+            <li>End-to-end, the pull now reaches <code>site-started</code> and the live site serves on its local port.</li>
+          </ul>
+        </li>
+      </ul>
+      <p>So the split <em>is</em> the fix; the only question is doing it properly in reprint
+      instead of string-stripping downstream.</p>
+    </section>
+
+    <section id="already-split">
+      <h2><span class="num">4</span>The clean part: reprint already separates these concerns</h2>
+      <ul>
+        <li><code>generate_runtime_php()</code> (<code>functions.php:45</code>) returns a
+        <strong>complete, self-contained</strong> <code>&lt;?php …</code> file containing only the
+        base layers (error handler, DB constants, the lazy SQLite <code>$wpdb</code> loader, the
+        on-the-fly thumbnail + remote-uploads proxy). No routing.</li>
+        <li><code>generate_cli_server_routing()</code> is the <strong>only</strong> thing that adds
+        dispatch, and it is appended <em>after</em> the base layers.</li>
+        <li><strong>Precedent:</strong> the <strong>nginx-fpm</strong> applier
+        (<code>class-nginx-fpm-applier.php</code>) already writes
+        <code>runtime.php = generate_runtime_php(...)</code> <strong>with no routing tail</strong>,
+        and wires it as <code>auto_prepend_file={runtime_path}</code> via
+        <code>fastcgi_param PHP_VALUE</code>. That is exactly the "host owns routing, reprint
+        provides environment-only prepend" contract Studio needs.</li>
+      </ul>
+    </section>
+
+    <section id="fix">
+      <h2><span class="num">5</span>Recommended change</h2>
+
+      <h3>Primary — smallest, additive, backward-compatible</h3>
+      <p>Have the php-builtin applier <strong>also</strong> emit a prepend-only artifact. In
+      <code>class-php-builtin-applier.php::apply()</code>:</p>
+      <pre><code>$base = generate_runtime_php($manifest, $fs_root);
+
+<span class="c">// Full router — for `php -S runtime.php` / start.sh (unchanged behavior).</span>
+write_runtime_file($output_dir . '/runtime.php', $base . $this-&gt;generate_cli_server_routing($options));
+
+<span class="c">// Prepend-only — for hosts that own request dispatch (an external php -S</span>
+<span class="c">// router, FPM, etc.) and inject this via auto_prepend_file. No routing tail.</span>
+write_runtime_file($output_dir . '/runtime.prepend.php', $base);
+$summary[] = "Wrote {$output_dir}/runtime.prepend.php";</code></pre>
+      <p>Studio then points <code>auto_prepend_file</code> at <code>runtime.prepend.php</code> instead
+      of <code>runtime.php</code>. <code>runtime.php</code> and <code>start.sh</code> are untouched,
+      so standalone usage is unaffected.</p>
+
+      <h3>Alternative — cleaner abstraction: a dedicated runtime target</h3>
+      <p>Studio's server is not really "php-builtin" (that means <em>reprint</em> owns the
+      <code>php -S</code> router). Consider a target like <code>--runtime=php-prepend</code> (or
+      <code>auto-prepend</code> / <code>host-routed</code>) whose applier writes only
+      <code>generate_runtime_php()</code> to a single prepend file and no server/router/config —
+      purpose-built for "the host owns routing." Studio's native path would pass that instead of
+      <code>php-builtin</code>. (The nginx-fpm applier is the model; this is the FPM case minus the
+      <code>nginx.conf</code>.)</p>
+
+      <div class="callout amber">
+        <span class="tag">Also worth fixing — defense-in-depth + a doc bug</span>
+        <p>The <code>generate_cli_server_routing()</code> docblock claims the routing "only runs
+        under php -S (guarded by php_sapi_name check)" — <strong>there is no such guard</strong> in
+        the emitted code; the tail runs unconditionally. Either make the comment accurate or add a
+        real guard. A reliable guard that makes a single <code>runtime.php</code> safe in both modes
+        is to skip the routing tail when the file is the active auto-prepend:</p>
+        <pre><code>$__ap = ini_get('auto_prepend_file');
+if (!($__ap &amp;&amp; realpath($__ap) === realpath(__FILE__))) {
+    <span class="c">// … CLI-server routing tail …</span>
+}</code></pre>
+        <p><code>php_sapi_name()</code> is <code>cli-server</code> in <strong>both</strong> cases (an
+        external <code>php -S</code> router with this file as auto_prepend is still
+        <code>cli-server</code>), so a SAPI check does <em>not</em> distinguish them —
+        <code>auto_prepend_file</code> does. Optional if you ship the separate prepend file, but it
+        hardens against future misuse.</p>
+      </div>
+    </section>
+
+    <section id="tests">
+      <h2><span class="num">6</span>Suggested tests</h2>
+      <ul>
+        <li><strong>Unit / snapshot:</strong> php-builtin <code>apply()</code> writes both
+        <code>runtime.php</code> (ends with the routing tail) and <code>runtime.prepend.php</code>
+        (ends after the uploads-proxy block, <strong>no</strong> <code>// CLI-server routing</code>
+        marker), both <code>php -l</code>-clean.</li>
+        <li><strong>Behavioral:</strong> with the prepend file as <code>auto_prepend_file</code> and a
+        trivial external router that <code>require</code>s the WP entry, a request resolves
+        <code>$GLOBALS['wpdb']</code> to the SQLite integration (e.g. assert
+        <code>get_class($GLOBALS['wpdb'])</code> is the SQLite db class and a <code>SELECT</code>
+        succeeds) — i.e. it never reaches MySQL.</li>
+      </ul>
+    </section>
+
+    <section id="out-of-scope">
+      <h2><span class="num">7</span>Out of scope — separate, unrelated issue</h2>
+      <p>After the start fix, the Studio pull now gets all the way up and then fails on the
+      <em>deferred</em> file sync (<code>files-pull --filter=skipped-earlier</code>) with:</p>
+      <pre><code class="err">Invalid response: missing multipart boundary. Body: 0%);--wp--preset--gradient--…
+  reprint.phar/packages/reprint-importer/src/import.php:10175</code></pre>
+      <p>This is a reprint exporter/transport problem (a response body without a multipart boundary),
+      independent of the runtime split. Flagging it as a separate item worth a look — it may be
+      transient or a real bug in the skipped-earlier download path.</p>
+    </section>
+
+    <section id="files">
+      <h2><span class="num">8</span>Key files</h2>
+      <div class="card filelist">
+        <p><b>packages/reprint-importer/src/lib/target-runtime/class-php-builtin-applier.php</b><br>
+        <span class="muted">— <code>apply()</code>, <code>generate_cli_server_routing()</code> — the file to change.</span></p>
+        <p><b>packages/reprint-importer/src/lib/target-runtime/functions.php</b><br>
+        <span class="muted">— <code>generate_runtime_php()</code> (line 45, the prepend-safe base layers), <code>write_runtime_file()</code> (line 357).</span></p>
+        <p><b>packages/reprint-importer/src/lib/target-runtime/class-nginx-fpm-applier.php</b><br>
+        <span class="muted">— precedent: base-only <code>runtime.php</code> consumed via <code>auto_prepend_file</code>.</span></p>
+        <p><b>Studio consumer (reference)</b><br>
+        <span class="muted">— <code>apps/cli/lib/pull/runtime-start-options.ts</code> → <code>loadImportedRuntimeStartOptionsNative</code>, and the <code>--runtime=php-builtin</code> selection in <code>apps/cli/commands/pull-reprint.ts</code>.</span></p>
+      </div>
+    </section>
+
+    <div class="footer">
+      Hand-off report for the reprint repo · prompted by a failing native-PHP <code>studio pull-reprint</code>.
+      The fix lives in reprint; Studio currently works around it by string-stripping the generated <code>runtime.php</code>.
+    </div>
+
+  </div>
+</main>
+</body>
+</html>
