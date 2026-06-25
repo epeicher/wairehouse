@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Reprint — Dispatch-Free Prepend Artifact (native-PHP runtime fix)</title>
+<title>Reprint — Native-PHP runtime fix (RESOLVED Studio-side via nginx-fpm)</title>
 <style>
   :root{
     --ink:#0c1322; --ink-2:#1b2536; --paper:#f7f8fb; --card:#ffffff;
@@ -85,11 +85,31 @@
       <span class="pill">Repo <b>WordPress/reprint</b></span>
       <span class="pill">Applier <b>class-php-builtin-applier.php</b></span>
       <span class="pill">Triggered by <b>Automattic/studio#3881</b></span>
-      <span class="pill">Status <b>Prototype proven downstream</b></span>
+      <span class="pill">Status <b>Resolved Studio-side · no reprint change</b></span>
     </div>
   </header>
 
   <div class="wrap">
+
+    <div class="callout teal" style="margin-top:26px">
+      <span class="tag">Resolution · 2026-06-25 · no reprint change needed</span>
+      <p>This was fixed <strong>in Studio</strong> with a one-line change — request reprint's
+      existing <code>nginx-fpm</code> runtime target instead of <code>php-builtin</code> for
+      native PHP:</p>
+      <pre><code><span class="err">- const reprintRuntime = runtime === SITE_RUNTIME_NATIVE_PHP ? 'php-builtin' : 'playground-cli';</span>
+<span style="color:#7fe3da">+ const reprintRuntime = runtime === SITE_RUNTIME_NATIVE_PHP ? 'nginx-fpm'  : 'playground-cli';</span></code></pre>
+      <p>reprint's <code>nginx-fpm</code> applier <strong>already</strong> emits a dispatch-free
+      <code>runtime.php</code> (<code>generate_runtime_php()</code> with no routing tail), built to
+      be injected via <code>auto_prepend_file</code> because nginx owns routing. Studio's native
+      <code>php -S … router.php</code> pool is the same "host owns routing" contract, so it consumes
+      that runtime directly. Verified against <strong>stock released reprint v0.8.2</strong>: the
+      pulled site starts and serves on native PHP with no DB error.</p>
+      <p><strong>So the reprint-side change recommended below is not needed.</strong> The analysis
+      is kept as background on the root cause. (A dedicated <code>--runtime=php-prepend</code> /
+      <code>host-routed</code> target would read a little cleaner than reusing <code>nginx-fpm</code>
+      — which also drops an unused <code>nginx.conf</code> — but that's a nice-to-have, not
+      required.)</p>
+    </div>
 
     <section id="context">
       <h2><span class="num">1</span>Context</h2>
