@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio — Preserve local wp-content on first pull (Option B, no reprint change)</title>
+<style>
+  :root{
+    --ink:#0c1322; --ink-2:#1b2536; --paper:#f7f8fb; --card:#ffffff;
+    --line:#e3e7ef; --line-2:#d4dae6; --text:#1e2533; --muted:#5b6679;
+    --accent:#2f6df6; --accent-2:#0fb5a8; --violet:#7c5cfc; --amber:#e8901a; --rose:#e25563;
+    --code-bg:#0e1626; --code-text:#d7e0f4; --radius:14px; --maxw:900px;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  main{max-width:var(--maxw);margin:0 auto;padding:0 0 120px}
+  .wrap{padding:0 28px}
+  @media(max-width:640px){.wrap{padding:0 18px}}
+
+  header.hero{
+    padding:60px 28px 40px;color:#fff;position:relative;overflow:hidden;
+    background:radial-gradient(1100px 500px at 80% -10%,rgba(15,181,168,.25),transparent 60%),
+               radial-gradient(800px 500px at 10% 0%,rgba(124,92,252,.25),transparent 55%),
+               linear-gradient(135deg,#0b1220 0%,#142036 100%),#0b1220;
+  }
+  header.hero .eyebrow{font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;color:#7fe3da;font-weight:600}
+  header.hero h1{font-size:38px;line-height:1.08;margin:14px 0 12px;font-weight:800;letter-spacing:-.5px}
+  header.hero h1 .grad{background:linear-gradient(90deg,#5ea2ff,#5ff0e0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  header.hero p.lede{font-size:17.5px;color:#c4cfe4;max-width:720px;margin:0 0 22px}
+  header.hero .pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:8px}
+  header.hero .pill{font-size:12.5px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#dbe4f5;padding:6px 12px;border-radius:999px}
+  header.hero .pill b{color:#fff}
+  @media(max-width:640px){header.hero h1{font-size:29px}}
+
+  section{padding-top:8px}
+  h2{font-size:25px;font-weight:780;letter-spacing:-.3px;margin:42px 0 6px;padding-top:10px;scroll-margin-top:14px}
+  h2 .num{color:var(--accent);font-weight:800;margin-right:10px;font-variant-numeric:tabular-nums}
+  h3{font-size:18px;font-weight:700;margin:26px 0 6px}
+  p{margin:11px 0}
+  .lede-sub{color:var(--muted);font-size:16.5px;max-width:760px}
+  hr.div{border:none;border-top:1px solid var(--line);margin:40px 0 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  strong{color:var(--ink)}
+
+  code{font-family:var(--mono);font-size:.86em;background:#eef1f7;color:#1f3b66;padding:1.5px 6px;border-radius:5px;border:1px solid #e2e7f1}
+  pre{background:var(--code-bg);color:var(--code-text);padding:16px 18px;border-radius:12px;overflow:auto;font-family:var(--mono);font-size:12.8px;line-height:1.6;border:1px solid #1d2942;margin:14px 0}
+  pre code{background:none;border:none;color:inherit;padding:0;font-size:inherit}
+  pre .c{color:#7c89a8}
+  pre .err{color:#ff9aa6}
+  pre .ok{color:#7fe3da}
+
+  .callout{border-left:4px solid var(--accent);background:#f0f5ff;border-radius:0 12px 12px 0;padding:14px 18px;margin:18px 0;font-size:14.8px}
+  .callout.teal{border-color:var(--accent-2);background:#eafaf8}
+  .callout.amber{border-color:var(--amber);background:#fdf4e6}
+  .callout.rose{border-color:var(--rose);background:#fdeef0}
+  .callout.violet{border-color:var(--violet);background:#f3effe}
+  .callout .tag{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.08em;display:block;margin-bottom:4px;color:var(--accent)}
+  .callout.teal .tag{color:#0a857b}
+  .callout.amber .tag{color:#a8650a}
+  .callout.rose .tag{color:#bc2c3c}
+  .callout.violet .tag{color:#5b3fd6}
+  .callout p{margin:6px 0}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:16px 0;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .filelist{font-family:var(--mono);font-size:12.8px}
+  .filelist b{color:var(--accent);font-weight:600}
+  .muted{color:var(--muted)}
+  .footer{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px}
+  .step{display:flex;gap:10px;margin:6px 0}
+  .step .n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:2px}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.6px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  td .yes{color:#0a857b;font-weight:700}
+  td .no{color:#a8650a;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">Studio · pull-reprint · design sketch</div>
+    <h1>Preserve local <span class="grad">wp-content</span> on a first pull — without changing reprint</h1>
+    <p class="lede">A first <code style="background:rgba(255,255,255,.12);color:#dbe4f5;border-color:rgba(255,255,255,.18)">pull-reprint --path</code> onto an existing Studio site deletes every plugin, theme and upload the user had installed. <strong>Option B</strong> fixes that entirely inside Studio — no reprint change, no phar bump — by carrying local-only content across the flatten.</p>
+    <div class="pills">
+      <span class="pill">Repo <b>Automattic/studio</b></span>
+      <span class="pill">File <b>commands/pull-reprint.ts</b></span>
+      <span class="pill">Ticket <b>STU-1951</b></span>
+      <span class="pill">Status <b>Alternative · not implemented</b></span>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <div class="callout violet" style="margin-top:26px">
+      <span class="tag">Status · this is the road not taken</span>
+      <p><strong>Option A</strong> — a merge-aware flatten inside reprint, behind a new
+      <code>--preserve-local-content</code> flag — was implemented and validated end-to-end
+      instead. This document is kept as the alternative that keeps the fix entirely inside
+      Studio: useful if a reprint release is ever the blocker, or as a stopgap on a release
+      branch. <a href="#compare">How A differs &darr;</a></p>
+    </div>
+
+    <section id="context">
+      <h2><span class="num">1</span>Context</h2>
+      <p><code>studio pull-reprint --path &lt;site&gt;</code> pulls a remote WordPress site onto an
+      <strong>existing</strong> local Studio site. Two behaviours were confirmed by testing:</p>
+      <ul>
+        <li>Pulling onto a <strong>new</strong> Studio site → locally installed plugins are <strong>deleted</strong>.</li>
+        <li><strong>Incrementally</strong> pulling onto an already-pulled site → plugins are <strong>kept</strong>.</li>
+      </ul>
+
+      <h3>Why the first pull deletes</h3>
+      <p>Studio assembles the site with reprint's <code>flat-docroot</code>, which turns the raw
+      download into a flat docroot made of symlinks. <code>--force</code> is passed
+      <strong>only on the first pull</strong> — its documented purpose is to overwrite the blank
+      WordPress install that <code>studio create</code> produced:</p>
+      <pre><code><span class="c">// apps/cli/commands/pull-reprint.ts</span>
+'flat-docroot', '-',
+`--flatten-to=${ metadata.sitePath }`,
+...( force ? [ '--force' ] : [] ),</code></pre>
+      <p>A <code>studio create</code> site has a <strong>real</strong> <code>wp-content</code>
+      directory. For the common WP&nbsp;Cloud layout, <code>flat-docroot</code> wants
+      <code>wp-content</code> to be a single symlink into the raw pull directory, so
+      <code>flatten_place_symlink()</code> hits a non-symlink target and, because
+      <code>--force</code> is set, does this:</p>
+      <pre><code><span class="c">// packages/reprint-importer/src/import.php</span>
+if ( is_dir( $target ) ) {
+    $this-&gt;remove_directory_recursive( $target );   <span class="err">// ← deletes the whole local wp-content</span>
+}
+symlink( $link_value, $target );</code></pre>
+      <p>Everything the user had in <code>wp-content</code> — plugins, themes, uploads — goes with
+      it. Delta pulls are unaffected because <code>--force</code> isn't passed and
+      <code>wp-content</code> is already a symlink, so the call takes the <code>is_link()</code>
+      refresh branch.</p>
+
+      <div class="callout teal">
+        <span class="tag">Not the file sync</span>
+        <p>reprint's file-sync diff never deletes local-only files. Its local index
+        (<code>.import-index.jsonl</code>) is <em>download-tracked</em> — there is no local
+        filesystem scan anywhere in reprint — so a plugin the user installed was never in the
+        index and was never a deletion candidate. The deletion is purely the forced flatten.</p>
+      </div>
+    </section>
+
+    <section id="idea">
+      <h2><span class="num">2</span>The idea</h2>
+      <p>Keep reprint untouched. Have Studio <strong>carry local-only content across the
+      flatten</strong>:</p>
+      <div class="card">
+        <div class="step"><span class="n">1</span><div><strong>Before</strong> <code>flat-docroot</code> — enumerate the site's <code>wp-content</code> and work out which entries are <em>local-only</em> (absent from the remote's downloaded tree). Move them to a stash outside the site directory.</div></div>
+        <div class="step"><span class="n">2</span><div><strong>Run the pull as today</strong> — <code>flat-docroot --force</code> replaces <code>wp-content</code> with a symlink into the raw pull directory.</div></div>
+        <div class="step"><span class="n">3</span><div><strong>After</strong> the flatten — restore the stashed entries into the flattened <code>wp-content</code>. Because that path is now a symlink, the files physically land <strong>inside the raw pull directory</strong>.</div></div>
+      </div>
+
+      <h3>Why the restored files then survive forever</h3>
+      <p>This is the load-bearing insight. reprint's delete drains only ever iterate the
+      <strong>local index</strong>, and that index only ever contains files reprint itself
+      downloaded. Restored files are untracked, so every later delta pull is blind to them — they
+      are never deletion candidates. Verified separately: an untracked plugin survives repeated
+      delta pulls in both <code>error</code> and <code>preserve-local</code> modes, with zero
+      delete calls logged.</p>
+    </section>
+
+    <section id="implementation">
+      <h2><span class="num">3</span>Implementation sketch</h2>
+      <p>All of it lives in <code>apps/cli/commands/pull-reprint.ts</code>, around the
+      <code>flat-docroot</code> step in <code>runFullPull</code>.</p>
+      <pre><code><span class="c">// 1. before flat-docroot</span>
+const stash = await stashLocalOnlyContent( metadata );   <span class="c">// -&gt; { path, entries[] }</span>
+
+<span class="c">// 2. existing flatten step, unchanged</span>
+await runStep( 'Flattening layout', [ 'flat-docroot', <span class="c">/* … --force … */</span> ] );
+
+<span class="c">// 3. after flat-docroot</span>
+await restoreLocalOnlyContent( metadata, stash );</code></pre>
+
+      <h3>Detecting “local-only”</h3>
+      <p>An entry under the site's <code>wp-content</code> is local-only when the same relative
+      path does <strong>not</strong> exist under the remote's content directory in the raw
+      download:</p>
+      <pre><code>rawDirectory + contentDir + '/' + relativePath</code></pre>
+      <p><code>contentDir</code> comes from preflight (<code>getContentDirFromState</code>). The
+      remote index (<code>.import-remote-index.jsonl</code>) is an equally good oracle and is
+      authoritative even before files land, but note its paths are <strong>base64-encoded</strong>.</p>
+      <p>Walk at least these levels, since user content lives below the top:</p>
+      <ul class="filelist">
+        <li><b>wp-content/*</b> — custom folders, drop-ins</li>
+        <li><b>wp-content/plugins/*</b></li>
+        <li><b>wp-content/themes/*</b></li>
+        <li><b>wp-content/mu-plugins/*</b></li>
+        <li><b>wp-content/uploads/**</b> — recurse, or treat conservatively</li>
+      </ul>
+
+      <h3>Conflict policy</h3>
+      <p>If a slug exists both locally and remotely, <strong>the remote wins</strong>: don't stash
+      it, and let the flatten link the remote's copy. Restoring it would shadow the pulled content
+      with a stale local copy.</p>
+    </section>
+
+    <section id="tradeoffs">
+      <h2><span class="num">4</span>Trade-offs</h2>
+      <table>
+        <tr><th style="width:70px">Verdict</th><th>Consequence</th></tr>
+        <tr><td><span class="yes">Pro</span></td><td>No reprint change, no phar bump, no release coupling.</td></tr>
+        <tr><td><span class="yes">Pro</span></td><td>Contained in one Studio file; easy to revert.</td></tr>
+        <tr><td><span class="yes">Pro</span></td><td>Restored content is permanently safe from delta pulls, because it is untracked.</td></tr>
+        <tr><td><span class="no">Con</span></td><td>User content ends up <strong>inside reprint's raw mirror</strong>. <code>raw/</code> is meant to be a faithful copy of the remote; this muddies ownership.</td></tr>
+        <tr><td><span class="no">Con</span></td><td><strong>Not atomic.</strong> Stash → flatten → restore spans three steps; a crash or interrupt between them can strand user data in the stash.</td></tr>
+        <tr><td><span class="no">Con</span></td><td><code>pull-reprint</code> is <strong>resumable</strong>, so the stash must be durable and idempotent across re-invocations.</td></tr>
+        <tr><td><span class="no">Con</span></td><td>Must be generalised beyond plugins (themes, mu-plugins, uploads, custom dirs) or it silently loses the rest.</td></tr>
+        <tr><td><span class="no">Con</span></td><td>Copy cost / temporary disk for large <code>uploads</code> unless a rename is possible.</td></tr>
+        <tr><td><span class="no">Con</span></td><td>Treats the symptom — the docroot is still a whole-directory alias.</td></tr>
+      </table>
+    </section>
+
+    <section id="risks">
+      <h2><span class="num">5</span>Risks and edge cases</h2>
+      <ul>
+        <li><strong>Interrupted pull</strong> — the site can be left flattened with the stash not
+        yet restored. Needs a stash manifest checked on resume, and restore-on-startup.</li>
+        <li><strong>Symlinked local entries</strong> — a user-created symlink should be moved as a
+        link, never followed.</li>
+        <li><strong><code>wp-content/database</code></strong> — Studio's SQLite lives here and the
+        pull writes its own copy into raw. Must be excluded from the stash so the pulled database
+        wins.</li>
+        <li><strong>Deferred media</strong> — <code>downloadSkippedFiles</code>
+        (<code>files-sync --filter=skipped-earlier</code>) runs <em>after</em> the flatten and
+        writes into raw. Restored uploads share that tree, so restore must not collide with files
+        still arriving.</li>
+        <li><strong>Permissions / ownership</strong> — restoring into <code>raw/</code> must
+        preserve modes.</li>
+      </ul>
+    </section>
+
+    <section id="compare">
+      <h2><span class="num">6</span>When to pick B — and how A differs</h2>
+      <p>Choose <strong>B</strong> when a reprint release is the bottleneck, when the fix must land
+      on a Studio release branch on its own, or when you want a small revertable change. Choose
+      <strong>A</strong> — the implemented route — when you want the docroot assembly itself to be
+      correct, which also fixes themes, uploads and custom folders by construction rather than by
+      enumeration.</p>
+
+      <div class="card">
+        <h3 style="margin-top:0">The implemented Option A</h3>
+        <p>Option A adds <code>--preserve-local-content</code> to reprint's
+        <code>flat-docroot</code>. Instead of replacing an existing real directory, it keeps it
+        real and places the <em>source's</em> entries inside it — recursing where both sides are
+        real directories, symlinking otherwise, and leaving local-only entries untouched. The
+        remote wins on conflicts. It also prunes symlinks it owns whose target the remote dropped,
+        and Studio re-runs the flatten after the deferred file tail so late-arriving media gets
+        linked.</p>
+        <p class="muted" style="margin-bottom:0">Net effect: no stash, no restore, no user content
+        inside <code>raw/</code>, and local-only plugins, themes, uploads and custom folders
+        survive both first and delta pulls.</p>
+      </div>
+    </section>
+
+    <div class="footer">
+      Design sketch · Studio <code>pull-reprint</code> · STU-1951 · documented alternative to the
+      implemented merge-aware flatten.
+    </div>
+
+  </div>
+</main>
+</body>
+</html>
