@@ -15,7 +15,7 @@ Served by GitHub Pages from the [`docs/`](docs/) folder.
 | Path | What it holds |
 |------|---------------|
 | [`docs/`](docs/) | Self-contained HTML plans + an auto-generated `index.html`. Published via GitHub Pages. |
-| [`desktop-mode/`](desktop-mode/) | Markdown plans, specs, and brainstorms. |
+| Project folders (e.g. [`desktop-mode/`](desktop-mode/), [`reprint/`](reprint/)) | Markdown plans, specs, brainstorms, and investigations about a specific project or repo. |
 | [`build-docs-index.sh`](build-docs-index.sh) | Rebuilds `docs/index.html` from each file's `<title>`. |
 | [`.github/workflows/build-index.yml`](.github/workflows/build-index.yml) | Rebuilds the index automatically on every push to `docs/`. |
 
