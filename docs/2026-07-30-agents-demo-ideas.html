@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agents — demo ideas</title>
+<style>
+  body { font: 16px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; color: #1d2327;
+         max-width: 860px; margin: 2rem auto; padding: 0 1.25rem; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.2rem; margin-top: 2rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.95rem; }
+  th, td { border: 1px solid #d0d5dd; padding: 0.5rem 0.65rem; text-align: left; vertical-align: top; }
+  th { background: #f6f7f7; }
+  code { background: #f0f0f1; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  .pitch { color: #3c434a; font-style: italic; }
+  ol li, ul li { margin: 0.3rem 0; }
+</style>
+</head>
+<body>
+
+<h1>AI Agents — demo ideas (productivity-first)</h1>
+<p>Demos for the Desktop Mode agents framework (PR #428). All six agents below are seeded and working
+on the demo site. Framing that sells: <strong>name the boring task → show the manual cost → drag, drop,
+done → show the receipt</strong>. The receipt is the differentiator: agents are real WordPress users, so
+every demo can close in wp-admin showing the revision or attachment <em>authored by the agent</em>.
+Drag &amp; drop is the hook — "drop the image on the robot" reads instantly on a projector or in a
+15-second clip.</p>
+
+<h2>The six demos</h2>
+<table>
+  <tr><th>Agent</th><th>Role</th><th>Drop</th><th>What happens</th><th>Time-saved pitch</th></tr>
+  <tr><td><strong>Photo Studio</strong></td><td>author</td><td>media</td>
+      <td>Store-ready transparent PNG appears in the Media Library, original untouched, authored by the agent.</td>
+      <td class="pitch">~10 min in Photoshop or ~$2/image outsourced with a day of turnaround; a 200-product catalog is a week of work.</td></tr>
+  <tr><td><strong>TLDR Editor</strong></td><td>editor</td><td>post, page</td>
+      <td>Proposes a summary; <code>apply &lt;ID&gt;</code> inserts it at the top, formatting preserved, revision attributed.</td>
+      <td class="pitch">5–10 min per post to read and summarize; a 1,000-post archive is a month nobody will ever spend.</td></tr>
+  <tr><td><strong>SEO Medic</strong></td><td>editor</td><td>post, page</td>
+      <td>Applies a missing excerpt, proposes three titles and a meta description.</td>
+      <td class="pitch">~10 min per post for an SEO pass, done in one drop.</td></tr>
+  <tr><td><strong>Comment Concierge</strong></td><td>editor</td><td>post</td>
+      <td>Read-only triage: sentiment summary, spam/toxicity flags, paste-ready reply drafts. Safest live demo — no write tools.</td>
+      <td class="pitch">30+ min/day of moderation queue becomes a 2-minute review.</td></tr>
+  <tr><td><strong>Alt Text Librarian</strong></td><td>media</td><td>media</td>
+      <td>Writes descriptive alt text to the Media Library and verifies it. Uses the new <code>desktop-mode/update-media</code> ability.</td>
+      <td class="pitch">2–3 min per image, legally required in more and more markets, almost universally skipped; clears a 500-image backlog over coffee.</td></tr>
+  <tr><td><strong>Localizer</strong></td><td>author</td><td>post, page</td>
+      <td>Creates a "[ES] …" draft translation, markup preserved, original untouched. Uses the new draft-only <code>desktop-mode/create-post</code> ability (structurally cannot publish).</td>
+      <td class="pitch">Translation round-trips take days; a reviewable draft in seconds.</td></tr>
+</table>
+
+<h2>The 3-minute keynote narrative</h2>
+<p>Chain them as "the Monday morning routine":</p>
+<ol>
+  <li>Drop a product photo on <strong>Photo Studio</strong> → transparent PNG.</li>
+  <li>Drop the new draft on <strong>TLDR Editor</strong>, then <strong>SEO Medic</strong>.</li>
+  <li>Drop yesterday's post on <strong>Comment Concierge</strong>.</li>
+  <li>While results stream in, open <strong>Users</strong> and deliver the close over the "Agent" badges:
+      <em>"Everything you just watched was done by these users. They have roles, they can't log in, every
+      edit is in the revision history — and if one misbehaves, you fire it like an employee."</em></li>
+  <li>Roadmap tease: the hook trigger means the Concierge runs on every new comment <em>without</em> the drag.</li>
+</ol>
+
+<h2>Staging notes</h2>
+<ul>
+  <li>Put a running stopwatch on screen — the productivity claim needs a visible clock.</li>
+  <li>Seed realistic prose; generated filler text produces vague summaries that undercut the TL;DR demo.</li>
+  <li>Drag targets are agent tiles: drag each agent on stage from Users onto the wallpaper beforehand,
+      and give it a Drag &amp; drop trigger.</li>
+  <li>Show the Tools pane once: "this checklist is the permission boundary — the agent literally cannot
+      do anything else". Approval steps (<code>apply &lt;ID&gt;</code>) demo human-in-the-loop, not friction.</li>
+  <li>Dependencies: Photo Studio needs a background-removal backend (AI Client / remove.bg); SEO Medic,
+      Concierge, and Librarian lean on the <code>ai/*</code> abilities plugin.</li>
+</ul>
+
+</body>
+</html>
