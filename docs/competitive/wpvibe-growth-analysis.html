@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Competitive — WPVibe growth analysis (Jun–Jul 2026)</title>
+<style>
+  body { font: 16px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; color: #1d2327;
+         max-width: 860px; margin: 2rem auto; padding: 0 1.25rem; }
+  h1 { font-size: 1.6rem; line-height: 1.25; } h2 { font-size: 1.2rem; margin-top: 2rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.5rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.95rem; }
+  th, td { border: 1px solid #d0d5dd; padding: 0.5rem 0.65rem; text-align: left; vertical-align: top; }
+  th { background: #f6f7f7; }
+  code { background: #f0f0f1; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  a { color: #2271b1; } a:hover { color: #135e96; }
+  .meta { background: #f6f7f7; border-left: 4px solid #2271b1; padding: 0.75rem 1rem; margin: 1rem 0 1.5rem; font-size: 0.95rem; }
+  .meta p { margin: 0.25rem 0; }
+  .tldr { background: #fcf9e8; border-left: 4px solid #dba617; padding: 0.75rem 1rem; margin: 1rem 0; }
+  .tldr h2 { margin-top: 0; font-size: 1.05rem; }
+  .nav { font-size: 0.9rem; color: #646970; margin-bottom: 1.5rem; }
+  .sources li { word-break: break-all; font-size: 0.9rem; }
+  ol li, ul li { margin: 0.3rem 0; }
+  .wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<p class="nav"><a href="../index.html">&larr; Plans index</a> &middot; Companion: <a href="./wpvibe-code-comparison.html">Desktop Mode vs WPVibe: codebase comparison</a></p>
+
+<h1>WPVibe growth analysis (June–July 2026)</h1>
+
+<div class="meta">
+  <p><strong>Date:</strong> July 31, 2026</p>
+  <p><strong>Subject:</strong> Why <code>vibe-ai</code> (WPVibe, wpvibe.ai) grew from a niche plugin to 6,000+ active installs, with downloads-per-day spiking after June 25, 2026. Desktop Mode sits at ~2,800 installs for comparison.</p>
+  <p><strong>Source:</strong> <code>desktop-mode/competitive/wpvibe-growth-analysis.md</code></p>
+</div>
+
+<div class="tldr">
+<h2>TL;DR</h2>
+<p>WPVibe's growth is not organic luck. It is an Awesome Motive product (SeedProd / WPBeginner / WPForms company, founder John Turner) that hit the MCP hype window with the largest distribution machine in WordPress behind it, got listed in the ChatGPT app store, and shipped roughly 20 releases in five weeks. A large share of the post-June-25 "Downloads Per Day" spike is mechanically inflated by update downloads pushed to existing installs; the real acquisition curve underneath is strong but far less dramatic.</p>
+</div>
+
+<h2>What the product is</h2>
+<p>WPVibe is a WordPress MCP (Model Context Protocol) server: it connects a self-hosted WordPress site to any MCP-compatible AI client (Claude, ChatGPT, Cursor, Windsurf, ...). The AI manages the site conversationally: posts, media, SEO, WooCommerce, theme editing (draft-first), and ~40 emulated WP-CLI commands that work on shared hosting.</p>
+<p>Key positioning choices:</p>
+<ul>
+  <li>"Use the AI you already pay for": no API keys, no second AI subscription, no per-token billing.</li>
+  <li>Free tier with unlimited connected sites and a daily action allowance; paid tiers ($19 to $149/mo) only raise the allowance.</li>
+  <li>Setup in about 60 seconds via Application Passwords plus one-click authorization.</li>
+  <li>Safety story front and center: draft-first writes, trash-first deletes, human-in-the-loop approval gates, append-only audit log, AES-256-GCM credential encryption, default-deny allowlist.</li>
+  <li>Leans on the WordPress Abilities API so other plugins' capabilities (WPForms, AIOSEO, SeedProd, ...) surface to the AI automatically.</li>
+</ul>
+<p>Claimed traction (wpvibe.ai, July 2026): 3,200+ sites connected, 1.2M+ tool calls. WordPress.org: 6,000+ active installs, 4.9/5 rating on 17 reviews, ~37k all-time downloads.</p>
+
+<h2>Read the downloads chart correctly</h2>
+<p>WordPress.org's Downloads Per Day counts every download, including updates fetched by existing installs. WPVibe's release cadence after June 25 was close to daily:</p>
+<p>1.5.0 (Jun 25), 1.5.1 (Jun 30), 1.5.2 (Jul 1), 1.6.0 (Jul 2), 1.6.1–1.6.3 (Jul 7–8), 1.7.1 (Jul 9), 1.8.0 (Jul 10), 1.8.1 (Jul 13), 1.9.0 (Jul 14), 1.9.1 (Jul 16), 1.10.0 (Jul 20), 1.11.0 (Jul 22), 1.12.0 (Jul 23), 1.13.0–1.13.3 (Jul 26–28).</p>
+<p>With ~6,000 active installs, each release triggers a few thousand update downloads. That is exactly the chart's oscillation: spikes to 2,000–2,500 on release days, troughs back to ~200–600 between them. Earlier bumps confirm the pattern: the ~400 spike on June 1 matches the 1.4.0 release, and the mid-May bumps match the 1.2.x releases.</p>
+<p>Of the 9,437 downloads in the last 7 days (as of Jul 31), four releases shipped inside that window. True new-install acquisition is likely in the hundreds per week, not thousands per day. Active installs did genuinely more than double, though, so the growth is real; the chart just exaggerates it.</p>
+
+<h2>Growth drivers</h2>
+
+<h3>1. The Awesome Motive distribution machine</h3>
+<p>The GitHub org is <code>awesomemotive</code>. That brings the biggest content-marketing engine in WordPress:</p>
+<ul>
+  <li>WPBeginner Spotlight 23 launch coverage (Apr 27).</li>
+  <li>WPBeginner full review (Jun 10): "the cleanest free option we've tested".</li>
+  <li>WPBeginner Spotlight 25 follow-up coverage.</li>
+  <li>Sister-brand SEO how-tos: wpmailsmtp.com and seedprod.com both publish "Connect WordPress to ChatGPT" articles funneling to WPVibe.</li>
+</ul>
+<p>Their properties reach tens of millions of installs and email subscribers.</p>
+
+<h3>2. Press and influencer wave at the inflection point</h3>
+<ul>
+  <li>Search Engine Journal article (Jul 1), matching the first sustained surge in the chart.</li>
+  <li>WPTuts (Jackson Whelan) YouTube reviews: "this insane new AI tool", "the easiest setup of any AI product for WordPress, period".</li>
+  <li>International spread: WPMarmite (French), note.com deep-dive (Japanese), Businesstechweekly.</li>
+</ul>
+
+<h3>3. ChatGPT app store listing</h3>
+<p>Per the SEJ article, by July 1 WPVibe was already a listed app in the ChatGPT store, with a Claude directory application pending. That is a discovery channel entirely outside wordpress.org, exposed to ChatGPT's mainstream user base exactly when "connect AI to my site" became a mainstream ask.</p>
+
+<h3>4. Product pivot from toy to tool, in this exact window</h3>
+<p>Reading the changelog as a narrative:</p>
+<ul>
+  <li>1.5.0 (Jun 25): surgical find-and-replace, bulk operations across posts/users/plugins.</li>
+  <li>1.6.0 (Jul 2): near-complete WP-CLI parity (checksums, cache purge, roles/capabilities, cron, theme ops, serialization-aware search-replace).</li>
+  <li>1.8.0–1.10.0: page-builder integrations (SeedProd, Elementor, Beaver Builder), WPCode snippets with approval gates.</li>
+  <li>1.11.0 (Jul 22): white-label mode, a pure agency-adoption feature.</li>
+  <li>Continuous hardening releases (approval previews, permission diagnostics, host-firewall workarounds), which double as trust marketing.</li>
+</ul>
+
+<h3>5. Two macro waves at once</h3>
+<p>MCP became the standard for wiring AI clients to tools; WPVibe claimed the "the MCP server for WordPress" slot (listed on mcpservers.org, open source on GitHub). It also rides the Abilities API narrative that WordPress developer press is amplifying.</p>
+
+<h2>Timeline</h2>
+<div class="wrap">
+<table>
+  <tr><th>Date</th><th>Event</th></tr>
+  <tr><td>Apr 15</td><td>WPTuts / jakson.co "insane new AI tool" post + video</td></tr>
+  <tr><td>Apr 27</td><td>WPBeginner Spotlight 23 launch coverage</td></tr>
+  <tr><td>May 11–15</td><td>1.2.2 / 1.2.3 (small chart bumps)</td></tr>
+  <tr><td>Jun 1</td><td>1.4.0 (Field API, frontend hover-to-edit, approval log); ~400 download spike</td></tr>
+  <tr><td>Jun 10</td><td>WPBeginner full review</td></tr>
+  <tr><td>Jun 25</td><td><strong>1.5.0; downloads inflection begins</strong></td></tr>
+  <tr><td>Jul 1</td><td>Search Engine Journal article; already listed in ChatGPT app store</td></tr>
+  <tr><td>Jul 2</td><td>1.6.0 (big WP-CLI expansion)</td></tr>
+  <tr><td>Jul 10–28</td><td>Near-daily releases; builder integrations, white label, dashboard widget</td></tr>
+  <tr><td>Jul 31</td><td>6,000+ active installs, 9,437 downloads in prior 7 days</td></tr>
+</table>
+</div>
+
+<h2>Conclusions relevant to Desktop Mode</h2>
+<ol>
+  <li><strong>The spike decomposes as roughly one-third mechanics, two-thirds playbook.</strong> Update downloads from a frantic release cadence inflate the chart; the rest is a coordinated Awesome Motive launch: owned-media reviews, sister-brand SEO, an SEJ placement, YouTube influencers, and an AI-client app store listing, all concentrated in five weeks.</li>
+  <li><strong>Directional difference.</strong> WPVibe brings WordPress into the AI client where users already live, so it inherits the AI clients' distribution. Desktop Mode brings a richer UX into WordPress and has to earn every wordpress.org visit.</li>
+  <li><strong>Copyable tactic (a): AI-client directories.</strong> ChatGPT apps / Claude connectors listings are free distribution. Desktop Mode's AI Copilot could plausibly pursue an MCP-facing surface to qualify.</li>
+  <li><strong>Copyable tactic (b): visible release cadence.</strong> Frequent releases signal momentum on the listing ("last updated 3 days ago") and lift the download chart that prospects use as a quality proxy.</li>
+  <li><strong>The moat is distribution, not community.</strong> A 4.9 rating on only 17 reviews says the install base is early and review velocity is being actively encouraged.</li>
+</ol>
+
+<h2>Sources</h2>
+<ul class="sources">
+  <li><a href="https://wordpress.org/plugins/vibe-ai/">https://wordpress.org/plugins/vibe-ai/</a> (listing, installs, rating)</li>
+  <li><a href="https://wpvibe.ai/">https://wpvibe.ai/</a> (product, pricing, traction claims)</li>
+  <li><a href="https://wpvibe.ai/changelog/">https://wpvibe.ai/changelog/</a> (full release history)</li>
+  <li><a href="https://www.searchenginejournal.com/new-wordpress-plugin-safely-and-easily-connects-ai-to-your-website/581219/">https://www.searchenginejournal.com/new-wordpress-plugin-safely-and-easily-connects-ai-to-your-website/581219/</a> (Jul 1)</li>
+  <li><a href="https://www.wpbeginner.com/news/wpbeginner-spotlight-23-wpvibe-brings-ai-to-wordpress-smarter-automations-seo-fundraising-tools/">https://www.wpbeginner.com/news/wpbeginner-spotlight-23-wpvibe-brings-ai-to-wordpress-smarter-automations-seo-fundraising-tools/</a> (Apr 27)</li>
+  <li><a href="https://www.wpbeginner.com/solutions/wpvibe/">https://www.wpbeginner.com/solutions/wpvibe/</a> (Jun 10 review)</li>
+  <li><a href="https://www.wpbeginner.com/news/wpbeginner-spotlight-25-let-ai-build-your-wordpress-forms-clean-your-database-and-boost-your-fundraising/">https://www.wpbeginner.com/news/wpbeginner-spotlight-25-let-ai-build-your-wordpress-forms-clean-your-database-and-boost-your-fundraising/</a></li>
+  <li><a href="https://jakson.co/this-insane-new-ai-tool-for-wordpress-just-blew-my-mind/">https://jakson.co/this-insane-new-ai-tool-for-wordpress-just-blew-my-mind/</a> (Apr 15)</li>
+  <li><a href="https://news.wpmarmite.com/wpvibe-seedprod-mcp-wordpress-ia/">https://news.wpmarmite.com/wpvibe-seedprod-mcp-wordpress-ia/</a></li>
+  <li><a href="https://github.com/awesomemotive/wpvibe-ai-mcp">https://github.com/awesomemotive/wpvibe-ai-mcp</a></li>
+  <li><a href="https://mcpservers.org/servers/awesomemotive/wpvibe-ai-mcp">https://mcpservers.org/servers/awesomemotive/wpvibe-ai-mcp</a></li>
+  <li><a href="https://note.com/mii_works/n/n3d3e9fe362d9?hl=en">https://note.com/mii_works/n/n3d3e9fe362d9?hl=en</a></li>
+  <li><a href="https://www.businesstechweekly.com/technology-news/new-wordpress-plugin-wpvibe-connects-ai-without-api-keys-for-seamless-site-management/">https://www.businesstechweekly.com/technology-news/new-wordpress-plugin-wpvibe-connects-ai-without-api-keys-for-seamless-site-management/</a></li>
+  <li><a href="https://wpmailsmtp.com/how-to-connect-your-wordpress-site-to-chatgpt-no-code/">https://wpmailsmtp.com/how-to-connect-your-wordpress-site-to-chatgpt-no-code/</a></li>
+  <li><a href="https://www.seedprod.com/connect-chatgpt-to-wordpress/">https://www.seedprod.com/connect-chatgpt-to-wordpress/</a></li>
+</ul>
+
+</body>
+</html>
