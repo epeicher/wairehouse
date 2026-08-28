@@ -21,7 +21,7 @@ endpoint from the warehouse Galaxy plan.
 
 ## Requirements
 
-- R1. Toolbar exposes a `<wpd-select>` with options: None / Category /
+- R1. Toolbar exposes a `<os-select>` with options: None / Category /
   Tag / Author / Date. Default = None (current behaviour).
 - R2. On selection change, posts cluster around the centroid of their
   group within ~2 seconds; the Pixi `Application` and `world`
@@ -49,7 +49,7 @@ endpoint from the warehouse Galaxy plan.
 ## Scope Boundaries
 
 - No multi-lens architecture, edge-kind discriminator, per-user prefs
-  endpoint, or toolbar `<wpd-*>` migration. Those remain in the
+  endpoint, or toolbar `<os-*>` migration. Those remain in the
   warehouse Galaxy plan and can land later.
 - No arbitrary-public-taxonomy support — v1 hard-codes `category` and
   `post_tag` (WordPress built-ins).
@@ -63,8 +63,8 @@ endpoint from the warehouse Galaxy plan.
 
 - `src/content-graph/index.ts` — wires toolbar + scene + REST. The
   orchestration layer for the new selector lives here.
-- `src/content-graph/toolbar.ts` — vanilla DOM toolbar (the `<wpd-*>`
-  migration is out of scope; we add ONE `<wpd-select>` next to the
+- `src/content-graph/toolbar.ts` — vanilla DOM toolbar (the `<os-*>`
+  migration is out of scope; we add ONE `<os-select>` next to the
   existing actions without refactoring the rest).
 - `src/content-graph/scene.ts` — `GraphScene`. Adds a
   `groupLabelLayer` Pixi container and a `setGrouping()` method.
@@ -141,7 +141,7 @@ endpoint from the warehouse Galaxy plan.
 
 **Approach:**
 - Add `post_author` to the SELECT in
-  `desktop_mode_content_graph_fetch_rows()` (already done in some
+  `openstation_content_graph_fetch_rows()` (already done in some
   in-progress branches per the Galaxy plan; if not, add here).
 - Single bulk `wp_term_relationships` JOIN keyed on in-scope post
   IDs, filtered to `category` and `post_tag`. Build
@@ -276,9 +276,9 @@ reheats.
 
 ---
 
-### U5. Toolbar: `<wpd-select>` group-by control
+### U5. Toolbar: `<os-select>` group-by control
 
-**Goal:** Add a single `<wpd-select>` next to the existing search +
+**Goal:** Add a single `<os-select>` next to the existing search +
 action buttons with the 5 options. Wire to the scene's
 `setGrouping()`.
 
@@ -289,8 +289,8 @@ action buttons with the 5 options. Wire to the scene's
 **Approach:**
 - Add `onGroupChange: (facet: GroupFacet | null) => void` to
   `ToolbarCallbacks`.
-- Render `<wpd-select>` element with five `<wpd-option>` children.
-  Listen for `wpd-pick`. The component is per
+- Render `<os-select>` element with five `<os-option>` children.
+  Listen for `os-pick`. The component is per
   `src/ui/components/index.ts` — exported, stable.
 - In `index.ts`, wire `onGroupChange` to `scene.setGrouping()`.
 

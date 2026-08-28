@@ -23,7 +23,7 @@ Editors and content strategists currently reach for the categories admin page or
 
 - A1. **Site editor**: opens Content Graph to understand topical coverage, find related content, and spot structural patterns (clusters, bridges, gaps). Primary user.
 - A2. **Content strategist**: uses the lens to audit how categories overlap, which authors span topics, and where the IA's spine (menus, hierarchy) sits. Secondary user.
-- A3. **Plugin developer extending Desktop Mode**: currently consumes Content Graph as a fixed window; benefits from the lens architecture being clean enough to add their own lens later. Tertiary; informs API and architecture quality, not v1 features.
+- A3. **Plugin developer extending OpenStation**: currently consumes Content Graph as a fixed window; benefits from the lens architecture being clean enough to add their own lens later. Tertiary; informs API and architecture quality, not v1 features.
 
 ---
 
@@ -151,8 +151,8 @@ Editors and content strategists currently reach for the categories admin page or
 - The existing `ForceSim` (`src/content-graph/sim.ts`) supports adding per-cluster centroid attractor forces as an extension. The current sim has three forces (repulsion, spring, gravity); adding a fourth attractor force toward each node's term centroid is the same shape of code, not a rewrite.
 - The REST endpoints under `desktop-mode/v1/content-graph/` are the right place to extend with new edge types and a `taxonomy` query parameter. The same caching model (transient keyed on participating rows' `post_modified_gmt` plus query parameters) extends naturally.
 - Pixi `Container` reuse across lens switches is feasible without remounting the `Application`. Same `world` container; different per-lens force configuration.
-- Per-user persistence has a natural home in existing user-meta or per-window persistence surfaces already used elsewhere in Desktop Mode. No new persistence primitive should be required.
-- The existing `<wpd-*>` component kit covers most of the needed UI (segmented control, dropdown, toggle chips). Whether each specific control already exists is a planning-tier check against `src/ui/components/index.ts`.
+- Per-user persistence has a natural home in existing user-meta or per-window persistence surfaces already used elsewhere in OpenStation. No new persistence primitive should be required.
+- The existing `<os-*>` component kit covers most of the needed UI (segmented control, dropdown, toggle chips). Whether each specific control already exists is a planning-tier check against `src/ui/components/index.ts`.
 
 ---
 
@@ -167,6 +167,6 @@ Editors and content strategists currently reach for the categories admin page or
 - [Affects R10][Technical] How are co-tag, co-author, hierarchy, and menu edge sets queried efficiently? Co-tag in particular implies a self-join on `wp_term_relationships` filtered to non-clustering taxonomies; on large sites this needs the cache strategy to keep up.
 - [Affects R5, R6][Technical] What attractor strength and cluster-spacing produces a visually pleasing Galaxy on a typical 200-node site, a sparse 30-node site, and a dense 500-node site without per-site tuning? Likely an empirical pass during implementation.
 - [Affects R3][Technical] What's the cleanest way to swap the active force configuration on a live `ForceSim` so the lens transition feels graceful rather than thrashed? Options: re-create the sim, mutate force coefficients in place, or run a transition phase. Decide during planning.
-- [Affects R11][Needs research] Is there a `<wpd-*>` component already suitable for the edges multi-toggle (chips with on/off plus a color swatch), or does this warrant a small new component? Check `src/ui/components/index.ts` during planning per the project's component-first rule.
+- [Affects R11][Needs research] Is there a `<os-*>` component already suitable for the edges multi-toggle (chips with on/off plus a color swatch), or does this warrant a small new component? Check `src/ui/components/index.ts` during planning per the project's component-first rule.
 - [Affects R14][Technical] Per-user persistence: existing user-meta key namespace conventions in this plugin are already established; the planning pass should grep current usage and reuse the convention rather than invent a new one.
 - [Affects R10][Technical] Menu-structure edges: nav menus point at multiple target types (post, term, custom URL). Edge generation should resolve only menu items whose target is a post in scope, but the precise filter belongs in planning when querying `wp_get_nav_menu_items` (or equivalent) is implemented.

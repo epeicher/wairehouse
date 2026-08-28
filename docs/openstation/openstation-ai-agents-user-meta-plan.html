@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Desktop Mode — AI Agents as synthetic users (user-meta storage) plan</title>
+<title>OpenStation — AI Agents as synthetic users (user-meta storage) plan</title>
 <style>
   :root{
     --ink:#0c1322;
@@ -132,7 +132,7 @@
     <div class="logo">🤖</div>
     <div>
       <div class="name">Agents</div>
-      <div class="sub">Desktop Mode · plan</div>
+      <div class="sub">OpenStation · plan</div>
     </div>
   </div>
   <span class="status">● Draft · 2026-07-27</span>
@@ -176,7 +176,7 @@
   <!-- SUMMARY -->
   <section id="summary">
     <h2><span class="num">01</span>Summary</h2>
-    <p>Implement Desktop Mode Agents: durable, addressable workers that live on the site as real WordPress users, take orders by chat, send-to, drag, hook, or HTTP, and act through the WordPress Abilities API under the agent's own role and capabilities. The objectives, trigger model, tools model, security posture, and build order come from PR #240.</p>
+    <p>Implement OpenStation Agents: durable, addressable workers that live on the site as real WordPress users, take orders by chat, send-to, drag, hook, or HTTP, and act through the WordPress Abilities API under the agent's own role and capabilities. The objectives, trigger model, tools model, security posture, and build order come from PR #240.</p>
     <div class="callout violet">
       <span class="tag">The storage departure</span>
       There is no <code>wp_guideline</code> CPT layer. Everything that defines an agent beyond its <code>wp_users</code> row (system prompt, description, ability allowlist, triggers, model override, rate limit) is stored as <strong>user meta on the agent's user</strong>. Two layers instead of three: the user row is the identity, its meta is the definition.
@@ -186,7 +186,7 @@
   <!-- PROBLEM FRAME -->
   <section id="problem">
     <h2><span class="num">02</span>Problem frame</h2>
-    <p class="section-intro">PR #240 (<a href="https://github.com/WordPress/desktop-mode/pull/240">WordPress/desktop-mode#240</a>, branch <code>origin/my-agents</code>) shipped a UX mock plus an architecture manifesto, and the branch actually carries a near-complete implementation (~12k lines: identity, behaviour, bindings, abilities bridge, runner, REST, My WordPress UI, run window, send-to dispatcher, six PHPUnit suites, three vitest suites). Two reasons we cannot merge or rebase it as-is:</p>
+    <p class="section-intro">PR #240 (<a href="https://github.com/WordPress/openstation/pull/240">WordPress/openstation#240</a>, branch <code>origin/my-agents</code>) shipped a UX mock plus an architecture manifesto, and the branch actually carries a near-complete implementation (~12k lines: identity, behaviour, bindings, abilities bridge, runner, REST, My WordPress UI, run window, send-to dispatcher, six PHPUnit suites, three vitest suites). Two reasons we cannot merge or rebase it as-is:</p>
     <div class="grid cols-2">
       <div class="tile">
         <span class="ico">🗄️</span>
@@ -196,7 +196,7 @@
       <div class="tile">
         <span class="ico">🌱</span>
         <h4>2. The branch is on a stale base</h4>
-        <p>It forked at 0.8.8, before the 0.9.4 AI migration. Trunk (0.9.7) removed <code>desktop_mode_register_ai_tool()</code> and <code>desktop_mode_register_ai_provider()</code>; tools are now the WP Abilities API (<code>wp_register_ability</code> / <code>wp_get_abilities</code>) and the LLM is reached through WP 7.0 Core Connectors + AI Client (<code>wp_ai_client_prompt()</code> via <code>includes/ai-copilot/client.php</code>). The branch's runner calls <code>desktop_mode_ai_openai_responses_call()</code>, which no longer exists.</p>
+        <p>It forked at 0.8.8, before the 0.9.4 AI migration. Trunk (0.9.7) removed <code>openstation_register_ai_tool()</code> and <code>openstation_register_ai_provider()</code>; tools are now the WP Abilities API (<code>wp_register_ability</code> / <code>wp_get_abilities</code>) and the LLM is reached through WP 7.0 Core Connectors + AI Client (<code>wp_ai_client_prompt()</code> via <code>includes/ai-copilot/client.php</code>). The branch's runner calls <code>openstation_ai_openai_responses_call()</code>, which no longer exists.</p>
       </div>
     </div>
     <div class="callout teal">
@@ -219,7 +219,7 @@
 
     <h3>Definition (was Layers 2+3) <span class="adapted">adapted: all user meta</span></h3>
     <ul>
-      <li><strong>R4.</strong> The agent's behaviour (system prompt, "when to use" description, ability allowlist) is editable from the Desktop Mode UI. <em>Adapted:</em> stored as user meta on the agent's row, not as a <code>wp_guideline</code> post.</li>
+      <li><strong>R4.</strong> The agent's behaviour (system prompt, "when to use" description, ability allowlist) is editable from the OpenStation UI. <em>Adapted:</em> stored as user meta on the agent's row, not as a <code>wp_guideline</code> post.</li>
       <li><strong>R5.</strong> Site-specific bindings (trigger configuration, per-agent model override, per-agent rate limit) are user meta on the agent's row. This part already matched the PR (its Layer 3).</li>
       <li><strong>R6.</strong> <span class="dropped">dropped</span> Push MD / Claude Code / Codex ecosystem portability via <code>wp_guideline</code> (<code>skills/{slug}/SKILL.md</code> materialisation), and skills-as-attachable-child-guidelines. With user-meta storage there is no CPT for those tools to consume. If portability returns later it will be an explicit export surface, not the storage layer.</li>
     </ul>
@@ -233,13 +233,13 @@
 
     <h3>Tools <span class="adapted">adapted to trunk</span></h3>
     <ul>
-      <li><strong>R10.</strong> Tools are the WordPress Abilities API: the picker is a view over <code>wp_get_abilities()</code>, each pick is stored on the agent (allowlist meta), each call is dispatched through <code>WP_Ability::execute()</code> so the ability's own <code>permission_callback</code> and schemas gate it. Any plugin that registers an ability becomes agent-compatible with zero bespoke integration. <em>Adapted:</em> the PR's fallback registry <code>desktop_mode_register_ai_tool()</code> no longer exists; abilities are the only tool source.</li>
+      <li><strong>R10.</strong> Tools are the WordPress Abilities API: the picker is a view over <code>wp_get_abilities()</code>, each pick is stored on the agent (allowlist meta), each call is dispatched through <code>WP_Ability::execute()</code> so the ability's own <code>permission_callback</code> and schemas gate it. Any plugin that registers an ability becomes agent-compatible with zero bespoke integration. <em>Adapted:</em> the PR's fallback registry <code>openstation_register_ai_tool()</code> no longer exists; abilities are the only tool source.</li>
       <li><strong>R11.</strong> Selecting a tool never elevates: capabilities are inherited from the agent's role, not granted by the picker.</li>
     </ul>
 
     <h3>LLM <span class="adapted">adapted to trunk</span></h3>
     <ul>
-      <li><strong>R12.</strong> Bring-your-own model via WP Core Connectors + AI Client (trunk reality; the PR predates the removal of <code>desktop_mode_register_ai_provider</code>). No connector configured: "Create agent" is disabled with a notice linking <code>options-connectors.php</code>; existing agents remain visible for audit. Availability check is the existing <code>desktop_mode_ai_is_available()</code> / <code>desktop_mode_ai_provider_configured()</code> pair.</li>
+      <li><strong>R12.</strong> Bring-your-own model via WP Core Connectors + AI Client (trunk reality; the PR predates the removal of <code>openstation_register_ai_provider</code>). No connector configured: "Create agent" is disabled with a notice linking <code>options-connectors.php</code>; existing agents remain visible for audit. Availability check is the existing <code>openstation_ai_is_available()</code> / <code>openstation_ai_provider_configured()</code> pair.</li>
       <li><strong>R13.</strong> Per-agent model override is a binding (user meta), passed to the AI Client per call when set.</li>
     </ul>
 
@@ -292,13 +292,13 @@
       <table>
         <thead><tr><th>Surface</th><th>What it provides</th></tr></thead>
         <tbody>
-          <tr><td><strong>AI substrate</strong></td><td><code>includes/ai-copilot/client.php</code> (<code>desktop_mode_ai_client_generate()</code> adapter over <code>wp_ai_client_prompt()</code>, token/model telemetry helpers), <code>settings.php</code> (<code>desktop_mode_ai_is_available()</code>, <code>desktop_mode_ai_provider_configured()</code>, <code>/ai/status</code> route, <code>connectorsUrl</code>), <code>abilities.php</code> (ability category, tool-name mangling <code>desktop_mode_ai_ability_tool_name()</code>, output-schema helper).</td></tr>
-          <tr><td><strong>Windows</strong></td><td><code>desktop_mode_register_window()</code> (<code>includes/registries/native-windows.php:143</code>) + <code>desktop_mode_register_icon()</code>; multi-instance support in <code>src/window-manager/index.ts</code> (<code>open()</code> by baseId, <code>openNew()</code>); <code>config</code> arg surfaces as <code>wp.desktop.getWindowConfig(id)</code>.</td></tr>
-          <tr><td><strong>My WordPress</strong></td><td><code>desktop_mode_my_wordpress_entities()</code> + filter <code>desktop_mode_my_wordpress_entities</code> (<code>includes/my-wordpress/window.php:69</code>); TS seam <code>registerEntityKind( kind, renderer )</code> in <code>src/my-wordpress/kind-registry.ts</code> (no monolith edits to <code>index.ts</code> needed).</td></tr>
-          <tr><td><strong>Drag</strong></td><td><code>wp.desktop.dragManager</code> (<code>src/drag/manager.ts</code>, <code>drop-target-registry.ts</code>: <code>DropTarget { id, element, accept, onDrop, acceptLabel }</code>), cross-iframe carrier <code>src/drag-bridge.ts</code>.</td></tr>
-          <tr><td><strong>Feature flag</strong></td><td><code>includes/extended-options.php</code> (<code>desktop_mode_get_extended_options()</code> defaults + REST), bootstrap early-return pattern at <code>includes/games/bootstrap.php:40-47</code>, admin-only checkbox in <code>src/settings/sections/extended.ts</code>.</td></tr>
+          <tr><td><strong>AI substrate</strong></td><td><code>includes/ai-copilot/client.php</code> (<code>openstation_ai_client_generate()</code> adapter over <code>wp_ai_client_prompt()</code>, token/model telemetry helpers), <code>settings.php</code> (<code>openstation_ai_is_available()</code>, <code>openstation_ai_provider_configured()</code>, <code>/ai/status</code> route, <code>connectorsUrl</code>), <code>abilities.php</code> (ability category, tool-name mangling <code>openstation_ai_ability_tool_name()</code>, output-schema helper).</td></tr>
+          <tr><td><strong>Windows</strong></td><td><code>openstation_register_window()</code> (<code>includes/registries/native-windows.php:143</code>) + <code>openstation_register_icon()</code>; multi-instance support in <code>src/window-manager/index.ts</code> (<code>open()</code> by baseId, <code>openNew()</code>); <code>config</code> arg surfaces as <code>wp.os.getWindowConfig(id)</code>.</td></tr>
+          <tr><td><strong>My WordPress</strong></td><td><code>openstation_my_wordpress_entities()</code> + filter <code>openstation_my_wordpress_entities</code> (<code>includes/my-wordpress/window.php:69</code>); TS seam <code>registerEntityKind( kind, renderer )</code> in <code>src/my-wordpress/kind-registry.ts</code> (no monolith edits to <code>index.ts</code> needed).</td></tr>
+          <tr><td><strong>Drag</strong></td><td><code>wp.os.dragManager</code> (<code>src/drag/manager.ts</code>, <code>drop-target-registry.ts</code>: <code>DropTarget { id, element, accept, onDrop, acceptLabel }</code>), cross-iframe carrier <code>src/drag-bridge.ts</code>.</td></tr>
+          <tr><td><strong>Feature flag</strong></td><td><code>includes/extended-options.php</code> (<code>openstation_get_extended_options()</code> defaults + REST), bootstrap early-return pattern at <code>includes/games/bootstrap.php:40-47</code>, admin-only checkbox in <code>src/settings/sections/extended.ts</code>.</td></tr>
           <tr><td><strong>REST conventions</strong></td><td>Namespace <code>desktop-mode/v1</code>, routes registered in the owning module on <code>rest_api_init</code>, central index <code>includes/rest/README.md</code> must gain rows.</td></tr>
-          <tr><td><strong>Users</strong></td><td>Users window enriches core <code>wp/v2/users</code> via <code>register_rest_field</code> (<code>includes/users-window/window.php:466</code>); existing plugin user-meta keys all use a <code>desktop_mode_</code> / <code>_desktop_mode_</code> prefix; avatars via <code>get_avatar_url()</code> server-side and <code>&lt;wpd-avatar&gt;</code> client-side.</td></tr>
+          <tr><td><strong>Users</strong></td><td>Users window enriches core <code>wp/v2/users</code> via <code>register_rest_field</code> (<code>includes/users-window/window.php:466</code>); existing plugin user-meta keys all use a <code>desktop_mode_</code> / <code>_desktop_mode_</code> prefix; avatars via <code>get_avatar_url()</code> server-side and <code>&lt;os-avatar&gt;</code> client-side.</td></tr>
           <tr><td><strong>Async jobs precedent</strong></td><td><code>includes/ai-copilot/{jobs,hooks}.php</code> (cron single-event + transient dedup) for the hook trigger.</td></tr>
         </tbody>
       </table>
@@ -308,11 +308,11 @@
     <p>Port targets, in decreasing reusability:</p>
     <div class="card">
       <h4><span class="kept">port nearly as-is</span></h4>
-      <p><code>identity.php</code> (marker meta <code>_desktop_mode_agent</code>, <code>agent-&lt;slug&gt;</code> login resolution, synthetic email, login/reset/app-password blocks, wp-admin Users column), <code>bindings.php</code> (trigger kinds registry + <code>desktop_mode_agent_trigger_kinds</code> filter, triggers/model/rate-limit meta), <code>privacy.php</code>, <code>run-window.php</code> + <code>src/agent-run-window.ts</code> (shared-store-driven run window), <code>src/agents-send-to.ts</code>, most of <code>src/my-wordpress/agents-*.ts</code>, all test suites (rewritten expectations, same coverage map).</p>
+      <p><code>identity.php</code> (marker meta <code>_desktop_mode_agent</code>, <code>agent-&lt;slug&gt;</code> login resolution, synthetic email, login/reset/app-password blocks, wp-admin Users column), <code>bindings.php</code> (trigger kinds registry + <code>openstation_agent_trigger_kinds</code> filter, triggers/model/rate-limit meta), <code>privacy.php</code>, <code>run-window.php</code> + <code>src/agent-run-window.ts</code> (shared-store-driven run window), <code>src/agents-send-to.ts</code>, most of <code>src/my-wordpress/agents-*.ts</code>, all test suites (rewritten expectations, same coverage map).</p>
     </div>
     <div class="card">
       <h4><span class="adapted">port with rework</span></h4>
-      <p><code>rest.php</code> (route map is right: CRUD + <code>/invoke</code> + <code>/abilities</code> + <code>/trigger-kinds</code> + <code>/hooks-catalogue</code> + <code>/send-to-targets</code> + <code>/dossier</code>; drop the 412 storage soft-gate and guideline capability shims, swap permissions per D7), <code>abilities.php</code> (catalogue shape stays, feed from <code>wp_get_abilities()</code> with the readonly/mutating distinction per D4), <code>runner.php</code> (keep the loop shape, turn cap, and identity switch; replace the OpenAI Responses transport with <code>desktop_mode_ai_client_generate()</code>).</p>
+      <p><code>rest.php</code> (route map is right: CRUD + <code>/invoke</code> + <code>/abilities</code> + <code>/trigger-kinds</code> + <code>/hooks-catalogue</code> + <code>/send-to-targets</code> + <code>/dossier</code>; drop the 412 storage soft-gate and guideline capability shims, swap permissions per D7), <code>abilities.php</code> (catalogue shape stays, feed from <code>wp_get_abilities()</code> with the readonly/mutating distinction per D4), <code>runner.php</code> (keep the loop shape, turn cap, and identity switch; replace the OpenAI Responses transport with <code>openstation_ai_client_generate()</code>).</p>
     </div>
     <div class="card">
       <h4><span class="dropped">do not port</span></h4>
@@ -355,23 +355,23 @@
 
     <div class="card">
       <h4>D2. No substrate gate</h4>
-      <p>User meta always exists, so the branch's <code>desktop_mode_agents_storage_available()</code> soft-gate, the 412 responses, and the "Enable Guidelines experiment" empty state are deleted, not ported. The only gates left are the feature flag and AI availability.</p>
+      <p>User meta always exists, so the branch's <code>openstation_agents_storage_available()</code> soft-gate, the 412 responses, and the "Enable Guidelines experiment" empty state are deleted, not ported. The only gates left are the feature flag and AI availability.</p>
     </div>
     <div class="card">
       <h4>D3. Runner on the Core AI Client</h4>
-      <p><code>desktop_mode_agent_invoke( $agent_user_id, $message, $context )</code> builds function declarations from the allowlisted abilities' <code>input_schema</code>, calls <code>desktop_mode_ai_client_generate()</code> (which wraps <code>wp_ai_client_prompt()</code>), executes returned function calls via <code>wp_get_ability()-&gt;execute()</code> as the agent user, feeds outputs back, loops to a hard cap (<code>DESKTOP_MODE_AGENT_RUNNER_MAX_TURNS = 8</code>), returns <code>{ text, toolCalls, turns }</code>. Model override meta is applied per call when the AI Client supports model selection for the active connector.</p>
+      <p><code>openstation_agent_invoke( $agent_user_id, $message, $context )</code> builds function declarations from the allowlisted abilities' <code>input_schema</code>, calls <code>openstation_ai_client_generate()</code> (which wraps <code>wp_ai_client_prompt()</code>), executes returned function calls via <code>wp_get_ability()-&gt;execute()</code> as the agent user, feeds outputs back, loops to a hard cap (<code>OPENSTATION_AGENT_RUNNER_MAX_TURNS = 8</code>), returns <code>{ text, toolCalls, turns }</code>. Model override meta is applied per call when the AI Client supports model selection for the active connector.</p>
     </div>
     <div class="card">
       <h4>D4. Ability catalogue: full registry, honest labelling</h4>
-      <p>The picker lists every registered ability (not only readonly ones), grouped by category, with a clear read-only vs mutating badge driven by <code>meta.annotations.readonly</code>. Execution-time safety is the ability's <code>permission_callback</code> evaluated against the agent user plus the agent's role. A filter <code>desktop_mode_agent_allowed_abilities</code> lets sites narrow the pickable set.</p>
+      <p>The picker lists every registered ability (not only readonly ones), grouped by category, with a clear read-only vs mutating badge driven by <code>meta.annotations.readonly</code>. Execution-time safety is the ability's <code>permission_callback</code> evaluated against the agent user plus the agent's role. A filter <code>openstation_agent_allowed_abilities</code> lets sites narrow the pickable set.</p>
     </div>
     <div class="card">
       <h4>D5. Feature flag <code>agents</code></h4>
-      <p>In <code>desktop_mode_get_extended_options()</code> defaults (off). <code>includes/agents/bootstrap.php</code> early-returns when off, mirroring <code>includes/games/bootstrap.php</code>, so no windows, icons, REST routes, or hook subscriptions exist until an admin opts in.</p>
+      <p>In <code>openstation_get_extended_options()</code> defaults (off). <code>includes/agents/bootstrap.php</code> early-returns when off, mirroring <code>includes/games/bootstrap.php</code>, so no windows, icons, REST routes, or hook subscriptions exist until an admin opts in.</p>
     </div>
     <div class="card">
       <h4>D6. Audit without revisions</h4>
-      <p>Every mutation through the module fires <code>desktop_mode_agent_updated( $agent_id, $changed_fields, $actor_id )</code> (plus <code>_created</code> / <code>_deleted</code> siblings) carrying before/after values, so logging plugins can persist a trail. v1 does not write its own changelog storage. This is the accepted trade-off vs <code>wp_guideline</code>'s free revisions, and it is called out in the docs.</p>
+      <p>Every mutation through the module fires <code>openstation_agent_updated( $agent_id, $changed_fields, $actor_id )</code> (plus <code>_created</code> / <code>_deleted</code> siblings) carrying before/after values, so logging plugins can persist a trail. v1 does not write its own changelog storage. This is the accepted trade-off vs <code>wp_guideline</code>'s free revisions, and it is called out in the docs.</p>
     </div>
     <div class="card">
       <h4>D7. Permission model</h4>
@@ -389,7 +389,7 @@
     </div>
     <div class="card">
       <h4>D9. UI integration via existing seams only</h4>
-      <p><code>desktop_mode_my_wordpress_entities</code> filter adds the Agents entry; <code>registerEntityKind( 'agent', renderer )</code> renders it; the run/chat window is a normal <code>desktop_mode_register_window()</code> registration with multi-instance opens per agent; drop targets go through <code>wp.desktop.dragManager.registerDropTarget</code>. No new mechanisms.</p>
+      <p><code>openstation_my_wordpress_entities</code> filter adds the Agents entry; <code>registerEntityKind( 'agent', renderer )</code> renders it; the run/chat window is a normal <code>openstation_register_window()</code> registration with multi-instance opens per agent; drop targets go through <code>wp.os.dragManager.registerDropTarget</code>. No new mechanisms.</p>
     </div>
   </section>
 
@@ -401,7 +401,7 @@
         <h4>✅ Resolved during planning</h4>
         <ul>
           <li>Storage layer: user meta on the agent's user row, per product direction (this is the reason this plan exists). The <code>wp_guideline</code> path and its Gutenberg dependency are out.</li>
-          <li>Tool source: Abilities API only; the removed <code>desktop_mode_register_ai_tool</code> registry is not resurrected.</li>
+          <li>Tool source: Abilities API only; the removed <code>openstation_register_ai_tool</code> registry is not resurrected.</li>
           <li>LLM transport: Core Connectors + AI Client through the existing <code>client.php</code> adapter; no plugin-owned provider registry or API key.</li>
           <li>Send-to stays as the sixth trigger kind (proven in the mock, cheapest real invocation surface).</li>
         </ul>
@@ -409,7 +409,7 @@
       <div class="card">
         <h4>⏳ Deferred to implementation</h4>
         <ul>
-          <li>Whether the Users window badges agents inline (default assumption: yes, via the existing <code>register_rest_field</code> enrichment plus a <code>&lt;wpd-*&gt;</code> badge) or offers a filter toggle to hide them.</li>
+          <li>Whether the Users window badges agents inline (default assumption: yes, via the existing <code>register_rest_field</code> enrichment plus a <code>&lt;os-*&gt;</code> badge) or offers a filter toggle to hide them.</li>
           <li>Exact chat-window layout (single run window with per-agent instances vs a dedicated chat window; default assumption: evolve the branch's run window into the chat surface).</li>
           <li>Whether model override is exposed in v1 UI or meta-only until the AI Client's model enumeration is ergonomic.</li>
           <li>Rate-limit accounting storage (transient per agent-hour is the default assumption).</li>
@@ -447,12 +447,12 @@ flowchart LR
     A["agent-to-agent"]:::in
   end
   subgraph ENG["Engine"]
-    R["POST /desktop-mode/v1/agents/{id}/invoke<br/>desktop_mode_agent_invoke()<br/><i>switch to agent user ·<br/>prompt+message → wp_ai_client_prompt ·<br/>tool loop ≤ 8 turns · restore user</i>"]:::eng
+    R["POST /desktop-mode/v1/agents/{id}/invoke<br/>openstation_agent_invoke()<br/><i>switch to agent user ·<br/>prompt+message → wp_ai_client_prompt ·<br/>tool loop ≤ 8 turns · restore user</i>"]:::eng
   end
   subgraph FX["Effects"]
     direction TB
     X["WP_Ability::execute()<br/>as the agent user"]:::fx
-    K["desktop_mode_agent_completed<br/><i>feeds chaining + run window</i>"]:::fx
+    K["openstation_agent_completed<br/><i>feeds chaining + run window</i>"]:::fx
   end
   C --> R
   S --> R
@@ -483,7 +483,7 @@ flowchart LR
   privacy.php</code></pre>
     <div class="callout">
       <span class="tag">store.php</span>
-      Replaces the branch's <code>behaviour.php</code> + the meta halves of <code>bindings.php</code>: one module owning every meta key, its sanitization, <code>register_meta</code> calls, and the <code>desktop_mode_agent_{created,updated,deleted}</code> actions.
+      Replaces the branch's <code>behaviour.php</code> + the meta halves of <code>bindings.php</code>: one module owning every meta key, its sanitization, <code>register_meta</code> calls, and the <code>openstation_agent_{created,updated,deleted}</code> actions.
     </div>
   </section>
 
@@ -493,13 +493,13 @@ flowchart LR
 
     <div class="card">
       <h4>U1. Scaffold, flag, storage, identity <span class="phase">Phase A</span></h4>
-      <p><code>agents</code> key in extended options (default off) + checkbox in <code>src/settings/sections/extended.ts</code>; <code>includes/agents/bootstrap.php</code> with the games-style early return; <code>store.php</code> (meta keys, <code>register_meta</code>, CRUD helpers <code>desktop_mode_agent_create/update/delete/get/list</code>, JSON sanitization, audit actions); <code>identity.php</code> ported (marker meta, unique <code>agent-</code> login, synthetic email, <code>authenticate</code> + <code>allow_password_reset</code> + application-password + REST cookie blocks, editable-roles enforcement, wp-admin Users column, delete = <code>wp_delete_user</code> with content reassignment choice); <code>privacy.php</code> ported. Uninstall cleanup added to the plugin's existing uninstall path.</p>
+      <p><code>agents</code> key in extended options (default off) + checkbox in <code>src/settings/sections/extended.ts</code>; <code>includes/agents/bootstrap.php</code> with the games-style early return; <code>store.php</code> (meta keys, <code>register_meta</code>, CRUD helpers <code>openstation_agent_create/update/delete/get/list</code>, JSON sanitization, audit actions); <code>identity.php</code> ported (marker meta, unique <code>agent-</code> login, synthetic email, <code>authenticate</code> + <code>allow_password_reset</code> + application-password + REST cookie blocks, editable-roles enforcement, wp-admin Users column, delete = <code>wp_delete_user</code> with content reassignment choice); <code>privacy.php</code> ported. Uninstall cleanup added to the plugin's existing uninstall path.</p>
       <p class="muted">PHPUnit: <code>agentsStore.php</code>, <code>agentsIdentity.php</code> (adapt branch suites). No UI yet.</p>
     </div>
 
     <div class="card">
       <h4>U2. Abilities bridge + runner <span class="phase">Phase A</span></h4>
-      <p><code>abilities.php</code>: catalogue helper over <code>wp_get_abilities()</code> with readonly/mutating annotation and the <code>desktop_mode_agent_allowed_abilities</code> filter; projection of an ability's <code>input_schema</code> into a function declaration (reuse <code>desktop_mode_ai_ability_tool_name()</code> and the copilot's schema normalisation). <code>runner.php</code>: <code>desktop_mode_agent_invoke()</code> per D3/D8, rate-limit check, <code>desktop_mode_agent_completed</code> action, turn cap, tool-result sanitization mirroring the copilot's.</p>
+      <p><code>abilities.php</code>: catalogue helper over <code>wp_get_abilities()</code> with readonly/mutating annotation and the <code>openstation_agent_allowed_abilities</code> filter; projection of an ability's <code>input_schema</code> into a function declaration (reuse <code>openstation_ai_ability_tool_name()</code> and the copilot's schema normalisation). <code>runner.php</code>: <code>openstation_agent_invoke()</code> per D3/D8, rate-limit check, <code>openstation_agent_completed</code> action, turn cap, tool-result sanitization mirroring the copilot's.</p>
       <p class="muted">PHPUnit: <code>agentsRunner.php</code> with a stubbed AI client (network-free, following <code>aiSearchExtensibility.php</code>'s pure-function style), <code>agentsAbilities.php</code>.</p>
     </div>
 
@@ -511,7 +511,7 @@ flowchart LR
 
     <div class="card">
       <h4>U4. My WordPress Agents UI <span class="phase">Phase A</span></h4>
-      <p>PHP: add the <code>agents</code> entity through the <code>desktop_mode_my_wordpress_entities</code> filter (bot SVG icon from the branch), gated on the read permission. TS: <code>registerEntityKind( 'agent', … )</code> renderer with list + Define / Tools / Triggers panes, create dialog (<code>&lt;wpd-text-field&gt;</code>, role select from an editable-roles endpoint field, <code>&lt;wpd-confirm-dialog&gt;</code> for delete), abilities picker (<code>&lt;wpd-checkbox-label&gt;</code> list with mutating badges), provider-not-configured notice reusing <code>aiStatus</code> + <code>connectorsUrl</code>. All requests via <code>trackedFetch</code> with <code>source: 'desktop-mode/agents'</code>.</p>
+      <p>PHP: add the <code>agents</code> entity through the <code>openstation_my_wordpress_entities</code> filter (bot SVG icon from the branch), gated on the read permission. TS: <code>registerEntityKind( 'agent', … )</code> renderer with list + Define / Tools / Triggers panes, create dialog (<code>&lt;os-text-field&gt;</code>, role select from an editable-roles endpoint field, <code>&lt;os-confirm-dialog&gt;</code> for delete), abilities picker (<code>&lt;os-checkbox-label&gt;</code> list with mutating badges), provider-not-configured notice reusing <code>aiStatus</code> + <code>connectorsUrl</code>. All requests via <code>trackedFetch</code> with <code>source: 'desktop-mode/agents'</code>.</p>
       <p class="muted">Vitest: <code>agents-renderer.test.ts</code>, <code>agents-rest.test.ts</code> (adapt branch suites).</p>
     </div>
 
@@ -529,7 +529,7 @@ flowchart LR
 
     <div class="card">
       <h4>U7. Hook trigger <span class="phase">Phase C</span></h4>
-      <p><code>triggers.php</code>: on init (flag on), read all agents' <code>hook</code> triggers, subscribe to a <strong>whitelisted</strong> hooks catalogue (<code>save_post</code>, <code>wp_insert_comment</code>, <code>transition_post_status</code>, filterable via <code>desktop_mode_agent_hook_catalogue</code>); on fire, enqueue a cron single event with transient dedup (copilot jobs pattern), serialise hook args into the message, invoke asynchronously. Loop guard: suppress subscriptions while a runner invocation is in flight for the same agent.</p>
+      <p><code>triggers.php</code>: on init (flag on), read all agents' <code>hook</code> triggers, subscribe to a <strong>whitelisted</strong> hooks catalogue (<code>save_post</code>, <code>wp_insert_comment</code>, <code>transition_post_status</code>, filterable via <code>openstation_agent_hook_catalogue</code>); on fire, enqueue a cron single event with transient dedup (copilot jobs pattern), serialise hook args into the message, invoke asynchronously. Loop guard: suppress subscriptions while a runner invocation is in flight for the same agent.</p>
       <p class="muted">PHPUnit: <code>agentsTriggers.php</code> (subscription build, dedup, loop guard).</p>
     </div>
 
@@ -541,7 +541,7 @@ flowchart LR
 
     <div class="card">
       <h4>U9. Agent-to-agent trigger <span class="phase">Phase C</span></h4>
-      <p>Chaining consumer on <code>desktop_mode_agent_completed</code>: agents with an <code>agent</code> trigger naming a source agent receive the source's result as their message. Depth cap (reuse the runner's turn-cap constant family) + cycle detection on the chain path.</p>
+      <p>Chaining consumer on <code>openstation_agent_completed</code>: agents with an <code>agent</code> trigger naming a source agent receive the source's result as their message. Depth cap (reuse the runner's turn-cap constant family) + cycle detection on the chain path.</p>
       <p class="muted">PHPUnit: chain execution, loop detection.</p>
     </div>
 
@@ -555,9 +555,9 @@ flowchart LR
   <section id="impact">
     <h2><span class="num">10</span>System-wide impact</h2>
     <ul>
-      <li><strong>Users surfaces:</strong> agents appear in <code>wp/v2/users</code>, the Users window, and author dropdowns. U1 ships the wp-admin column; U4 adds the Desktop Mode badge via the existing users-window <code>register_rest_field</code> enrichment. Bulk actions that email users (password reset, welcome) must skip agents (guard in the existing bulk routes).</li>
+      <li><strong>Users surfaces:</strong> agents appear in <code>wp/v2/users</code>, the Users window, and author dropdowns. U1 ships the wp-admin column; U4 adds the OpenStation badge via the existing users-window <code>register_rest_field</code> enrichment. Bulk actions that email users (password reset, welcome) must skip agents (guard in the existing bulk routes).</li>
       <li><strong>Presence:</strong> agents never heartbeat, so they read as <code>offline</code>; no change needed, but the badge should prevent "why is this user always offline" confusion.</li>
-      <li><strong>Payload:</strong> no changes to <code>desktop_mode_build_menu_payload()</code> in v1 (Agents lives inside My WordPress + its own window registration, both already carried). A future per-agent desktop tile would ride <code>desktop_mode_icons</code>.</li>
+      <li><strong>Payload:</strong> no changes to <code>openstation_build_menu_payload()</code> in v1 (Agents lives inside My WordPress + its own window registration, both already carried). A future per-agent desktop tile would ride <code>openstation_icons</code>.</li>
       <li><strong>AI Copilot:</strong> untouched. The runner reuses <code>client.php</code> helpers but registers nothing on the copilot's hook surface. A follow-up could expose agents to the copilot as commands.</li>
       <li><strong>Uninstall/cleanup:</strong> deleting the plugin must decide what happens to agent users (default: leave them, they are inert without the module; document it). Deactivating the flag hides surfaces but keeps data.</li>
     </ul>
@@ -568,7 +568,7 @@ flowchart LR
     <h2><span class="num">11</span>Risk analysis &amp; mitigation</h2>
     <div class="callout rose">
       <span class="tag">Prompt injection into mutating tools</span>
-      Agent reads attacker-controlled content, model calls a destructive ability. Mitigations: per-agent explicit allowlist set by <code>edit_users</code> humans, agent role capping blast radius, ability <code>permission_callback</code> as the hard gate, tool-result sanitization, turn cap, <code>desktop_mode_agent_completed</code> audit action. Recommend-in-docs: least-privilege roles (<code>author</code> for content agents, never <code>administrator</code> unless unavoidable).
+      Agent reads attacker-controlled content, model calls a destructive ability. Mitigations: per-agent explicit allowlist set by <code>edit_users</code> humans, agent role capping blast radius, ability <code>permission_callback</code> as the hard gate, tool-result sanitization, turn cap, <code>openstation_agent_completed</code> audit action. Recommend-in-docs: least-privilege roles (<code>author</code> for content agents, never <code>administrator</code> unless unavoidable).
     </div>
     <div class="callout rose">
       <span class="tag">Privilege escalation via agent creation</span>
@@ -626,7 +626,7 @@ flowchart LR
   <section id="docs">
     <h2><span class="num">13</span>Documentation plan</h2>
     <ul>
-      <li><code>docs/hooks-reference.md</code>: <code>desktop_mode_agent_{created,updated,deleted,completed}</code> actions; <code>desktop_mode_agent_trigger_kinds</code>, <code>desktop_mode_agent_allowed_abilities</code>, <code>desktop_mode_agent_hook_catalogue</code>, permission filters.</li>
+      <li><code>docs/hooks-reference.md</code>: <code>openstation_agent_{created,updated,deleted,completed}</code> actions; <code>openstation_agent_trigger_kinds</code>, <code>openstation_agent_allowed_abilities</code>, <code>openstation_agent_hook_catalogue</code>, permission filters.</li>
       <li><code>docs/javascript-reference.md</code>: agents REST client surface, run-window shared-store key, send-to integration points.</li>
       <li><code>docs/api-index.md</code> + <code>includes/rest/README.md</code>: new PHP functions and REST routes.</li>
       <li><code>docs/architecture.md</code>: the two-layer agent model (user row + meta), runner flow, trigger engine.</li>
@@ -639,7 +639,7 @@ flowchart LR
   <section id="sources">
     <h2><span class="num">14</span>Sources &amp; references</h2>
     <ul>
-      <li>PR #240 body (objectives, three-layer model, five triggers, abilities-as-tools, security posture, build order): <a href="https://github.com/WordPress/desktop-mode/pull/240">github.com/WordPress/desktop-mode/pull/240</a></li>
+      <li>PR #240 body (objectives, three-layer model, five triggers, abilities-as-tools, security posture, build order): <a href="https://github.com/WordPress/openstation/pull/240">github.com/WordPress/openstation/pull/240</a></li>
       <li>Branch <code>origin/my-agents</code> (commits <code>6b598c80</code>, <code>c3e3b1a5</code>, <code>13f830f5</code>): prior implementation used as reference, fork point 0.8.8.</li>
       <li>Trunk AI substrate: <code>includes/ai-copilot/{client,settings,abilities,search}.php</code>, <code>docs/migration-ai-connectors.md</code> (removal of provider registry + tool registry in 0.9.4).</li>
       <li>Extension seams: <code>includes/registries/native-windows.php</code>, <code>includes/my-wordpress/window.php</code>, <code>src/my-wordpress/kind-registry.ts</code>, <code>src/drag/</code>, <code>includes/extended-options.php</code>, <code>includes/games/bootstrap.php</code> (flag pattern), <code>includes/ai-copilot/{jobs,hooks}.php</code> (async pattern).</li>
@@ -649,7 +649,7 @@ flowchart LR
   </div><!-- /.wrap -->
 
   <footer>
-    <strong>Desktop Mode — AI Agents plan (user-meta storage).</strong> Draft, 2026-07-27. HTML rendering of <code>desktop-mode/plans/2026-07-27-001-feat-ai-agents-user-meta-plan.md</code> in this repository; the markdown file is the source of truth.
+    <strong>OpenStation — AI Agents plan (user-meta storage).</strong> Draft, 2026-07-27. HTML rendering of <code>openstation/plans/2026-07-27-001-feat-ai-agents-user-meta-plan.md</code> in this repository; the markdown file is the source of truth.
   </footer>
 </main>
 </div>

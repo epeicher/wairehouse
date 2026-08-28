@@ -6,6 +6,9 @@
 # <title>, and writes a styled index that links to them all. GitHub Pages serves
 # docs/ at https://epeicher.github.io/wairehouse/ so the index lives at the root.
 #
+# Plans in docs/<subfolder>/ (e.g. docs/openstation/, docs/reprint/) are listed
+# as their own labelled section; top-level docs/*.html (if any) come first.
+#
 # Run it after adding/removing a plan:   bash build-docs-index.sh
 # (A GitHub Action also runs it automatically on every push to docs/.)
 #
@@ -36,8 +39,13 @@ while IFS= read -r f; do
   COUNT=$((COUNT + 1))
 done < <( (cd "$DOCS" && ls -1 *.html 2>/dev/null || true) | grep -vx 'index.html' | sort )
 
-if [ "$COUNT" -eq 0 ]; then
-  CARDS="      <p class=\"empty\">No plans yet. Add an .html file to docs/ and re-run this script.</p>"
+TOTAL=$COUNT
+if [ "$COUNT" -gt 0 ]; then
+  TOPGRID="    <div class=\"grid\">
+${CARDS}    </div>
+"
+else
+  TOPGRID=""   # every plan lives in a subfolder; only the grouped sections render
 fi
 
 # ---- subfolder groups: each subdirectory of docs/ becomes its own sub-index ----
@@ -51,6 +59,7 @@ while IFS= read -r d; do
   [ -n "$subfiles" ] || continue
   name=$(basename "$rel")
   pretty=$(printf '%s' "$name" | sed 's/[-_]/ /g' | awk '{for(i=1;i<=NF;i++)$i=toupper(substr($i,1,1)) substr($i,2)}1')
+  case "$name" in openstation) pretty="OpenStation" ;; esac   # brand casing the generic title-caser can't know
   if [ -f "$d/index.html" ]; then
     heading="<a href=\"./${rel}/index.html\">${pretty}</a>"
   else
@@ -65,6 +74,7 @@ while IFS= read -r d; do
     skb=$(( (sbytes + 1023) / 1024 ))
     sdate=$(git log -1 --format=%ad --date=short -- "$d/$sf" 2>/dev/null || true)
     [ -n "$sdate" ] || sdate=$(date '+%Y-%m-%d')
+    TOTAL=$((TOTAL + 1))
     SUB+="      <a class=\"card\" href=\"./${rel}/${sf}\">
         <div class=\"ct\">${stitle}</div>
         <div class=\"cf\">${rel}/${sf}</div>
@@ -129,12 +139,10 @@ cat > "$DOCS/index.html" <<HTML
     <p>Tap any card to open it &mdash; works great on mobile, diagrams zoom.</p>
   </header>
   <main>
-    <div class="grid">
-${CARDS}    </div>
-${SECTIONS}  </main>
-  <footer>${COUNT} document(s) &middot; auto-generated index &middot; <a href="${PAGES_URL}">${PAGES_URL}</a></footer>
+${TOPGRID}${SECTIONS}  </main>
+  <footer>${TOTAL} document(s) &middot; auto-generated index &middot; <a href="${PAGES_URL}">${PAGES_URL}</a></footer>
 </body>
 </html>
 HTML
 
-echo "Wrote ${DOCS}/index.html with ${COUNT} document(s)."
+echo "Wrote ${DOCS}/index.html with ${TOTAL} document(s)."

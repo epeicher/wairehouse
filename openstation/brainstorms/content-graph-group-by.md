@@ -3,7 +3,7 @@ title: Content Graph — Group-by selector (Categories / Authors / Tags / Date)
 status: brainstorm
 date: 2026-05-15
 related:
-  - ../../wairehouse/desktop-mode/plans/2026-05-10-001-feat-content-graph-multi-lens-galaxy-plan.md
+  - ../../wairehouse/openstation/plans/2026-05-10-001-feat-content-graph-multi-lens-galaxy-plan.md
 ---
 
 # Content Graph — Group-by selector
@@ -33,7 +33,7 @@ Two ways to land what was requested:
   pluggable per facet.
 - **Option B — Ship grouping as a smaller, standalone feature first.**
   Skip the lens architecture, multi-edge-kinds, persistence, and
-  toolbar `<wpd-*>` migration from the Galaxy plan; ship just the
+  toolbar `<os-*>` migration from the Galaxy plan; ship just the
   selector + cluster-attractor force + labels. The lens architecture
   can land later if needed.
 
@@ -44,7 +44,7 @@ force loop and the label layer are the same code either way.
 
 ## What the selector controls
 
-Single-select dropdown (`<wpd-select>`) in the toolbar, near the
+Single-select dropdown (`<os-select>`) in the toolbar, near the
 search input. Options:
 
 - **None** (default — current behaviour, no clustering)
@@ -155,7 +155,7 @@ Group-label content is then `groups.authors[node.author_id].name`,
 ## Resolved decisions
 
 1. **Option B** — ship lean. No multi-lens architecture, no edge-kind
-   discriminator, no toolbar `<wpd-*>` migration. Just the selector,
+   discriminator, no toolbar `<os-*>` migration. Just the selector,
    cluster-attractor force, group labels.
 2. **Date bucketing:** year. Year-month deferred.
 3. **Multi-term posts:** weighted pull (each membership contributes
@@ -193,7 +193,7 @@ These were considered but deferred:
 - TypeScript types + REST helpers: a few hours.
 - `ForceSim` cluster-attractor force loop: half a day with tuning.
 - Group-label Pixi layer: half a day.
-- Toolbar `<wpd-select>` wiring and live-swap orchestration: half a day.
+- Toolbar `<os-select>` wiring and live-swap orchestration: half a day.
 - Tests (PHPUnit for new payload fields, Vitest for force-loop math,
   manual visual verification at small/large node counts): half a day.
 

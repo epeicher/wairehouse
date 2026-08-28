@@ -10,7 +10,7 @@ origin: docs/brainstorms/content-graph-multi-lens-galaxy-requirements.md
 
 ## Summary
 
-Extend the Content Graph window with a lens architecture (`Constellation` + new `Galaxy`) and four new edge types (co-tag, co-author, hierarchy, menu). PHP work extends `graph-builder.php` in place with new edge extractors and a `kind` field on edges, plus a new `preferences.php` per-user state endpoint following the `os-settings.php` pattern. Frontend work adds a cluster-attractor force loop to `ForceSim`, a `setLens()` method on `GraphScene`, edge-kind-aware draw with bridge highlighting, and a refactored toolbar that migrates the existing raw-DOM controls to `<wpd-*>` components while adding the new lens segmented control, taxonomy dropdown, and edges multi-toggle.
+Extend the Content Graph window with a lens architecture (`Constellation` + new `Galaxy`) and four new edge types (co-tag, co-author, hierarchy, menu). PHP work extends `graph-builder.php` in place with new edge extractors and a `kind` field on edges, plus a new `preferences.php` per-user state endpoint following the `os-settings.php` pattern. Frontend work adds a cluster-attractor force loop to `ForceSim`, a `setLens()` method on `GraphScene`, edge-kind-aware draw with bridge highlighting, and a refactored toolbar that migrates the existing raw-DOM controls to `<os-*>` components while adding the new lens segmented control, taxonomy dropdown, and edges multi-toggle.
 
 ---
 
@@ -39,7 +39,7 @@ Content Graph today is a single-geometry tool: one force-directed layout, one ed
 - R15. Existing satellite fan-out, side panel, search, fit-to-view, and pan/zoom unchanged across both lenses.
 - R16. Post-type filter chips remain a secondary filter on top of the chosen taxonomy and lens. Post-type selections are per-lens (covered by R14): switching lenses preserves the post-type filter for each lens independently rather than resetting it.
 
-**Origin actors:** A1 (site editor), A2 (content strategist), A3 (plugin developer extending Desktop Mode)
+**Origin actors:** A1 (site editor), A2 (content strategist), A3 (plugin developer extending OpenStation)
 **Origin flows:** F1 (switch lens), F2 (pick taxonomy), F3 (reveal hidden edge type), F4 (focus a node)
 **Origin acceptance examples:** AE1 (covers R6), AE2 (covers R7), AE3 (covers R12, R13), AE4 (covers R3), AE5 (covers R14), AE6 (covers R9)
 
@@ -54,7 +54,7 @@ Content Graph today is a single-geometry tool: one force-directed layout, one ed
 - Multi-taxonomy overlay; auto-detect-by-post-type clustering: origin discarded options.
 - Site Audit overlays (orphans, broken links, stale content): origin out-of-scope.
 - Scale work above the existing `ForceSim` ~500-node ceiling (Barnes-Hut, level-of-detail, mini-map): out of this plan; Galaxy must not regress on sites Constellation handles today.
-- New `wp.desktop.*` public API for lens or edge-type registration: plan-local non-goal. Internal-only in v1; promote to public hooks if extension demand surfaces in a follow-up.
+- New `wp.os.*` public API for lens or edge-type registration: plan-local non-goal. Internal-only in v1; promote to public hooks if extension demand surfaces in a follow-up.
 - New `docs/examples/` example: plan-local non-goal. Lens and edge-type registration are not public extension surfaces in v1.
 
 ---
@@ -66,32 +66,32 @@ Content Graph today is a single-geometry tool: one force-directed layout, one ed
 - `src/content-graph/index.ts`: render entry; wires toolbar + panel + scene + REST. Owns `activeTypes` state and `loadGraph()` orchestration. No persistence wired today.
 - `src/content-graph/scene.ts`: `GraphScene` class. Pixi v8 `Application` + world `Container` with three layers. Camera target-then-ease. `draw()` repaints all `EdgeView`s and `NodeView`s every tick. Adding edge kinds requires extending `EdgeView` and the `draw()` color/width branching.
 - `src/content-graph/sim.ts`: hand-rolled spring sim. `step(dt)` runs (1) O(n²) repulsion, (2) per-edge spring, (3) gravity + Euler integrate with damping + velocity clamp + drag-influence smoothstep, (4) `alpha *= ALPHA_DECAY`. Adding cluster centroid attractors is a clean fourth force loop between gravity and integrate.
-- `src/content-graph/toolbar.ts`: vanilla DOM today (raw `document.createElement('button')`). `AGENTS.md` flags this as a violation; this plan migrates it to `<wpd-*>`.
-- `src/content-graph/rest.ts`: `getConfig()` reads `window.desktopModeWindowConfig['desktop-mode-content-graph']`. `trackedFetch` wrappers tagged `source: 'desktop-mode/content-graph'`.
+- `src/content-graph/toolbar.ts`: vanilla DOM today (raw `document.createElement('button')`). `AGENTS.md` flags this as a violation; this plan migrates it to `<os-*>`.
+- `src/content-graph/rest.ts`: `getConfig()` reads `window.openStationWindowConfig['desktop-mode-content-graph']`. `trackedFetch` wrappers tagged `source: 'desktop-mode/content-graph'`.
 - `src/content-graph/types.ts`: wire-payload + in-memory shapes. REST is the source of truth.
-- `includes/content-graph/window.php`: `desktop_mode_register_window` registration. `config` array hydrates `window.desktopModeWindowConfig` in JS. The place to inject initial preferences and taxonomy catalog.
-- `includes/content-graph/rest.php`: three routes (`/post-types`, `/nodes`, `/post/<id>`). Capability check `desktop_mode_content_graph_user_can_use()`.
+- `includes/content-graph/window.php`: `openstation_register_window` registration. `config` array hydrates `window.openStationWindowConfig` in JS. The place to inject initial preferences and taxonomy catalog.
+- `includes/content-graph/rest.php`: three routes (`/post-types`, `/nodes`, `/post/<id>`). Capability check `openstation_content_graph_user_can_use()`.
 - `includes/content-graph/graph-builder.php`: full graph builder + transient cache. Cache key = `MD5(GROUP_CONCAT(ID, post_modified_gmt))` over participating rows. Extend in place for the new edge types.
 - `includes/os-settings.php`: canonical pattern for per-user preference endpoint. Meta key `desktop_mode_os_settings`, REST `GET/POST`, sanitizer/defaults.
 - `includes/session.php`: alternate per-user state pattern; useful as cross-reference.
 - `src/boot/session-saver.ts`: trailing-edge debounced (500ms) saver with `sendBeacon` flush on unload. The pattern preferences-saver should mirror, but with a shorter debounce.
-- `src/ui/components/wpd-segmented/wpd-segmented.ts`: segmented control. Stable since 0.9.0. `value` + `wpd-pick` event.
-- `src/ui/components/wpd-select/wpd-select.ts`: dropdown wrapping native `<select>`. Same `value` + `wpd-pick` contract. Stable since 0.11.0.
-- `src/ui/components/wpd-multiselect/wpd-multiselect.ts`: popover with checkboxes. Experimental.
-- `src/ui/components/wpd-chip/wpd-chip.ts`: chip primitive with optional dismiss. Replaces hand-rolled chip buttons.
+- `src/ui/components/os-segmented/os-segmented.ts`: segmented control. Stable since 0.9.0. `value` + `os-pick` event.
+- `src/ui/components/os-select/os-select.ts`: dropdown wrapping native `<select>`. Same `value` + `os-pick` contract. Stable since 0.11.0.
+- `src/ui/components/os-multiselect/os-multiselect.ts`: popover with checkboxes. Experimental.
+- `src/ui/components/os-chip/os-chip.ts`: chip primitive with optional dismiss. Replaces hand-rolled chip buttons.
 
 ### Institutional Learnings
 
 - No `docs/solutions/` tree exists in this repo. The de-facto institutional knowledge lives in `AGENTS.md`. Four notes apply directly:
-  - **`<wpd-*>` over raw HTML controls**: today's vanilla-DOM toolbar in `src/content-graph/toolbar.ts` violates this; the plan migrates it.
-  - **`wp.desktop.fetch` / `trackedFetch` over raw `fetch`**: already followed in `src/content-graph/rest.ts`; new REST helpers must keep this convention.
+  - **`<os-*>` over raw HTML controls**: today's vanilla-DOM toolbar in `src/content-graph/toolbar.ts` violates this; the plan migrates it.
+  - **`wp.os.fetch` / `trackedFetch` over raw `fetch`**: already followed in `src/content-graph/rest.ts`; new REST helpers must keep this convention.
   - **`createSharedStore` for cross-bundle state**: NOT applicable here. Content Graph is a single bundle (`content-graph.min.js`), so plain module-level state is fine.
   - **Live-refresh payload pattern**: NOT triggered. Lenses and edge types are TS-side constants in v1, not server-driven registries.
 - The Pixi.js skill pack at `.agents/skills/pixijs/` is reference material, not learnings. Useful for Pixi v8 specifics but does not encode prior incidents.
 
 ### External References
 
-- None. Local patterns cover all four design dimensions (force sim, persistence, REST cache, `<wpd-*>` kit). External research skipped per Phase 1.2.
+- None. Local patterns cover all four design dimensions (force sim, persistence, REST cache, `<os-*>` kit). External research skipped per Phase 1.2.
 
 ---
 
@@ -104,9 +104,9 @@ Content Graph today is a single-geometry tool: one force-directed layout, one ed
 - **Per-node term membership ships on the `/nodes` payload**: every node carries a `terms: Record<taxonomy, termId[]>` map scoped to taxonomies the request asked about. The scope is computed server-side from the active Galaxy taxonomy plus any taxonomies referenced by the requested edge kinds (co-tag pulls in all non-clustering public taxonomies). Rationale: U5's `setClusterTaxonomy()` needs membership data to derive centroids; emitting it inline saves a second round-trip on every taxonomy switch and shares the query cost with the co-tag extractor (which already JOINs `wp_term_relationships`). Bounded by a per-node-per-taxonomy 50-term truncation cap with an observability hook.
 - **Backend extends `graph-builder.php` in place, not a parallel module**: new per-edge-type extractors run alongside the existing link extractor. Cache-key hash domain expands to cover the new data sources (term-relationships state, nav-menu state). Rationale: one cache, one invalidation contract; parallel modules would require per-source cache coordination.
 - **Cache invalidation hooks expand**: existing `save_post` and `deleted_post` stay; add `set_object_terms` (taxonomy changes), `wp_update_nav_menu` and `wp_update_nav_menu_item` (menu changes). Rationale: any of these can change an edge derived in this plan.
-- **Per-user preferences follow `os-settings.php` shape**: new `includes/content-graph/preferences.php`, meta key `desktop_mode_content_graph_prefs` (autoload-false, no leading underscore per convention), REST `GET/POST /desktop-mode/v1/content-graph/preferences`. Initial state injected through `desktopModeWindowConfig` to avoid first-paint round-trip. Debounced writes mirror `src/boot/session-saver.ts` at 250ms (UI-pref writes are higher-frequency, lower-criticality than session writes).
-- **Toolbar `<wpd-*>` migration is bundled into this effort, not split off**: `src/content-graph/toolbar.ts` is raw DOM today. Extending it without migrating would entrench the `AGENTS.md` violation. Migration is small per-control surgery, not a rewrite.
-- **No new public `wp.desktop.*` API in v1**: lens registry and edge-type registry stay as TS-side constants. Promote to public hooks if real plugin demand surfaces. Rationale: API surfaces are easier to add later than to remove; v1 has no validated extension demand from plugin authors.
+- **Per-user preferences follow `os-settings.php` shape**: new `includes/content-graph/preferences.php`, meta key `desktop_mode_content_graph_prefs` (autoload-false, no leading underscore per convention), REST `GET/POST /desktop-mode/v1/content-graph/preferences`. Initial state injected through `openStationWindowConfig` to avoid first-paint round-trip. Debounced writes mirror `src/boot/session-saver.ts` at 250ms (UI-pref writes are higher-frequency, lower-criticality than session writes).
+- **Toolbar `<os-*>` migration is bundled into this effort, not split off**: `src/content-graph/toolbar.ts` is raw DOM today. Extending it without migrating would entrench the `AGENTS.md` violation. Migration is small per-control surgery, not a rewrite.
+- **No new public `wp.os.*` API in v1**: lens registry and edge-type registry stay as TS-side constants. Promote to public hooks if real plugin demand surfaces. Rationale: API surfaces are easier to add later than to remove; v1 has no validated extension demand from plugin authors.
 
 ---
 
@@ -115,12 +115,12 @@ Content Graph today is a single-geometry tool: one force-directed layout, one ed
 ### Resolved During Planning
 
 - **How are co-tag, co-author, hierarchy, menu edge sets queried efficiently?**
-  - Co-tag: single bulk `wp_term_relationships` JOIN keyed on the in-scope post IDs already fetched, filtered to non-clustering taxonomies. Stay on raw `$wpdb->get_results` with prepared `IN (...)` placeholders, matching the existing `desktop_mode_content_graph_fetch_rows()` style.
+  - Co-tag: single bulk `wp_term_relationships` JOIN keyed on the in-scope post IDs already fetched, filtered to non-clustering taxonomies. Stay on raw `$wpdb->get_results` with prepared `IN (...)` placeholders, matching the existing `openstation_content_graph_fetch_rows()` style.
   - Co-author: derive in PHP from `post_author` (added to existing fetch SELECT). No extra query.
   - Hierarchy: derive in PHP from `post_parent` (added to existing fetch SELECT). No extra query.
   - Menu: `wp_get_nav_menus()` + `wp_get_nav_menu_items($menu)` per menu, filter to `_menu_item_type='post_type'`, emit edges from menu (or parent menu item) to referenced post id. Skip non-post targets.
 - **Cleanest way to swap force config on a live `ForceSim`?** Add a `setForceConfig({ clustersEnabled, attractorStrength })` method that mutates internal flags. Tick loop reads flags and runs the cluster-attractor force loop only when enabled. No re-creation. `reheat(0.3, false)` after the swap.
-- **Multi-toggle component**: `<wpd-multiselect>` for the edges control (popover with checkboxes saves toolbar real estate). Post-type chips become `<wpd-chip>` rows with a thin parent owning the active `Set` (the existing toolbar already does this; just swap the `<button>` for `<wpd-chip>`).
+- **Multi-toggle component**: `<os-multiselect>` for the edges control (popover with checkboxes saves toolbar real estate). Post-type chips become `<os-chip>` rows with a thin parent owning the active `Set` (the existing toolbar already does this; just swap the `<button>` for `<os-chip>`).
 - **User-meta key naming**: `desktop_mode_content_graph_prefs` (per the `desktop_mode_<feature>` convention from `os-settings.php`).
 - **Menu-edge filter precision**: `_menu_item_type='post_type'` AND `_menu_item_object_id` resolves to a post in scope. Skip terms (`taxonomy`) and custom URLs (`custom`).
 
@@ -158,12 +158,12 @@ Content Graph today is a single-geometry tool: one force-directed layout, one ed
                               │ wired by index.ts orchestration
                               │
         ┌─────────────────────┴───────────────────────────────────────────┐
-        │  Toolbar (refactored to <wpd-*>)                                │
+        │  Toolbar (refactored to <os-*>)                                │
         │                                                                 │
-        │   <wpd-segmented> Lens     :  Constellation | Galaxy            │
-        │   <wpd-select>    Taxonomy :  (visible only in Galaxy)          │
-        │   <wpd-chip> row  Types    :  per post-type (existing concept)  │
-        │   <wpd-multiselect> Edges  :  links | co-tag | co-author |     │
+        │   <os-segmented> Lens     :  Constellation | Galaxy            │
+        │   <os-select>    Taxonomy :  (visible only in Galaxy)          │
+        │   <os-chip> row  Types    :  per post-type (existing concept)  │
+        │   <os-multiselect> Edges  :  links | co-tag | co-author |     │
         │                              hierarchy | menu                   │
         │   Search input + Fit button (preserved)                         │
         └─────────────────────────────────────────────────────────────────┘
@@ -223,26 +223,26 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 - Test: `tests/phpunit/tests/contentGraphEdgeBuilders.php`
 
 **Approach:**
-- Add `post_parent` and `post_author` to the SELECT in `desktop_mode_content_graph_fetch_rows()`. Hierarchy and co-author edges derive in pure PHP from the same fetched rows (no extra query).
+- Add `post_parent` and `post_author` to the SELECT in `openstation_content_graph_fetch_rows()`. Hierarchy and co-author edges derive in pure PHP from the same fetched rows (no extra query).
 - Co-tag: one bulk `wp_term_relationships` JOIN keyed on in-scope post IDs, filtered to taxonomies other than the currently-clustering taxonomy. Co-tag is symmetric, dedupe on ordered `(min, max)` pair.
 - Menu: `wp_get_nav_menus()` to enumerate menus, then `wp_get_nav_menu_items($menu)` per menu, filter to `_menu_item_type='post_type'` AND `_menu_item_object_id` is in scope. Emit one edge per (menu_item -> target_post_id) where source is either the menu's representative post or the menu item's parent post if any.
-- Extend `desktop_mode_content_graph_cache_key()`'s hash domain to include term-relationships state digest and nav-menu state digest, both keyed on the in-scope post IDs.
+- Extend `openstation_content_graph_cache_key()`'s hash domain to include term-relationships state digest and nav-menu state digest, both keyed on the in-scope post IDs.
 - Add cache-flush hooks: `set_object_terms`, `wp_update_nav_menu`, `wp_update_nav_menu_item`.
 - REST `/nodes` accepts an `edges` query parameter (CSV list of edge kinds to include). Default = all kinds the requesting client wants (carried via the toolbar's edge-toggle state). Build returns edges with a `kind` field on each.
 - Edges come back as `array{ from: int, to: int, kind: string }`. Existing hyperlink edges become `kind: 'link'`.
 - **Per-node term membership emission** (consumed by U5's Galaxy clustering): each node in the `/nodes` response carries a `terms` field shaped as `array<taxonomy_slug, int[]>` mapping taxonomy slug to the term ids that node belongs to. Scope: only taxonomies the build is asked about (a new `taxonomies` query parameter, defaulting to the user's saved Galaxy taxonomy plus any other taxonomies referenced by the requested edge kinds, e.g., co-tag implies all non-clustering public taxonomies). Same bulk `wp_term_relationships` JOIN as the co-tag extractor; the membership map is a side-output of the same query, so the cost is one query (not N), shared.
-- **Payload-size bound:** the per-node `terms` map sizes proportionally to (number of taxonomies in scope) × (average terms per node). Practical bound on a 500-node site with 3 in-scope taxonomies and an average of 4 terms per taxonomy per node is roughly 500 × 3 × 4 = 6000 small int values, on the order of tens of kilobytes pre-gzip. The build truncates `terms[<taxonomy>]` for any single node above 50 entries (a defensive cap; users with more terms per post on one taxonomy hit a documented limit, and the truncation is logged via `do_action('desktop_mode_content_graph_terms_truncated', $post_id, $taxonomy, $count)` for observability). The same query is required for co-tag edge generation regardless, so this adds no new query cost on top of edges; it just keeps the data product instead of discarding it.
+- **Payload-size bound:** the per-node `terms` map sizes proportionally to (number of taxonomies in scope) × (average terms per node). Practical bound on a 500-node site with 3 in-scope taxonomies and an average of 4 terms per taxonomy per node is roughly 500 × 3 × 4 = 6000 small int values, on the order of tens of kilobytes pre-gzip. The build truncates `terms[<taxonomy>]` for any single node above 50 entries (a defensive cap; users with more terms per post on one taxonomy hit a documented limit, and the truncation is logged via `do_action('openstation_content_graph_terms_truncated', $post_id, $taxonomy, $count)` for observability). The same query is required for co-tag edge generation regardless, so this adds no new query cost on top of edges; it just keeps the data product instead of discarding it.
 
 **Patterns to follow:**
-- `desktop_mode_content_graph_fetch_rows()` in `includes/content-graph/graph-builder.php` (raw `$wpdb` with prepared `IN(...)` placeholders).
-- Existing cache-key construction in `desktop_mode_content_graph_cache_key()`.
+- `openstation_content_graph_fetch_rows()` in `includes/content-graph/graph-builder.php` (raw `$wpdb` with prepared `IN(...)` placeholders).
+- Existing cache-key construction in `openstation_content_graph_cache_key()`.
 
 **Test scenarios:**
 - Happy path: a fixture with three posts, two share a tag, two share an author, one has `post_parent` set to another. Calling build with all four new edge kinds returns the expected set of typed edges, no duplicates, no self-edges.
 - Happy path (edges parameter contract): requesting `edges=link,co_tag` returns only hyperlink and co-tag edges, with no co-author, hierarchy, or menu edges in the response. Requesting `edges=link` returns only hyperlink edges. Confirms the parameter U3's `fetchGraph(cfg, types, edgeKinds)` contract depends on.
 - Happy path (Covers AE1): a post tagged with two categories produces co-tag edges to other posts in either category when clustering by a different taxonomy.
 - Happy path (per-node terms emission): with a fixture of three posts where post A has terms `[1, 2]` in `category` and `[10]` in `post_tag`, the response node for A carries `terms: { category: [1, 2], post_tag: [10] }`. Posts with no terms in any in-scope taxonomy carry an empty `terms: {}` object (not omitted, so the field is reliably present on every node).
-- Edge case (terms truncation cap): a single post with more than 50 terms in a single taxonomy has its `terms[<taxonomy>]` truncated to 50 entries, and `do_action('desktop_mode_content_graph_terms_truncated', $post_id, $taxonomy, $count)` fires once with the original count.
+- Edge case (terms truncation cap): a single post with more than 50 terms in a single taxonomy has its `terms[<taxonomy>]` truncated to 50 entries, and `do_action('openstation_content_graph_terms_truncated', $post_id, $taxonomy, $count)` fires once with the original count.
 - Edge case: post with no terms in any taxonomy produces no co-tag edges.
 - Edge case: posts in different post types are still candidates for co-author edges if they share `post_author`.
 - Edge case: nav menu containing a custom-URL item plus a post-type item produces only the post-type edge (custom URL skipped).
@@ -260,7 +260,7 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 
 ### U2. PHP: preferences endpoint and config injection
 
-**Goal:** New per-user preferences endpoint following the `os-settings.php` pattern. Inject initial preferences and the public-taxonomy catalog into `desktopModeWindowConfig` so first paint avoids a REST round-trip.
+**Goal:** New per-user preferences endpoint following the `os-settings.php` pattern. Inject initial preferences and the public-taxonomy catalog into `openStationWindowConfig` so first paint avoids a REST round-trip.
 
 **Requirements:** R4, R14
 
@@ -273,8 +273,8 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 - Test: `tests/phpunit/tests/contentGraphPreferences.php`
 
 **Approach:**
-- New file `preferences.php` with constant `DESKTOP_MODE_CONTENT_GRAPH_PREFS_META_KEY = 'desktop_mode_content_graph_prefs'`.
-- Two REST routes under `desktop-mode/v1/content-graph/preferences`: `GET` (returns merged-with-defaults) and `POST` (sanitizes + stores). Permission callback shared with existing `desktop_mode_content_graph_rest_permission()`.
+- New file `preferences.php` with constant `OPENSTATION_CONTENT_GRAPH_PREFS_META_KEY = 'desktop_mode_content_graph_prefs'`.
+- Two REST routes under `desktop-mode/v1/content-graph/preferences`: `GET` (returns merged-with-defaults) and `POST` (sanitizes + stores). Permission callback shared with existing `openstation_content_graph_rest_permission()`.
 - Schema (illustrative, fields that exist v1):
   - `lens`: enum `'constellation' | 'galaxy'`, default `'constellation'`.
   - `byLens.constellation.types`: string[] of post-type slugs (defaults to all public).
@@ -288,7 +288,7 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 
 **Patterns to follow:**
 - `includes/os-settings.php` end-to-end (meta key naming, sanitizer/defaults, REST route registration, schema-driven validation).
-- Existing `config` array injection in `desktop_mode_register_window` call inside `includes/content-graph/window.php`.
+- Existing `config` array injection in `openstation_register_window` call inside `includes/content-graph/window.php`.
 
 **Test scenarios:**
 - Happy path: GET returns defaults for a user with no stored prefs.
@@ -302,7 +302,7 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 
 **Verification:**
 - PHPUnit `test-content-graph-preferences.php` passes.
-- Manual: open Content Graph as a logged-in user; check `window.desktopModeWindowConfig['desktop-mode-content-graph']` contains `prefs`, `taxonomies`, `edgeKinds`.
+- Manual: open Content Graph as a logged-in user; check `window.openStationWindowConfig['desktop-mode-content-graph']` contains `prefs`, `taxonomies`, `edgeKinds`.
 - `npm run lint`, `npm run typecheck`, `npm run test:js` green.
 
 ---
@@ -450,9 +450,9 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 
 ---
 
-### U6. Toolbar: <wpd-*> migration plus lens / taxonomy / edges controls
+### U6. Toolbar: <os-*> migration plus lens / taxonomy / edges controls
 
-**Goal:** Migrate `src/content-graph/toolbar.ts` from raw DOM to `<wpd-*>` components. Add the lens segmented control, taxonomy dropdown, and edges multi-toggle. Per-lens visibility rules: taxonomy dropdown visible only in Galaxy; edges multi-toggle visible in both lenses.
+**Goal:** Migrate `src/content-graph/toolbar.ts` from raw DOM to `<os-*>` components. Add the lens segmented control, taxonomy dropdown, and edges multi-toggle. Per-lens visibility rules: taxonomy dropdown visible only in Galaxy; edges multi-toggle visible in both lenses.
 
 **Requirements:** R1, R4, R11, R16
 
@@ -463,17 +463,17 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 - Test: `tests/vitest/content-graph-toolbar.test.ts`
 
 **Approach:**
-- Replace the existing raw `<button>` chip rendering with `<wpd-chip>` rows. The parent owner of the active `Set` stays; only the rendered element changes.
-- New `<wpd-segmented>` for the lens picker, with two `<wpd-segment>` children. `wpd-pick` event fires `onLensChange(lensId)`.
-- New `<wpd-select>` for the taxonomy dropdown, populated from `cfg.taxonomies`. Hidden when the active lens is Constellation. `wpd-pick` fires `onTaxonomyChange(slug)`.
-- New `<wpd-multiselect>` for the edges toggle, populated from `cfg.edgeKinds`. `wpd-pick` fires `onEdgesChange(kinds)`.
+- Replace the existing raw `<button>` chip rendering with `<os-chip>` rows. The parent owner of the active `Set` stays; only the rendered element changes.
+- New `<os-segmented>` for the lens picker, with two `<os-segment>` children. `os-pick` event fires `onLensChange(lensId)`.
+- New `<os-select>` for the taxonomy dropdown, populated from `cfg.taxonomies`. Hidden when the active lens is Constellation. `os-pick` fires `onTaxonomyChange(slug)`.
+- New `<os-multiselect>` for the edges toggle, populated from `cfg.edgeKinds`. `os-pick` fires `onEdgesChange(kinds)`.
 - Search input + Fit button preserved (refactor styling to fit the new component layout if needed).
-- Layout: use `<wpd-row>` / `<wpd-cluster>` to compose the toolbar. Mobile/narrow handling: the existing toolbar sits in a horizontally-scrollable container; preserve.
+- Layout: use `<os-row>` / `<os-cluster>` to compose the toolbar. Mobile/narrow handling: the existing toolbar sits in a horizontally-scrollable container; preserve.
 - Removal: delete the raw `escapeHtml`/`escapeAttr` helpers if they become unused after migration.
 
 **Patterns to follow:**
-- Other toolbar consumers of `<wpd-segmented>` and `<wpd-select>` in the repo (the research map called these out as established stable components).
-- `panel.ts`'s use of `wpd-spinner` for a precedent of `<wpd-*>` consumption inside content-graph.
+- Other toolbar consumers of `<os-segmented>` and `<os-select>` in the repo (the research map called these out as established stable components).
+- `panel.ts`'s use of `os-spinner` for a precedent of `<os-*>` consumption inside content-graph.
 
 **Test scenarios:**
 - Happy path: clicking a lens segment fires `onLensChange` with the picked id.
@@ -531,7 +531,7 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 
 ### U8. Documentation updates
 
-**Goal:** Backfill the existing `desktop_mode_content_graph_*` filters in `docs/hooks-reference.md` (the gap research found). Document any new filters introduced by this work. Skip new `wp.desktop.*` API and `docs/examples/` entries; both are deferred per Key Technical Decisions.
+**Goal:** Backfill the existing `openstation_content_graph_*` filters in `docs/hooks-reference.md` (the gap research found). Document any new filters introduced by this work. Skip new `wp.os.*` API and `docs/examples/` entries; both are deferred per Key Technical Decisions.
 
 **Requirements:** Indirect (preserves the project's documented-contract rule from `AGENTS.md`).
 
@@ -542,9 +542,9 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 - Modify (only if a new filter is added during U1-U7): the same.
 
 **Approach:**
-- Add a new section in `docs/hooks-reference.md` covering the existing Content Graph filters that aren't documented today: `desktop_mode_content_graph_window_args`, `desktop_mode_content_graph_icon_args`, `desktop_mode_content_graph_user_can_use`, `desktop_mode_content_graph_post_types`, `desktop_mode_content_graph_template_html`. Status: Stable. Cite signatures and a one-line use case for each.
+- Add a new section in `docs/hooks-reference.md` covering the existing Content Graph filters that aren't documented today: `openstation_content_graph_window_args`, `openstation_content_graph_icon_args`, `openstation_content_graph_user_can_use`, `openstation_content_graph_post_types`, `openstation_content_graph_template_html`. Status: Stable. Cite signatures and a one-line use case for each.
 - If the implementation adds any new filter (likely candidates: a filter on the edge-kind catalog, a filter on the taxonomy catalog, a filter on the prefs schema), document it in the same section with status: Experimental and a note that the surface may change.
-- Skip `docs/javascript-reference.md` updates: no public `wp.desktop.*` surface added in v1.
+- Skip `docs/javascript-reference.md` updates: no public `wp.os.*` surface added in v1.
 - Skip `docs/examples/`: no public extension surface to demo.
 
 **Test expectation:** none. Documentation-only unit; correctness is reviewed via human read-through during PR review.
@@ -575,9 +575,9 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 | Force-sim becomes unstable when attractor force is added (oscillation, escape velocity). | The existing `MAX_VELOCITY` clamp and damping factor cap blow-up. Force coefficient tuning deferred to implementation with empirical fixtures (sparse, typical, dense sites). Tests assert convergence within N ticks for the typical case. |
 | Co-tag query becomes expensive on sites with many tags or many posts (N posts × M tags). | One bulk `wp_term_relationships` JOIN keyed on the in-scope post IDs already fetched, not per-post. Existing transient cache covers steady-state cost. If empirical pain emerges, an opt-in "compute co-tag edges only on demand" path is a clean follow-up. |
 | Cache invalidation gaps cause stale edges (e.g., a hook we forgot to listen to). | Explicit hook list in U1: `save_post`, `deleted_post`, `set_object_terms`, `wp_update_nav_menu`, `wp_update_nav_menu_item`. Integration tests in U1 exercise the most likely scenarios. |
-| `<wpd-*>` migration of the existing chip row introduces visual regressions. | Toolbar visual diff via screenshots before/after on a seeded site during PR review. The component-kit replacements are functionally equivalent; risk is in styling spacing or dashicon rendering. |
+| `<os-*>` migration of the existing chip row introduces visual regressions. | Toolbar visual diff via screenshots before/after on a seeded site during PR review. The component-kit replacements are functionally equivalent; risk is in styling spacing or dashicon rendering. |
 | Lens switch loses camera or focus state because the rebuild path (`loadGraph()` + `setData()`) snaps to fit-to-view. | Resolved in design: `setData()` preserves `focusedId` and camera target on rebuilds, and `loadGraph()` accepts a `reason` flag that suppresses `fitToView()` and `clearFocus()` on lens-switch loads. AE4 is enforced as an explicit test scenario in U5. Any regression is caught by the test, not by review alone. |
-| Per-node `terms` payload grows unbounded on sites with very long taxonomies (e.g., a tag taxonomy with hundreds of terms per post). | Per-node-per-taxonomy 50-term truncation cap in U1, with `do_action('desktop_mode_content_graph_terms_truncated', ...)` for observability. The scoping rule (only request taxonomies actually needed by the active lens + visible edge kinds) keeps typical payloads bounded; the cap is the safety net for outliers. |
+| Per-node `terms` payload grows unbounded on sites with very long taxonomies (e.g., a tag taxonomy with hundreds of terms per post). | Per-node-per-taxonomy 50-term truncation cap in U1, with `do_action('openstation_content_graph_terms_truncated', ...)` for observability. The scoping rule (only request taxonomies actually needed by the active lens + visible edge kinds) keeps typical payloads bounded; the cap is the safety net for outliers. |
 | Bridge highlighting visually overpowers cross-cluster signal because intra-dim alpha is too aggressive (or too mild). | Default `intraDimAlpha = 0.06`; expose as a per-lens config field so it can be tuned without recompile. Tune empirically against seeded fixtures. |
 | Preferences schema drift between PHP and TS leads to silent field loss. | PHP sanitizer is the gate; TS types describe the same shape; PHP unit tests in U2 assert the round-trip. Whenever the schema changes, both sides update in the same commit. |
 
@@ -589,13 +589,13 @@ The lens system is two TS-side constants (one per lens) keyed by id. Each consta
 - Translation (i18n): user-facing strings ("Constellation", "Galaxy", lens labels, taxonomy labels, edge-kind labels, "Uncategorized") flow through the existing `__()` helper. Per the project memory, do NOT regenerate the POT/PO/JSON in this PR. That is a batched pre-translation step.
 - Operational rollout: this is a single-plugin feature; no migration, no feature flag in v1. Ships in the next plugin release.
 - Build: per `AGENTS.md`, run `npm run build` after every code change. Specifically `npm run build:content-graph` covers the relevant bundle, and `npm run build` covers all targets.
-- PHPUnit conventions: every new test class under `tests/phpunit/tests/` MUST carry the `@group desktop-mode` PHPDoc tag at the class level. The repo's `tests/phpunit/phpunit.xml.dist` filters tests by `@group desktop-mode`; without the tag, the class runs zero tests and the suite reports green silently. File naming follows the existing camelCase convention (e.g., `contentGraphEdgeBuilders.php`, `contentGraphPreferences.php`).
+- PHPUnit conventions: every new test class under `tests/phpunit/tests/` MUST carry the `@group openstation` PHPDoc tag at the class level. The repo's `tests/phpunit/phpunit.xml.dist` filters tests by `@group openstation`; without the tag, the class runs zero tests and the suite reports green silently. File naming follows the existing camelCase convention (e.g., `contentGraphEdgeBuilders.php`, `contentGraphPreferences.php`).
 
 ---
 
 ## Sources & References
 
 - **Origin document:** [docs/brainstorms/content-graph-multi-lens-galaxy-requirements.md](../brainstorms/content-graph-multi-lens-galaxy-requirements.md)
-- Related code: `src/content-graph/`, `includes/content-graph/`, `src/ui/components/wpd-segmented/`, `src/ui/components/wpd-select/`, `src/ui/components/wpd-multiselect/`, `src/ui/components/wpd-chip/`, `includes/os-settings.php`, `src/boot/session-saver.ts`
+- Related code: `src/content-graph/`, `includes/content-graph/`, `src/ui/components/os-segmented/`, `src/ui/components/os-select/`, `src/ui/components/os-multiselect/`, `src/ui/components/os-chip/`, `includes/os-settings.php`, `src/boot/session-saver.ts`
 - Related PRs/issues: none yet.
 - External docs: none used.
