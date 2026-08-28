@@ -9,8 +9,51 @@ Applied on 2026-08-28: steps 1, 2, 3 and 6 (step 3 is ruleset 21726771,
 decided, not changed: zero required reviews stays, on purpose. Step 5.1 and
 step 7 are the pinning PR, which also pins `actions/checkout` and
 `actions/github-script` in `pr-preview-publish.yml` (unpinned too, and it
-would break under step 5.2). Step 5.2 was applied after that PR (#698) merged: `sha_pinning_required:
-true`, `allowed_actions: selected` kept. Every step is now done.
+would break under step 5.2). Step 5.2 was applied after that PR (#698) merged
+and then **reverted the same day** — see "The transitive-dependency trap"
+below. Final state: steps 1, 2, 3, 5.1, 6 and 7 applied; step 4 decided; step
+5.2 abandoned as unusable.
+
+## The transitive-dependency trap (read before re-enabling 5.2 or editing 6)
+
+**Both `sha_pinning_required` and `allowed_actions` are enforced transitively,
+into the nested `uses:` of third-party composite actions we do not control.**
+The rules are evaluated at "Set up job", before any step runs, so the job list
+comes back empty and the only evidence is one annotation on the run.
+
+Two workflows broke this way, neither of which had changed:
+
+- **`pr-preview-publish.yml`**, by step 5.2.
+  `WordPress/action-wp-playground-pr-preview/.github/actions/expose-artifact-on-public-url`
+  does `uses: actions/download-artifact@v4` in its own `action.yml`. GitHub-
+  owned, so the allow-list permits it, but it is a tag. Unfixable from this
+  repo without forking upstream, which is why 5.2 was abandoned.
+- **`claude.yml`**, by step 6. `anthropics/claude-code-action` does
+  `uses: oven-sh/setup-bun@0c5077e5…`, already SHA-pinned but from an owner
+  that was not in the patterns. Fixed by adding `oven-sh/setup-bun@*`.
+
+Two things make this hard to notice:
+
+1. Neither workflow is `pull_request`-triggered (`workflow_run` and
+   `issue_comment`), so neither runs during a PR and neither appears on a PR's
+   checks tab. The Actions tab is the only place they surface.
+2. `claude.yml` only executes on an `@claude` mention; every run in between was
+   `skipped`, so step 6 broke it silently and it stayed broken until someone
+   invoked the bot.
+
+**So auditing the top-level `uses:` in `.github/workflows/` is not sufficient.**
+Before adding a pattern-based restriction, read the `action.yml` of every
+third-party action in use and enumerate its nested `uses:` too. A green
+`trunk-build.yml` run proves nothing here: it only uses `actions/checkout` and
+`actions/setup-node`. `release.yml` is safe for a different reason, the 10up
+deploy action is a Docker action with no nested `uses:` at all.
+
+**Current settings after the revert:** `allowed_actions: selected`,
+`sha_pinning_required: false`, patterns = the four above plus
+`oven-sh/setup-bun@*`. Our own workflows remain SHA-pinned in code from #698;
+that is the protection that matters. The lost piece is enforcement against
+future drift in our own files, which a repo-side CI check could restore
+without reaching into upstream actions.
 
 ## 1. Default workflow token: write → read, and no PR approvals
 
