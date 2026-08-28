@@ -83,8 +83,11 @@ while IFS= read -r d; do
       </a>
 "
   done <<< "$subfiles"
-  SECTIONS+="    <section class=\"group\">
-      <h2 class=\"group-title\">${heading} <span class=\"group-path\">${rel}/</span></h2>
+  SECTIONS+="    <section class=\"group\" data-group=\"${rel}\">
+      <h2 class=\"group-title\" role=\"button\" tabindex=\"0\" aria-expanded=\"true\">
+        <span class=\"group-caret\" aria-hidden=\"true\">&#9662;</span>${heading} <span class=\"group-path\">${rel}/</span>
+        <span class=\"collapsed-badge\">Collapsed</span>
+      </h2>
       <div class=\"grid\">
 ${SUB}      </div>
     </section>
@@ -124,9 +127,18 @@ cat > "$DOCS/index.html" <<HTML
   .empty{color:var(--muted);text-align:center;padding:40px}
   .group{margin-top:8px}
   .group-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:44px 0 16px;padding-top:26px;
-    border-top:1px solid var(--line);font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+    border-top:1px solid var(--line);font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.2px;
+    cursor:pointer;user-select:none;border-radius:4px}
+  .group-title:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
   .group-title a{color:var(--ink);text-decoration:none}
   .group-title a:hover{color:var(--accent);text-decoration:underline}
+  .group-caret{display:inline-block;font-size:15px;color:var(--accent);transition:transform .15s ease}
+  .group.collapsed .group-caret{transform:rotate(-90deg)}
+  .group.collapsed .grid{display:none}
+  .collapsed-badge{display:none;margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);background:#eef1f7;border:1px solid var(--line);
+    border-radius:999px;padding:3px 10px}
+  .group.collapsed .collapsed-badge{display:inline-block}
   .group-path{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--accent);letter-spacing:0}
   footer{max-width:880px;margin:0 auto;padding:0 22px 60px;color:var(--muted);font-size:12.5px;text-align:center}
   @media(max-width:560px){header h1{font-size:30px}.grid{grid-template-columns:1fr}}
@@ -141,6 +153,58 @@ cat > "$DOCS/index.html" <<HTML
   <main>
 ${TOPGRID}${SECTIONS}  </main>
   <footer>${TOTAL} document(s) &middot; auto-generated index &middot; <a href="${PAGES_URL}">${PAGES_URL}</a></footer>
+  <script>
+  (function () {
+    'use strict';
+    var STORAGE_KEY = 'wairehouse-docs-collapsed-groups';
+    var collapsed;
+    try {
+      collapsed = new Set(JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]'));
+    } catch (e) {
+      collapsed = new Set();
+    }
+
+    function save() {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(collapsed)));
+      } catch (e) { /* private browsing or storage disabled: state just won't persist */ }
+    }
+
+    function setState(section, title, isCollapsed) {
+      section.classList.toggle('collapsed', isCollapsed);
+      title.setAttribute('aria-expanded', String(!isCollapsed));
+    }
+
+    var sections = document.querySelectorAll('section.group[data-group]');
+    for (var i = 0; i < sections.length; i++) {
+      (function (section) {
+        var name = section.getAttribute('data-group');
+        var title = section.querySelector('.group-title');
+        if (!title) return;
+
+        setState(section, title, collapsed.has(name));
+
+        function toggle() {
+          var isCollapsed = !section.classList.contains('collapsed');
+          setState(section, title, isCollapsed);
+          if (isCollapsed) { collapsed.add(name); } else { collapsed.delete(name); }
+          save();
+        }
+
+        title.addEventListener('click', function (e) {
+          if (e.target.closest('a')) return; // clicking the heading link navigates instead of toggling
+          toggle();
+        });
+        title.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            toggle();
+          }
+        });
+      })(sections[i]);
+    }
+  })();
+  </script>
 </body>
 </html>
 HTML
