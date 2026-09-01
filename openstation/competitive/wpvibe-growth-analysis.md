@@ -1,7 +1,7 @@
 # WPVibe growth analysis (June-July 2026)
 
 **Date:** July 31, 2026
-**Subject:** Why `vibe-ai` (WPVibe, wpvibe.ai) grew from a niche plugin to 6,000+ active installs, with downloads-per-day spiking after June 25, 2026. OpenStation sits at ~2,800 installs for comparison.
+**Subject:** Why `vibe-ai` (WPVibe, wpvibe.ai) grew from a niche plugin to 6,000+ active installs, with downloads-per-day spiking after June 25, 2026. Desktop Mode sits at ~2,800 installs for comparison.
 
 ## TL;DR
 
@@ -83,11 +83,11 @@ MCP became the standard for wiring AI clients to tools; WPVibe claimed the "the 
 | Jul 10-28 | Near-daily releases; builder integrations, white label, dashboard widget |
 | Jul 31 | 6,000+ active installs, 9,437 downloads in prior 7 days |
 
-## Conclusions relevant to OpenStation
+## Conclusions relevant to Desktop Mode
 
 1. **The spike decomposes as roughly one-third mechanics, two-thirds playbook.** Update downloads from a frantic release cadence inflate the chart; the rest is a coordinated Awesome Motive launch: owned-media reviews, sister-brand SEO, an SEJ placement, YouTube influencers, and an AI-client app store listing, all concentrated in five weeks.
-2. **Directional difference.** WPVibe brings WordPress into the AI client where users already live, so it inherits the AI clients' distribution. OpenStation brings a richer UX into WordPress and has to earn every wordpress.org visit.
-3. **Copyable tactic (a): AI-client directories.** ChatGPT apps / Claude connectors listings are free distribution. OpenStation's AI Copilot could plausibly pursue an MCP-facing surface to qualify.
+2. **Directional difference.** WPVibe brings WordPress into the AI client where users already live, so it inherits the AI clients' distribution. Desktop Mode brings a richer UX into WordPress and has to earn every wordpress.org visit.
+3. **Copyable tactic (a): AI-client directories.** ChatGPT apps / Claude connectors listings are free distribution. Desktop Mode's AI Copilot could plausibly pursue an MCP-facing surface to qualify.
 4. **Copyable tactic (b): visible release cadence.** Frequent releases signal momentum on the listing ("last updated 3 days ago") and lift the download chart that prospects use as a quality proxy.
 5. **The moat is distribution, not community.** A 4.9 rating on only 17 reviews says the install base is early and review velocity is being actively encouraged.
 
