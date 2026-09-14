@@ -1,0 +1,39 @@
+{
+    "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+    "landingPage": "/wp-admin/",
+    "preferredVersions": {
+        "php": "8.3",
+        "wp": "latest"
+    },
+    "features": {
+        "networking": true
+    },
+    "plugins": ["gutenberg"],
+    "login": true,
+    "steps": [
+        {
+            "step": "setSiteOptions",
+            "options": {
+                "blogname": "WP Admin Design Prototype",
+                "blogdescription": "Playground-powered design environment",
+                "permalink_structure": "/%postname%/"
+            }
+        },
+        {
+            "step": "updateUserMeta",
+            "meta": {
+                "admin_color": "modern"
+            },
+            "userId": 1
+        },
+        {
+            "step": "writeFile",
+            "path": "/wordpress/wp-content/mu-plugins/design-tool-deps.php",
+            "data": "<?php\n/**\n * Plugin Name: WP Admin Design Tool \u2014 Dependency Loader\n * Description: Ensures @wordpress/components, @wordpress/element, and @wordpress/dataviews\n *              are loaded on all admin pages, not just the block editor. This mu-plugin is\n *              written into Playground by the Blueprint and is required for the design tool\n *              to work on classic admin pages.\n *\n * @prototype\n */\n\nadd_action( 'admin_enqueue_scripts', function() {\n    // These scripts are registered by WordPress/Gutenberg core but only\n    // enqueued automatically on block editor pages. We force-enqueue them\n    // on ALL admin pages so design prototypes can use wp.components anywhere.\n\n    // Check that the handles exist (Gutenberg must be active)\n    $required = array( 'wp-element', 'wp-components', 'wp-data', 'wp-i18n' );\n    $missing  = array();\n\n    foreach ( $required as $handle ) {\n        if ( wp_script_is( $handle, 'registered' ) ) {\n            wp_enqueue_script( $handle );\n        } else {\n            $missing[] = $handle;\n        }\n    }\n\n    // Also enqueue the component styles\n    if ( wp_style_is( 'wp-components', 'registered' ) ) {\n        wp_enqueue_style( 'wp-components' );\n    }\n\n    // Optionally enqueue DataViews if registered\n    if ( wp_script_is( 'wp-dataviews', 'registered' ) ) {\n        wp_enqueue_script( 'wp-dataviews' );\n    }\n\n    // Enqueue editor packages for SlotFill support\n    $editor_packages = array( 'wp-plugins', 'wp-editor', 'wp-blocks', 'wp-block-editor' );\n    foreach ( $editor_packages as $handle ) {\n        if ( wp_script_is( $handle, 'registered' ) ) {\n            wp_enqueue_script( $handle );\n        }\n    }\n\n    // Surface errors visibly if critical packages are missing\n    if ( ! empty( $missing ) ) {\n        add_action( 'admin_notices', function() use ( $missing ) {\n            echo '<div class=\"notice notice-error\"><p>';\n            echo '<strong>WP Admin Design Tool:</strong> Missing script handles: <code>' . implode( '</code>, <code>', $missing ) . '</code>. ';\n            echo 'Ensure the Gutenberg plugin is installed and active.';\n            echo '</p></div>';\n        });\n    }\n}, 5 ); // Priority 5 \u2014 run early so prototypes can depend on these\n"
+        },
+        {
+            "step": "runPHP",
+            "code": "<?php require '/wordpress/wp-load.php'; wp_insert_post(array('post_title' => 'Sample Post: Design System Test', 'post_status' => 'publish', 'post_content' => '<!-- wp:paragraph --><p>Sample post for testing editor modifications.</p><!-- /wp:paragraph --><!-- wp:heading --><h2 class=\"wp-block-heading\">Section Heading</h2><!-- /wp:heading --><!-- wp:paragraph --><p>More content for testing block interactions and sidebar panels.</p><!-- /wp:paragraph -->')); wp_insert_post(array('post_title' => 'Sample Page: Settings Prototype', 'post_status' => 'publish', 'post_type' => 'page', 'post_content' => '<!-- wp:paragraph --><p>A sample page for prototyping admin page layouts.</p><!-- /wp:paragraph -->'));"
+        }
+    ]
+}
