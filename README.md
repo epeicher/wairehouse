@@ -16,6 +16,7 @@ Served by GitHub Pages from the [`docs/`](docs/) folder.
 |------|---------------|
 | [`docs/`](docs/) | Self-contained HTML plans + an auto-generated `index.html`. Published via GitHub Pages. |
 | Project folders (e.g. [`openstation/`](openstation/), [`reprint/`](reprint/)) | Markdown plans, specs, brainstorms, and investigations about a specific project or repo. |
+| [`skills/`](skills/) | Agent skills collected from around the web, kept here until they find a proper home. |
 | [`build-docs-index.sh`](build-docs-index.sh) | Rebuilds `docs/index.html` from each file's `<title>`. |
 | [`.github/workflows/build-index.yml`](.github/workflows/build-index.yml) | Rebuilds the index automatically on every push to `docs/`. |
 
