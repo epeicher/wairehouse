@@ -3,6 +3,7 @@
 **Repo:** alcazaba-plugin (OpenStation, wp.org slug `desktop-mode`), trunk at 1.1.9
 **Origin:** [Marketing strategy, section 6](../marketing/2026-09-16-installs-north-star-marketing-strategy.md): "We cannot fix churn we cannot see. The single most important instrument in the plan."
 **Pairs with:** [First-run activation](2026-09-16-002-feat-first-run-activation-plan.md), which adds the install stamp this payload reads. Either can ship first; this plan degrades to `null` where the stamp is absent.
+**Collector:** a small intake plugin on openstation.blog (WordPress.com), described in "The collector" below. It is a second deliverable in its own repo and has to be live before the plugin change ships.
 
 ## The problem
 
@@ -22,7 +23,7 @@ When a site admin deactivates OpenStation, a dialog asks one optional question b
 > What we send: your answer, the plugin, WordPress and PHP versions, your site language, and how long OpenStation was installed. Nothing that identifies you or your site.
 > [ Skip and deactivate ]  [ Send and deactivate ]
 
-Nothing is sent unless the admin clicks **Send**. Both buttons deactivate. Submissions are forwarded server-side to a collector we run, and land in a table we read weekly.
+Nothing is sent unless the admin clicks **Send**. Both buttons deactivate. Submissions are forwarded server-side to openstation.blog, where an intake plugin stores them in a table we read from that site's wp-admin every week.
 
 Consent is per submission, which is the opt-in wp.org's guideline 7 requires. There is no background ping in this plan.
 
@@ -33,6 +34,7 @@ Consent is per submission, which is the opt-in wp.org's guideline 7 requires. Th
 3. **The forward is synchronous, short, and best-effort.** A cron job cannot do it: the plugin is about to be deactivated and its cron callbacks will not exist. So the REST handler forwards inline with `timeout => 3`, returns 200 whatever happens, and the browser proceeds to deactivate on any response. Worst case the admin waits three seconds once.
 4. **Anonymous means no site id.** No hash of the home URL, no install UUID. A random per-submission id is enough to dedupe retries. Deliberate: it makes the disclosure a single honest sentence, and dedupe across submissions is not something the weekly read needs.
 5. **Five reasons, as specified.** A sixth, "Just testing / temporary", would cut noise from staging sites. Not added here; revisit after the first month of data.
+6. **The collector is openstation.blog, not new infrastructure.** The plugin already talks to that host (`includes/about-feed.php:15` fetches its RSS for the About tab), so the disclosure names a site users have already seen named. The intake is a WordPress plugin, the stack the team writes and reviews every day, and the weekly read is a wp-admin screen on the site Roberto already runs. The alternative, a dedicated serverless collector (a Spacefast Functions space or a Cloudflare Worker), was considered and dropped: it adds a second platform and a second account for a 150-line intake. openstation.me was ruled out specifically because it is a static Astro space today, and turning a working marketing site into a worker-kind space for one POST route is the wrong trade.
 
 ## The payload
 
@@ -48,7 +50,7 @@ Consent is per submission, which is the opt-in wp.org's guideline 7 requires. Th
   "multisite": false,
   "install_age_days": 12,           // from openstation_installed_at, null if absent
   "ever_enabled": true,             // any user has desktop_mode_mode meta (openstation_users_with_prior_desktop_use())
-  "enabled_user_count": 2,          // bucketed on the collector, exact here
+  "enabled_user_count": 2,          // bucketed by the intake plugin, exact here
   "first_enable_delay_days": 0,     // from openstation_first_enabled_at, null if absent
   "deactivator_enabled": false,     // openstation_is_enabled() for the current user
   "active_plugins": 23,             // count only, no slugs
@@ -68,7 +70,7 @@ require_once OPENSTATION_DIR . 'includes/feedback/bootstrap.php';
 
 Files:
 
-- `bootstrap.php`: requires the two below; defines `OPENSTATION_FEEDBACK_ENDPOINT` (the collector URL) and the `openstation_deactivation_feedback_enabled()` helper (`apply_filters( 'openstation_deactivation_feedback_enabled', true )`).
+- `bootstrap.php`: requires the two below; defines `OPENSTATION_FEEDBACK_ENDPOINT` as `https://openstation.blog/wp-json/openstation-feedback/v1/deactivation` and the `openstation_deactivation_feedback_enabled()` helper (`apply_filters( 'openstation_deactivation_feedback_enabled', true )`).
 - `deactivation.php`: the screen hook, the payload builder, the forwarder.
 - `rest.php`: the route.
 
@@ -136,7 +138,7 @@ $response = wp_remote_post( apply_filters( 'openstation_deactivation_feedback_en
 return ! is_wp_error( $response ) && 2 === (int) floor( wp_remote_retrieve_response_code( $response ) / 100 );
 ```
 
-`wp_remote_post`, not `wp_safe_remote_post`: the destination is a constant we own, and the filter is for hosts that want to point it at their own collector. phpcs has no rule on `wp_remote_*`; `WordPress.WP.AlternativeFunctions` forbids raw cURL, which is fine.
+`wp_remote_post`, not `wp_safe_remote_post`: the destination is a constant we own, and the filter is for hosts that want to point it at their own intake (WordPress.com, for instance, may prefer an internal one). phpcs has no rule on `wp_remote_*`; `WordPress.WP.AlternativeFunctions` forbids raw cURL, which is fine.
 
 ## Client side: `src/deactivation-feedback/`
 
@@ -168,34 +170,65 @@ The dialog:
 
 `apps/plugins/parts/mutations.ts:58-69` `deactivatePlugin()` gains one branch: when `host.rest.isOpenStationSelf( row.plugin )`, load the bundle (URL from the app config, next to `selfPluginFile` at `apps/plugins/plugins.os.php:269-277`), `await askDeactivationFeedback( { …, context: 'app' } )`, then dispatch as today. Bulk deactivation in `apps/plugins/parts/actions.ts:352-378` does the same when the selection includes self. The cards view, the 1.1.9 table view, the flyout detail and the bulk bar all route through these two functions, so no other change is needed.
 
-## The collector
+## The collector: the intake plugin on openstation.blog
 
-A Cloudflare Worker with a D1 table, at a subdomain we control (proposal: `feedback.openstation.me`). It is the smallest thing that gives "a table we read weekly":
+A small standalone WordPress plugin, **OpenStation Feedback Intake**, installed on openstation.blog. The blog runs on WordPress.com's Atomic infrastructure (its responses carry the WordPress.com host header), which allows custom plugins and custom tables. It is the second deliverable of this plan and has to be live before the OpenStation change ships, because the forwarder returns 200 on any failure and a missing intake would silently discard the first weeks of data.
 
-```sql
-CREATE TABLE deactivations (
-  id TEXT PRIMARY KEY,           -- the submission uuid; INSERT OR IGNORE dedupes retries
-  received_at TEXT NOT NULL,     -- ISO 8601, server clock
-  reason TEXT NOT NULL,
-  details TEXT,
-  plugin_version TEXT, wp_version TEXT, php_version TEXT, locale TEXT,
-  multisite INTEGER, install_age_days INTEGER, ever_enabled INTEGER,
-  enabled_user_bucket TEXT,      -- "0" | "1" | "2-5" | "6+" (bucketed on ingest)
-  first_enable_delay_days INTEGER, deactivator_enabled INTEGER,
-  active_plugins_bucket TEXT,    -- "<10" | "10-29" | "30+"
-  context TEXT
-);
+**Where it lives:** its own repo, proposal `WordPress/openstation-feedback-intake`, next to the plugin. Not in `extensions/` of the plugin repo: everything there is a plugin that runs on OpenStation sites, and this one runs on ours. It never ships to wp.org.
+
+### The route
+
+```php
+register_rest_route( 'openstation-feedback/v1', '/deactivation', array(
+	'methods'             => WP_REST_Server::CREATABLE,
+	'callback'            => 'osfi_rest_receive_deactivation',
+	'permission_callback' => '__return_true',   // public by design: the senders are anonymous sites
+	'args'                => array( /* the payload keys, each with type + enum/maxLength, additionalProperties false */ ),
+) );
 ```
 
-The Worker accepts `POST /v1/deactivation` with a JSON body, validates the enum fields, buckets the two counts, drops anything else, and never logs the request IP. Rate-limit by IP in memory (Workers KV not needed) to blunt abuse. A `GET /v1/deactivation.csv` behind a bearer token is the weekly read; the marketing metrics script pulls it into the dashboard.
+The handler:
 
-Alternative considered: a REST endpoint plus custom table on openstation.blog. Works, but puts an unauthenticated write endpoint on the marketing site and couples uptime of the feedback pipe to a WordPress host. The Worker is the recommendation; the endpoint constant is the only thing the plugin knows either way.
+1. Rejects bodies over 2 KB and anything that fails the schema (`rest_invalid_param`, 400). `additionalProperties => false` so an unknown key is a reject, not a silent drop.
+2. Throttles per IP with a transient (`osfi_rl_` . `md5( ip )`, 5 per minute, 60-second window). The IP is used for the throttle key only and never stored.
+3. Buckets `enabled_user_count` into `0 | 1 | 2-5 | 6+` and `active_plugins` into `<10 | 10-29 | 30+`, truncates `details` to 1000 chars through `sanitize_textarea_field()`.
+4. `INSERT IGNORE` on the submission `id` so a retried send is not a duplicate row.
+5. Returns `{ received: true }` with 201, or 200 on the duplicate.
 
-**Decision needed before shipping:** the hostname, and who owns the Cloudflare account it lives in.
+Atomic's WAF and Jetpack Protect sit in front of this. If junk still shows up, the next step is a rotating sender token published with each plugin release, not a secret (the plugin is open source), but enough to make a spammer's job annoying.
+
+### The table
+
+`{$wpdb->prefix}openstation_feedback_deactivations`, created with `dbDelta` on activation and lazily on `admin_init` (the pattern in the OpenStation repo at `includes/games/schema.php`, including the `PRIMARY KEY  (id)` two-space quirk):
+
+| Column | Type | Note |
+|---|---|---|
+| `id` | `CHAR(36)` PK | the submission uuid |
+| `received_at_ms` | `BIGINT UNSIGNED` | server clock |
+| `reason` | `VARCHAR(32)` | indexed |
+| `details` | `TEXT` | nullable |
+| `plugin_version`, `wp_version`, `php_version`, `locale` | `VARCHAR(32)` | |
+| `multisite`, `ever_enabled`, `deactivator_enabled` | `TINYINT(1)` | |
+| `install_age_days`, `first_enable_delay_days` | `INT` nullable | `NULL` = unknown |
+| `enabled_user_bucket`, `active_plugins_bucket` | `VARCHAR(8)` | |
+| `context` | `VARCHAR(16)` | `classic`, `chromeless`, `app` |
+
+No IP, no user agent, no referer, no site identifier. Retention: nothing is pruned automatically; the rows are small and the trend over years is the point.
+
+### The weekly read
+
+- **Tools → OpenStation feedback** in the blog's wp-admin, capability `manage_options`: a `WP_List_Table` over the rows, newest first, filterable by reason and date range, with the `details` column readable inline. Above the table, a summary for the last 7 and 30 days: submissions per reason, and the `ever_enabled` split, which is the activation funnel the strategy asks for. With OpenStation turned on for the blog admin, this screen opens in a window like any other.
+- **Export:** a nonce-protected "Download CSV" action on the same screen, and `GET /openstation-feedback/v1/deactivation?after=<date>` gated on `manage_options`, so the marketing metrics script (strategy, section 7) pulls with an application password.
+
+### Its own checks
+
+PHPUnit in the intake repo, modeled on the OpenStation suite: schema rejects an unknown key and an oversize body; a duplicate id yields one row; the throttle returns 429 on the sixth request in a minute; the list route is 401 for anonymous. wp-env for local runs.
+
+**Decision needed before shipping:** the intake repo's name and owner, and who installs the plugin on openstation.blog.
 
 ## Docs and disclosure
 
-- `readme.txt`, `= External services =`: a new `**Deactivation feedback**` block in the four-label style used for the AI Assistant (lines 73-82): what is sent (the list above, "nothing that identifies you or your site"), when (only when you click Send in the dialog shown on deactivation), why (to learn what to fix), who provides the service (Automattic, with the privacy policy link). Update the FAQ answer at line 125-127 so "No." stays truthful ("…and an optional, one-click feedback form when you deactivate.").
+- `readme.txt`, `= External services =`: a new `**Deactivation feedback**` block in the four-label style used for the AI Assistant (lines 73-82): what is sent (the list above, "nothing that identifies you or your site"), when (only when you click Send in the dialog shown on deactivation), why (to learn what to fix), who provides the service (openstation.blog, operated by Automattic, with the Automattic privacy policy link). Update the FAQ answer at line 125-127 so "No." stays truthful ("…and an optional, one-click feedback form when you deactivate."). The intake repo's README carries the mirror statement: what the table holds and what it never holds.
 - `includes/rest/README.md`: the route row.
 - `docs/hooks-reference.md`: `openstation_deactivation_feedback_enabled`, `openstation_deactivation_feedback_payload`, `openstation_deactivation_feedback_endpoint`.
 - `docs/javascript-reference.md`: `wp.os.deactivationFeedback.ask()`.
@@ -223,7 +256,7 @@ On the QA wp-env (`npm run env:start`, port 8890):
 1. Classic admin, OpenStation off for the user: Plugins, Deactivate on the OpenStation row. Dialog appears. Skip deactivates without a request in the Network tab. Reactivate, Deactivate again, pick a reason, Send: one `POST /wp-json/desktop-mode/v1/feedback/deactivation`, then the deactivation redirect.
 2. Inside OpenStation with `nativePluginsEnabled` off: the Plugins dock tile opens the chromeless `plugins.php`; same behaviour inside the iframe, then `src/plugin-presence.ts` exits to classic admin as it does today.
 3. `nativePluginsEnabled` on: the native Plugins app, cards view and table view, row action and bulk. Same dialog, `context: "app"`.
-4. Point `OPENSTATION_FEEDBACK_ENDPOINT` at a local Worker (`wrangler dev`) and confirm one row per Send with the bucketed columns.
+4. Install the intake plugin on the same QA site and filter `openstation_deactivation_feedback_endpoint` to its own `rest_url( 'openstation-feedback/v1/deactivation' )` (a loopback request inside the wp-env container). Confirm one row per Send with the bucketed columns under Tools → OpenStation feedback, and that a repeated Send with the same id adds nothing.
 5. `add_filter( 'openstation_deactivation_feedback_enabled', '__return_false' )`: no script on the screen, route returns 403.
 6. Multisite (`npm run test:php:multisite` for the suite; manual on a network install): network admin Plugins page shows the dialog too.
 
@@ -234,4 +267,5 @@ Then `npm run build`, `npm run lint`, `npm run typecheck`, `npm run test:js`, `n
 - Bulk deactivation from classic `plugins.php` with OpenStation among the checked rows. It is rare, the interception is a form-submit hook, and it can follow once the single-row path has data.
 - An uninstall hook. The plugin has none today (a real gap: options, user meta and two table sets survive uninstall), and it is a separate change.
 - Any background or install-time ping. See the first-run plan for why that needs its own consent surface.
-- Reading the data: the marketing metrics pipeline (strategy, section 7) consumes the CSV; this plan ends at the table.
+- Reading the data beyond the wp-admin screen: the marketing metrics pipeline (strategy, section 7) consumes the export route; this plan ends at the table and its screen.
+- A sender token or any other anti-spam measure beyond schema validation and the per-IP throttle, until junk actually appears.
