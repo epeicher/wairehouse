@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Turning the Installs Curve</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #f6f4f9;
+  --surface: #ffffff;
+  --surface-2: #eeeaf3;
+  --ink: #17131e;
+  --ink-2: #4d4658;
+  --muted: #7b7387;
+  --line: #d9d3e2;
+  --line-strong: #b9b0c6;
+  --accent: #b51cc2;
+  --accent-soft: rgba(242, 82, 252, 0.14);
+  --good: #1f7a4d;
+  --warn: #a8600a;
+  --bad: #b8323a;
+  --bar: #6e5a86;
+  --bar-hi: #b51cc2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f0c14;
+    --surface: #17131f;
+    --surface-2: #211c2b;
+    --ink: #ece7f3;
+    --ink-2: #c3bbcf;
+    --muted: #8e859c;
+    --line: #2d2739;
+    --line-strong: #463d55;
+    --accent: #f252fc;
+    --accent-soft: rgba(242, 82, 252, 0.16);
+    --good: #4fc98a;
+    --warn: #e2a24a;
+    --bad: #f0707a;
+    --bar: #6f5f86;
+    --bar-hi: #f252fc;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0f0c14;
+  --surface: #17131f;
+  --surface-2: #211c2b;
+  --ink: #ece7f3;
+  --ink-2: #c3bbcf;
+  --muted: #8e859c;
+  --line: #2d2739;
+  --line-strong: #463d55;
+  --accent: #f252fc;
+  --accent-soft: rgba(242, 82, 252, 0.16);
+  --good: #4fc98a;
+  --warn: #e2a24a;
+  --bad: #f0707a;
+  --bar: #6f5f86;
+  --bar-hi: #f252fc;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  padding-block: 0 96px;
+  padding-inline: 20px;
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+header.top {
+  padding-block: 56px 32px;
+  border-bottom: 1px solid var(--line);
+}
+h1 {
+  font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+  font-weight: 700;
+  font-size: clamp(34px, 6vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 12px 0 18px;
+  text-wrap: balance;
+  max-width: 14ch;
+}
+.lede { font-size: 19px; line-height: 1.5; color: var(--ink-2); max-width: 60ch; margin: 0 0 24px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 14px; color: var(--muted); }
+.meta b { color: var(--ink-2); font-weight: 500; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 18px; border-bottom: 1px solid var(--line); font-size: 14px; }
+nav.toc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid transparent; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-bottom-color: var(--accent); outline: none; }
+section { padding-block: 44px 8px; }
+h2 {
+  font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+h3 {
+  font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  margin: 30px 0 10px;
+  text-wrap: balance;
+}
+p { max-width: 66ch; margin: 0 0 14px; }
+ul, ol { max-width: 66ch; padding-left: 22px; margin: 0 0 14px; }
+li { margin-bottom: 8px; }
+li::marker { color: var(--accent); }
+strong { font-weight: 600; }
+.tldr {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  padding: 22px 26px;
+  margin: 28px 0 8px;
+}
+.tldr p:last-child { margin-bottom: 0; }
+.bets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 24px 0; }
+.bet { background: var(--surface); border: 1px solid var(--line); padding: 18px 20px; }
+.bet .eyebrow { color: var(--accent); }
+.bet h4 { font-family: "Bricolage Grotesque", sans-serif; font-size: 19px; margin: 6px 0 8px; line-height: 1.15; }
+.bet p { font-size: 15px; margin: 0; color: var(--ink-2); }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 20px 0 26px; }
+.kpi { background: var(--surface); padding: 16px 18px; }
+.kpi .n { font-family: "Bricolage Grotesque", sans-serif; font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.kpi .d { font-size: 13px; margin-top: 4px; font-weight: 500; }
+.down { color: var(--bad); } .flat { color: var(--warn); } .up { color: var(--good); }
+.tablewrap { overflow-x: auto; margin: 16px 0 22px; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 560px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--surface-2); }
+tr:last-child td { border-bottom: none; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tag { display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; padding: 2px 8px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--ink-2); white-space: nowrap; }
+.tag.hi { border-color: var(--accent); color: var(--accent); }
+figure { margin: 24px 0 8px; background: var(--surface); border: 1px solid var(--line); padding: 18px 18px 12px; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 10px; max-width: none; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+.legend .a::before { background: var(--bar); }
+.legend .b::before { background: var(--bar-hi); border-radius: 50%; }
+.callout { background: var(--accent-soft); border: 1px solid var(--line); padding: 16px 20px; margin: 18px 0; max-width: 66ch; }
+.callout p { margin: 0; }
+.plan { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
+.phase { background: var(--surface); border: 1px solid var(--line); padding: 18px; }
+.phase h4 { font-family: "Bricolage Grotesque", sans-serif; font-size: 17px; margin: 0 0 4px; }
+.phase .when { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.phase ul { padding-left: 18px; font-size: 14.5px; margin: 0 0 10px; }
+.phase .target { font-size: 14px; font-weight: 600; color: var(--accent); }
+.sources { font-size: 14px; color: var(--ink-2); }
+.sources a { color: var(--accent); text-decoration: none; word-break: break-all; }
+.sources a:hover, .sources a:focus-visible { text-decoration: underline; outline: none; }
+.footnote { font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--line); margin-top: 48px; padding-top: 16px; }
+@media (max-width: 720px) {
+  .bets, .plan { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  h2 { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">OpenStation · Marketing strategy · September 16, 2026</div>
+  <h1>Turning the installs curve around</h1>
+  <p class="lede">Active installs peaked near 2,700 in July and are losing about 75 sites a week. This is the plan to stop the bleed, switch on the distribution Automattic already owns, and put the AI story where prospects can find it.</p>
+  <div class="meta">
+    <div><b>North Star</b> active installs on wordpress.org</div>
+    <div><b>Framework</b> Generate, Compose, Customize (WordPress VIP guide)</div>
+    <div><b>Horizon</b> 90 days</div>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#where">Where we are</a>
+  <a href="#guide">The guide, applied</a>
+  <a href="#model">The model</a>
+  <a href="#positioning">Positioning</a>
+  <a href="#acquisition">Acquisition</a>
+  <a href="#retention">Retention</a>
+  <a href="#stack">Marketing AI stack</a>
+  <a href="#measure">Measurement</a>
+  <a href="#plan">90-day plan</a>
+  <a href="#not">What not to do</a>
+</nav>
+
+<div class="tldr">
+  <div class="eyebrow">In short</div>
+  <p><strong>It is a churn problem, not a downloads problem.</strong> Weekly downloads have been flat for two months, but with 30 releases in four months nearly all of them are updates. New-install acquisition is close to zero, and the May launch cohort is draining faster than anything replaces it.</p>
+  <p><strong>We are stuck in Generate.</strong> High output (two releases a week, a blog post every three days, a brand system) with no pipeline from release to audience to install, no measurement of what converts, and no customization where our differentiation actually lives.</p>
+  <p><strong>Proposed targets:</strong> hold 2,000+ through October, 3,000 by end of December, 5,000 by end of Q1 2027. These are commitments to the levers below, not forecasts.</p>
+</div>
+
+<div class="bets">
+  <div class="bet"><div class="eyebrow">Bet 1</div><h4>Stop the bleed</h4><p>A retention loop we can measure: first-run activation, a deactivation feedback dialog, support hygiene, a compatibility push. Net flat by end of October.</p></div>
+  <div class="bet"><div class="eyebrow">Bet 2</div><h4>Turn on Automattic's own distribution</h4><p>WordPress.com, VIP, Jetpack, WooCommerce, Studio and Playground are channels we own and are not using. The one lever with the scale to move the number by thousands.</p></div>
+  <div class="bet"><div class="eyebrow">Bet 3</div><h4>Reposition for what the market is buying</h4><p>Keep the workspace as the visual hook. Lead the enterprise and press story with the governed AI workbench, which today is hidden from the listing.</p></div>
+</div>
+
+<section id="where">
+  <h2>1. Where we are</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="n">2,048</div><div class="l">Estimated active installs</div><div class="d down">−16% in 30 days</div></div>
+    <div class="kpi"><div class="n">≈75</div><div class="l">Sites lost per week</div><div class="d down">peak ≈2,700 mid July</div></div>
+    <div class="kpi"><div class="n">173</div><div class="l">Median daily downloads, last 30 days</div><div class="d flat">186 the month before</div></div>
+    <div class="kpi"><div class="n">30</div><div class="l">Releases since May 7</div><div class="d flat">one every 4 days</div></div>
+    <div class="kpi"><div class="n">5.0</div><div class="l">Rating on 23 reviews</div><div class="d up">22 five-star</div></div>
+    <div class="kpi"><div class="n">0%</div><div class="l">Support threads resolved</div><div class="d down">1 open, visible on the listing</div></div>
+    <div class="kpi"><div class="n">268</div><div class="l">GitHub stars</div><div class="d flat">41 forks, 50 open issues</div></div>
+    <div class="kpi"><div class="n">1</div><div class="l">Third-party reviews found</div><div class="d down">happas.jp; nothing from Tavern, WPBeginner, SEJ, YouTube</div></div>
+  </div>
+
+  <h3>Downloads are updates</h3>
+  <figure>
+    <div class="legend"><span class="a">Weekly downloads (wp.org)</span><span class="b">Releases that week</span></div>
+    <svg viewBox="0 0 860 350" role="img" aria-label="Weekly downloads from May 20 to September 15, 2026, with release counts">
+      <!-- grid -->
+      <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">
+        <line x1="60" y1="40" x2="840" y2="40" stroke="var(--line)"/><text x="52" y="44" text-anchor="end">5,000</text>
+        <line x1="60" y1="92" x2="840" y2="92" stroke="var(--line)"/><text x="52" y="96" text-anchor="end">4,000</text>
+        <line x1="60" y1="144" x2="840" y2="144" stroke="var(--line)"/><text x="52" y="148" text-anchor="end">3,000</text>
+        <line x1="60" y1="196" x2="840" y2="196" stroke="var(--line)"/><text x="52" y="200" text-anchor="end">2,000</text>
+        <line x1="60" y1="248" x2="840" y2="248" stroke="var(--line)"/><text x="52" y="252" text-anchor="end">1,000</text>
+        <line x1="60" y1="300" x2="840" y2="300" stroke="var(--line-strong)"/>
+      </g>
+      <!-- bars: x = 68 + i*45.5, width 34; height = value*0.052; y = 300-h -->
+      <g fill="var(--bar)">
+        <rect x="68" y="60" width="34" height="240"/>
+        <rect x="113.5" y="195.5" width="34" height="104.5"/>
+        <rect x="159" y="130" width="34" height="170"/>
+        <rect x="204.5" y="245.6" width="34" height="54.4"/>
+        <rect x="250" y="229.7" width="34" height="70.3"/>
+        <rect x="295.5" y="279" width="34" height="21"/>
+        <rect x="341" y="263.8" width="34" height="36.2"/>
+        <rect x="386.5" y="224.8" width="34" height="75.2"/>
+        <rect x="432" y="229.5" width="34" height="70.5"/>
+        <rect x="477.5" y="186.2" width="34" height="113.8"/>
+        <rect x="523" y="221.6" width="34" height="78.4"/>
+        <rect x="568.5" y="208.9" width="34" height="91.1"/>
+        <rect x="614" y="185.3" width="34" height="114.7"/>
+        <rect x="659.5" y="151.4" width="34" height="148.6"/>
+        <rect x="705" y="197.6" width="34" height="102.4"/>
+        <rect x="750.5" y="207.2" width="34" height="92.8"/>
+        <rect x="796" y="210.1" width="34" height="89.9"/>
+      </g>
+      <!-- value labels on notable bars -->
+      <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink-2)" text-anchor="middle">
+        <text x="85" y="54">4,615</text>
+        <text x="312.5" y="273">404</text>
+        <text x="676.5" y="145">2,858</text>
+      </g>
+      <!-- release dots: one per release, stacked above axis at bottom of chart, y=318.. -->
+      <g fill="var(--bar-hi)">
+        <circle cx="79" cy="314" r="3.5"/><circle cx="85" cy="314" r="3.5"/><circle cx="91" cy="314" r="3.5"/>
+        <circle cx="170" cy="314" r="3.5"/><circle cx="182" cy="314" r="3.5"/>
+        <circle cx="267" cy="314" r="3.5"/>
+        <circle cx="358" cy="314" r="3.5"/>
+        <circle cx="443" cy="314" r="3.5"/><circle cx="455" cy="314" r="3.5"/>
+        <circle cx="488.5" cy="314" r="3.5"/><circle cx="500.5" cy="314" r="3.5"/>
+        <circle cx="540" cy="314" r="3.5"/>
+        <circle cx="579.5" cy="314" r="3.5"/><circle cx="591.5" cy="314" r="3.5"/>
+        <circle cx="631" cy="314" r="3.5"/>
+        <circle cx="670.5" cy="314" r="3.5"/><circle cx="676.5" cy="314" r="3.5"/><circle cx="682.5" cy="314" r="3.5"/>
+        <circle cx="716" cy="314" r="3.5"/><circle cx="728" cy="314" r="3.5"/>
+        <circle cx="761.5" cy="314" r="3.5"/><circle cx="773.5" cy="314" r="3.5"/>
+        <circle cx="807" cy="314" r="3.5"/><circle cx="819" cy="314" r="3.5"/>
+      </g>
+      <!-- x labels -->
+      <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">
+        <text x="85" y="338">May 20</text>
+        <text x="267" y="338">Jun 17</text>
+        <text x="449" y="338">Jul 15</text>
+        <text x="631" y="338">Aug 12</text>
+        <text x="813" y="338">Sep 9</text>
+      </g>
+    </svg>
+    <figcaption>Weekly downloads, May 20 to September 15, 2026. Bars scale to 5,000. Dots mark releases shipped that week. The one week with no release for a full seven days before it (June 24 to 30) did 404 downloads, about 58 a day, and that is the ceiling of organic acquisition.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>The May cohort is the whole install base.</strong> The week of May 20 did 4,615 downloads, with 1,238 on May 21 alone. That was the hackathon and launch buzz. Nothing since has come close.</li>
+    <li><strong>Every release generates about 2,000 update downloads</strong> over the following week. Weekly totals of 1,700 to 2,900 are an install base updating, plus a trickle of new installs.</li>
+    <li><strong>The two spikes on the wp-rankings chart (Aug 27, Sep 3) are artifacts</strong>, not growth. They line up with the 1.1.4/1.1.5 and 1.1.6 releases. wp-rankings estimates installs partly from download velocity.</li>
+    <li><strong>Net loss of 75 a week with gross adds under 60 a day</strong> means deactivations run somewhere between 300 and 500 a week. That is the number to attack first, and nothing in the product records why a site leaves.</li>
+    <li><strong>Caveat.</strong> Playground launches from the openstation.me demo may count as wp.org downloads. If they do, organic acquisition is lower still. Measuring demo launches separately resolves this.</li>
+  </ul>
+
+  <h3>Why the cohort churns (hypotheses to test)</h3>
+  <ol>
+    <li><strong>Curiosity installs.</strong> "Automattic built a desktop for wp-admin in a hackathon" is a try-it story, not a keep-it story.</li>
+    <li><strong>Per-user opt-in hides the value.</strong> The plugin does nothing until a user clicks the admin-bar toggle. Site owners who installed for a team may never have seen it turn on anywhere.</li>
+    <li><strong>Compatibility friction.</strong> Windows over plugin admin pages break in ways the compat layer has not seen. At 0% support resolution, a break is a reason to leave and not come back.</li>
+    <li><strong>No re-engagement.</strong> Two releases a week ship real improvements, but the only channel to an installed site is a changelog written for engineers.</li>
+    <li><strong>The AI story is invisible.</strong> WPVibe pulled 6,000 installs in ten weeks on "AI manages your site". Our agents are screenshot 4 and absent from the tags.</li>
+  </ol>
+</section>
+
+<section id="guide">
+  <h2>2. What the guide says, and what it means for us</h2>
+  <p>The guide is written for enterprise marketing leaders assembling AI tooling. Its framework transfers directly to a small team marketing an open-source product, and its audience is also one of our best-fit customers.</p>
+
+  <h3>The three modes, applied to our marketing</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Mode</th><th>Guide's definition</th><th>OpenStation today</th><th>What good looks like</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Generate</strong></td><td>Out-of-the-box AI creating content fast. Easy early wins. Fragments at the workflow level.</td><td>High output: 30 releases, 10 blog posts in a month, a brand system. Inconsistent framing: readme says "wp-admin forgets", site says "One tab", changelog says "fix dock overlap". No voice file, no reuse.</td><td>One voice file and one prompt library. Every release produces one story, told once, reused everywhere. Measured on downstream installs, not volume.</td></tr>
+      <tr><td><strong>Compose</strong></td><td>Connecting systems so AI flows across workflows. Where most strategies break. Pick a few integrations and own them.</td><td>Nothing is connected. Release, blog, listing, social and metrics are separate manual steps. No funnel dashboard. Support forum and GitHub issues are disconnected.</td><td>Three integrations, owned: release to content, metrics to a weekly review, support to triage. Nothing else this quarter.</td></tr>
+      <tr><td><strong>Customize</strong></td><td>Tailored capability on proprietary data. Where differentiation happens. The mistake is avoiding it.</td><td>Our proprietary assets are the demo, the install base, and Automattic's channels. None is instrumented or worked.</td><td>The Playground demo as a guided tour. First-run and deactivation loops feeding the roadmap. A WordPress.com and VIP go-to-market only we can run.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The guide's five questions, answered for our stack</h3>
+  <ol>
+    <li><strong>Where are we using AI across content and marketing workflows?</strong> Ad hoc, per person, for drafting. No shared prompts, no guardrails, no measurement.</li>
+    <li><strong>Which workflows create the most friction?</strong> Release to audience. Two releases a week and no repeatable way to turn them into a story, a listing update, a social post and a re-engagement touch. Second: knowing whether anything worked.</li>
+    <li><strong>Where is out-of-the-box enough, and where does customization differentiate?</strong> Drafting, translation, captions and changelog rewriting are Generate work and fine with a voice file. The demo, onboarding and the enterprise narrative are Customize work nobody else can do for us.</li>
+    <li><strong>Do we have governance and ownership?</strong> No named owner for the North Star, no weekly review, no definition of "new install" versus "update".</li>
+    <li><strong>What manual work still exists?</strong> Every release note is rewritten by hand at least twice. Metrics are checked by visiting wp-rankings.</li>
+  </ol>
+
+  <h3>The guide is also a channel map</h3>
+  <p>WordPress VIP publishes this guide to sell governed, composable, AI-ready platforms to enterprise marketing teams. Read its "AI-ready platform layer" criteria against OpenStation:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Guide's criterion</th><th>OpenStation already has</th></tr></thead>
+    <tbody>
+      <tr><td>Governance and control: role-based access, audit trails, approvals</td><td>Copilot is read-only by design. Agents are real WordPress users with a capability ceiling and per-agent ability allowlists. Destructive actions go through a confirm dialog.</td></tr>
+      <tr><td>Workflow consistency</td><td>Spaces (one desktop per job), workspaces, shared presence, saved layouts.</td></tr>
+      <tr><td>Composable, API-first integration</td><td>Abilities API for every AI tool. Documented <code>openstation_register_*</code> PHP and typed JS APIs. No SaaS relay, no API keys in the plugin.</td></tr>
+      <tr><td>Operational resilience</td><td>Windows open in 3 ms (measured). "The desktop pays for itself by the third screen."</td></tr>
+      <tr><td>Content readiness</td><td>Corkboard content graph. Copilot search over the site's own content.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><p>We are the admin layer of the exact platform story VIP is selling, and VIP is an Automattic company. Section 5 turns this into a play.</p></div>
+</section>
+
+<section id="model">
+  <h2>3. The model: installs = acquisition minus churn</h2>
+  <p>Active installs is a stock. The flows are new installs, deactivations and deletions. Every play below is tagged with the flow it moves. Three rules:</p>
+  <ul>
+    <li><strong>Retention first.</strong> At the current rate, every 100 new installs a week only buys 25 net. Fixing churn multiplies every acquisition play.</li>
+    <li><strong>Owned distribution before earned.</strong> Automattic's channels reach millions of WordPress sites. A single WordPress.com placement outweighs a year of blog posts.</li>
+    <li><strong>One message, two registers.</strong> The workspace is the visual hook for creators and agencies. Governed AI is why enterprise teams and the press pay attention. Same product, same demo, different first sentence.</li>
+  </ul>
+</section>
+
+<section id="positioning">
+  <h2>4. Positioning</h2>
+  <p><strong>Current:</strong> "wp-admin forgets. OpenStation doesn't." on the listing, and "One tab. Your whole WordPress site." on the site. Both true, both productivity claims, and neither says why a site should install it this quarter.</p>
+  <div class="callout"><p><strong>Proposed umbrella:</strong> The workspace where humans and AI run a WordPress site together. Built by Automattic, open source, nothing leaves your server.</p></div>
+  <ul>
+    <li><strong>Creator and agency register</strong> (listing, site, video): "Open posts, media and settings side by side. Ask the assistant to find anything. Give an agent a job and watch it work, on your desktop, under your rules." Lead visual: an editor, the Media Library and an agent's activity window open at once.</li>
+    <li><strong>Enterprise and press register</strong> (VIP, WP Tavern, SEJ): "WPVibe puts your site inside someone else's AI client through a closed relay. OpenStation puts governed AI inside your admin: read-only Copilot, agents that are WordPress users with a capability ceiling, every tool an Ability you can audit, no API keys or metering. Open source, GPL, by Automattic."</li>
+  </ul>
+  <h3>Concrete changes</h3>
+  <ol>
+    <li><strong>Listing title and tags.</strong> Keep "OpenStation" first. Add the AI surface: <span class="tag hi">ai-agents</span> <span class="tag hi">ai-assistant</span> <span class="tag hi">command-palette</span> <span class="tag hi">chatgpt</span> <span class="tag hi">claude</span>. wp.org search weights title, tags, freshness, installs and support resolution. Today a search for "AI agent" cannot find us.</li>
+    <li><strong>Screenshot order.</strong> Agents (now 4) and Cmd+K (now 3) move to positions 2 and 3. The listing video shows one agent job end to end inside the first 30 seconds.</li>
+    <li><strong>Readme.</strong> The first paragraph stays. The second becomes the AI paragraph with the governance sentence. "For developers" gains one line on Abilities and MCP readiness.</li>
+    <li><strong>Site.</strong> Headline matches the umbrella. The stats block still says "v1.0.0"; drive it from the wp.org API.</li>
+  </ol>
+</section>
+
+<section id="acquisition">
+  <h2>5. Acquisition plays, ranked</h2>
+  <p>Effort is team-weeks. Impact is a judgment on net installs per quarter once running.</p>
+
+  <h3>Tier 1 · Owned Automattic distribution <span class="tag">Customize</span></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Play</th><th>What it is</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td><strong>WordPress.com placement</strong></td><td>Marketplace listing with a featured slot, one-click recommendation on Business and Commerce plans, a "Try the new admin" banner in Calypso for eligible sites. It already runs there.</td><td class="num">2</td><td><strong>Thousands.</strong> The only play at this scale.</td></tr>
+      <tr><td><strong>WordPress VIP co-marketing</strong></td><td>Pitch VIP's content team a follow-on to this guide: "The AI-ready admin layer: governed agents inside WordPress." Joint webinar, a case study with a VIP editorial customer, a spot on VIP's recommended plugins.</td><td class="num">3</td><td>Tens of large multi-user sites, plus the enterprise narrative for press.</td></tr>
+      <tr><td><strong>Studio preset and Playground blueprint</strong></td><td>A "WordPress with OpenStation" starter in Studio and a listed Playground blueprint with sample content, three open windows and an agent pre-configured.</td><td class="num">1</td><td>Hundreds, compounding through agencies.</td></tr>
+      <tr><td><strong>Jetpack and WooCommerce channels</strong></td><td>A WooCommerce blog post on the store desk. A Jetpack newsletter mention. Both audiences are the multi-screen admin user.</td><td class="num">1</td><td>Hundreds.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Tier 2 · Listing and search <span class="tag">Generate</span></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Play</th><th>What it is</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Listing rewrite</strong></td><td>Title, tags, screenshots, video and readme per section 4.</td><td class="num">0.5</td><td>Hundreds over a quarter. Raises conversion of every other play.</td></tr>
+      <tr><td><strong>Support hygiene</strong></td><td>Answer every wp.org thread within 48 hours and mark resolved. Route threads to GitHub issues.</td><td class="num">2 h/week</td><td>Trust signal, and the cheapest churn fix.</td></tr>
+      <tr><td><strong>Review velocity</strong></td><td>Ask for a review in the product after a user's 5th session, once. 23 reviews at 5.0 is great and small. 100 changes search rank.</td><td class="num">0.5</td><td>Rank lift, indirect.</td></tr>
+      <tr><td><strong>Search content</strong></td><td>Five evergreen pages on the queries people type: "wordpress admin multiple windows", "wordpress command palette", "wordpress ai agent plugin", "connect claude to wordpress". Each ends in the demo.</td><td class="num">1</td><td>Slow, durable.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Tier 3 · Earned media and community <span class="tag">Compose</span></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Play</th><th>What it is</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Press pitch, enterprise register</strong></td><td>WP Tavern, Search Engine Journal, WPBeginner news, Post Status. Angle: "Automattic's open answer to AI site management: governed, self-hosted, no relay." Time it to a release that ships something concrete; MCP transport is the ideal hook.</td><td class="num">1</td><td>WPVibe got 6,000 installs on one SEJ piece plus owned media. Ours is smaller without Awesome Motive's properties, but non-zero.</td></tr>
+      <tr><td><strong>YouTube</strong></td><td>A ready-made demo site and a 90-second script to WPTuts, WPCrafter, Jamie Marsland and two Spanish-language channels. Video converts this product.</td><td class="num">1</td><td>Hundreds per video that lands.</td></tr>
+      <tr><td><strong>International</strong></td><td>happas.jp covered it unprompted. WPMarmite (FR), note.com (JP), Spanish pieces written directly.</td><td class="num">0.5</td><td>Tens to hundreds.</td></tr>
+      <tr><td><strong>WordCamp and Make</strong></td><td>A talk on "agents as WordPress users", a Make/Core post on consuming the Abilities API, a demo link in both.</td><td class="num">1</td><td>Developer mindshare, feeds agencies.</td></tr>
+      <tr><td><strong>AI-client directories</strong></td><td>Once the MCP transport ships (the competitive doc calls it "the missing 10%"), list in the Claude connectors and ChatGPT apps directories and mcpservers.org. Distribution outside wordpress.org entirely, and where WPVibe's curve came from.</td><td class="num">eng 2 to 4, mkt 0.5</td><td>Potentially the second-largest lever after WordPress.com.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Tier 4 · Product-led <span class="tag">Customize</span></h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Play</th><th>What it is</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td><strong>"Invite your team"</strong></td><td>After a user enables OpenStation, offer to email the other users on the site a one-line invitation with the toggle link. Per-user opt-in is our retention risk; this turns it into spread.</td><td class="num">1</td><td>Raises activation per installed site.</td></tr>
+      <tr><td><strong>Shareable artifacts</strong></td><td>A gallery for desktop themes, wallpapers and workspaces, uploadable from the product. Every share is a landing page.</td><td class="num">2</td><td>Slow, community-building.</td></tr>
+      <tr><td><strong>Multisite network story</strong></td><td>1.1.8 shipped the network switcher. Agencies run multisite. One post, one video, one Tavern pitch.</td><td class="num">0.5</td><td>Tens of networks, each many sites.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="retention">
+  <h2>6. Retention plays (do these first)</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Play</th><th>What it is</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Deactivation feedback dialog</strong></td><td>On deactivate, one optional question: broke something / too slow / didn't understand it / not for me / other, with a text box. Anonymous, opt-in, common on wp.org. Results land in a table we read weekly.</td><td>We cannot fix churn we cannot see. The single most important instrument in the plan.</td></tr>
+      <tr><td><strong>First-run activation</strong></td><td>A one-time admin notice with the toggle, and a 20-second in-product tour on first enable: open a window, snap it, hit Cmd+K. Measure "enabled by at least one user within 7 days of install".</td><td>An install nobody turned on gets deleted at the next plugin cleanup.</td></tr>
+      <tr><td><strong>What's New that speaks human</strong></td><td>A dialog on first load after an update: three lines, one screenshot, written in the voice file.</td><td>Converts the release cadence from noise into a reason to keep the plugin.</td></tr>
+      <tr><td><strong>Compatibility program</strong></td><td>The 20 most-installed admin-heavy plugins (Yoast, Elementor, WPForms, ACF, WooCommerce, Rank Math, MonsterInsights, …). Test each in a window. Fix or document. Publish a compatibility page.</td><td>Each incompatibility is a deactivation and a one-star risk.</td></tr>
+      <tr><td><strong>Support SLA</strong></td><td>48-hour first response, thread marked resolved, GitHub issue when it is a bug. Owner named.</td><td>The listing's 0% resolved is both a churn cause and an acquisition drag.</td></tr>
+      <tr><td><strong>Performance as a promise</strong></td><td>Put the 3 ms and "third screen" numbers in the listing and the first-run tour.</td><td>Speed is the objection people expect from a windowed admin. Pre-empt it.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="stack">
+  <h2>7. The marketing AI stack</h2>
+  <p>The guide's core advice: audit Generate, connect a few things in Compose, customize only where it differentiates, name owners. Here is that stack for a team of two or three.</p>
+
+  <h3>Generate: one voice, reusable</h3>
+  <ul>
+    <li><strong>A voice file</strong> in the warehouse repo: the umbrella message, the two registers, banned words, three paragraphs from the readme that already sound right. Every AI-assisted draft starts from it.</li>
+    <li><strong>A prompt library</strong> for the recurring jobs: PR list to human changelog; changelog to What's New; release to blog draft; blog to social snippets; English to Spanish, French and Japanese; screenshot captions; support first reply.</li>
+    <li><strong>Approval stays human.</strong> Roberto approves anything public. The readme voice is an asset and brand drift is real.</li>
+    <li><strong>Measure downstream.</strong> A post counts if it produced demo launches or installs, not because it shipped.</li>
+  </ul>
+
+  <h3>Compose: three integrations, owned</h3>
+  <ol>
+    <li><strong>Release to content.</strong> A GitHub Action on tag collects merged PR titles, drafts the human changelog and What's New lines with the voice file, opens a draft post on openstation.blog through the REST API, and opens a Linear task for review. Nothing publishes automatically.</li>
+    <li><strong>Metrics to review.</strong> A daily script pulls the wp.org info and download APIs, GitHub stars, the wp-rankings estimate, site and demo counters, and the deactivation table into one dashboard. A weekly Slack post with the North Star and leading indicators.</li>
+    <li><strong>Support to triage.</strong> A daily check of the wp.org forum opens a Linear issue per new thread with a reply draft attached. First reply within 48 hours becomes mechanical.</li>
+  </ol>
+  <p>Do not connect anything else this quarter. The guide's "connected but fragile" pattern is real at any team size.</p>
+
+  <h3>Customize: where only we can win</h3>
+  <ul>
+    <li><strong>The Playground demo as a guided tour.</strong> A real-looking site, three windows pre-arranged, a Space per job, an agent with one visible completed run, a five-step overlay. Instrument launches and step completion. It is the product's best salesperson and today it is a blank sandbox.</li>
+    <li><strong>The retention loop.</strong> Deactivation reasons and first-run activation feed a monthly "why sites leave" review that picks one fix per month.</li>
+    <li><strong>The Automattic go-to-market.</strong> Nobody else can put OpenStation on WordPress.com, in Studio, or in a VIP guide. This is customization in the guide's exact sense.</li>
+  </ul>
+
+  <h3>Ownership</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Area</th><th>Owner</th></tr></thead>
+    <tbody>
+      <tr><td>North Star and weekly review</td><td>Daniel (project lead)</td></tr>
+      <tr><td>Content, voice, blog, international</td><td>Roberto</td></tr>
+      <tr><td>Listing, support SLA, compatibility</td><td>One named engineer, rotating monthly</td></tr>
+      <tr><td>WordPress.com, VIP, Studio relationships</td><td>Daniel, with an Automattic sponsor from each product</td></tr>
+      <tr><td>Metrics pipeline and release automation</td><td>One engineer, two weeks, then maintenance</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="measure">
+  <h2>8. Measurement</h2>
+  <p><strong>North Star:</strong> estimated active installs, tracked daily from the wp.org bucket plus wp-rankings, and from our own estimate: downloads on days with no release in the previous 7 days, times 7, minus deactivation-dialog count. Reported as a 7-day rolling net change.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Leading indicator, weekly</th><th>Why it leads</th></tr></thead>
+    <tbody>
+      <tr><td>New installs (quiet-day downloads estimate)</td><td>Acquisition, cleaned of update noise</td></tr>
+      <tr><td>Deactivation submissions and reasons</td><td>Churn, and why</td></tr>
+      <tr><td>Sites with one enabled user within 7 days of install</td><td>Activation</td></tr>
+      <tr><td>Playground demo launches and tour completions</td><td>Top of funnel we control</td></tr>
+      <tr><td>openstation.me visits by referrer</td><td>Which channel is working</td></tr>
+      <tr><td>wp.org reviews (count) and threads resolved (%)</td><td>Listing trust signals</td></tr>
+      <tr><td>GitHub stars, forks</td><td>Developer channel</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Lagging, monthly:</strong> press placements, YouTube views on partner videos, WordPress.com and VIP milestones.</p>
+</section>
+
+<section id="plan">
+  <h2>9. Ninety-day plan</h2>
+  <div class="plan">
+    <div class="phase">
+      <h4>Instrument and stop the obvious leaks</h4>
+      <div class="when">Weeks 1 to 2 · by September 30</div>
+      <ul>
+        <li>Deactivation dialog, first-run notice and tour, What's New dialog. Ship in 1.2.0.</li>
+        <li>Listing rewrite: title, tags, screenshots, readme AI paragraph, site stats fixed.</li>
+        <li>Resolve the open support thread. Set the 48-hour SLA and the rotating owner.</li>
+        <li>Metrics pipeline v1 and weekly Slack post.</li>
+        <li>Voice file and prompt library.</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <h4>Owned distribution and the demo</h4>
+      <div class="when">Weeks 3 to 6 · October</div>
+      <ul>
+        <li>WordPress.com marketplace conversation started, QA pass on a Business site.</li>
+        <li>Playground blueprint with guided tour; Studio preset submitted.</li>
+        <li>Compatibility program: first 10 plugins, page live.</li>
+        <li>Release-to-content automation live.</li>
+        <li>WooCommerce post and first Spanish pitch.</li>
+      </ul>
+      <div class="target">Target: net flat by October 31</div>
+    </div>
+    <div class="phase">
+      <h4>The AI story and earned media</h4>
+      <div class="when">Weeks 7 to 13 · November to mid December</div>
+      <ul>
+        <li>VIP co-marketing pitch with the "AI-ready admin layer" draft.</li>
+        <li>MCP transport scoped; if it ships, directory listings and press pitch the same week.</li>
+        <li>Press pitch in the enterprise register with the WPVibe comparison.</li>
+        <li>Two YouTube partner videos.</li>
+        <li>"Invite your team" and the review prompt ship.</li>
+      </ul>
+      <div class="target">Target: 3,000 by December 31</div>
+    </div>
+  </div>
+</section>
+
+<section id="not">
+  <h2>10. What not to do</h2>
+  <ul>
+    <li><strong>Do not chase the downloads chart.</strong> More releases lift downloads without lifting installs, and we already ship twice a week. Cadence is fine; narrative is missing.</li>
+    <li><strong>Do not add telemetry without opt-in.</strong> wp.org rules and our "nothing leaves your server" message both forbid it. The deactivation dialog and first-run counter are opt-in and anonymous.</li>
+    <li><strong>Do not build a relay or a SaaS.</strong> The self-hosted, no-key story is the differentiator against WPVibe.</li>
+    <li><strong>Do not rewrite the readme's first paragraph.</strong> It is the best-written thing in our marketing. Add to it.</li>
+    <li><strong>Do not connect more than three systems this quarter.</strong> The guide's "connected but fragile" pattern is one weekend of enthusiasm away.</li>
+  </ul>
+
+  <h3>Sources</h3>
+  <ul class="sources">
+    <li><a href="https://wp-rankings.com/plugins/desktop-mode/">wp-rankings.com/plugins/desktop-mode</a> (estimated installs, momentum, resolution rate)</li>
+    <li><a href="https://wordpress.org/plugins/desktop-mode/">wordpress.org/plugins/desktop-mode</a> and its info and download-stats APIs (installs bucket, downloads, ratings, support)</li>
+    <li><a href="https://github.com/WordPress/openstation">github.com/WordPress/openstation</a> (stars, forks, release tags)</li>
+    <li><a href="https://openstation.me/">openstation.me</a> and <a href="https://openstation.blog/">openstation.blog</a> (site and blog audit)</li>
+    <li><a href="https://happas.jp/blog/en/post/982/">happas.jp review</a> (the one third-party review surfaced)</li>
+    <li>"Building the Enterprise AI Stack: A Framework for Marketing Leaders", WordPress VIP and Americaneagle.com</li>
+    <li>Internal: WPVibe growth analysis and code comparison (warehouse, competitive/)</li>
+  </ul>
+  <div class="footnote">Numbers as of September 16, 2026. The install estimate carries medium confidence per wp-rankings; the wp.org bucket is 2,000+. Targets are proposals to be agreed with the team.</div>
+</section>
+</div>
+</body>
+</html>
