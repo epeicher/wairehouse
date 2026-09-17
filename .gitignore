@@ -149,3 +149,7 @@ vite.config.ts.timestamp-*
 .claude/*
 !.claude/settings.json
 .claude/settings.local.json
+
+# Generated at deploy time by build-docs-index.sh (see .github/workflows/pages.yml).
+# Kept out of git so the Pages build doesn't need a bot commit to stay in sync.
+docs/index.html

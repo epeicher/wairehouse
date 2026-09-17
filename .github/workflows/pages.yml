@@ -1,0 +1,51 @@
+name: Build and deploy /docs to Pages
+
+# Regenerates docs/index.html and publishes docs/ to GitHub Pages in one run.
+#
+# The index is built here rather than committed, so there is no bot commit and
+# no second "pages build and deployment" run chasing it. Pages' source must be
+# set to "GitHub Actions" for this to deploy (Settings > Pages > Source).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'build-docs-index.sh'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:   # redeploy on demand without touching docs/
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so per-file dates are accurate
+
+      - name: Regenerate index
+        run: bash build-docs-index.sh
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

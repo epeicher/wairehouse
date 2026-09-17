@@ -10,7 +10,7 @@
 # as their own labelled section; top-level docs/*.html (if any) come first.
 #
 # Run it after adding/removing a plan:   bash build-docs-index.sh
-# (A GitHub Action also runs it automatically on every push to docs/.)
+# (The Pages workflow also runs it on every push to docs/, then deploys the result.)
 #
 set -euo pipefail
 cd "$(dirname "$0")"
