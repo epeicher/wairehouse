@@ -156,3 +156,9 @@ Facts behind it, in case of follow-ups:
 - **"Exactly what it can touch":** the two-step beat. The style reviewer starts read-only and can't apply its own suggestions until `update-post` is ticked.
 
 **Deck:** https://claude.ai/artifact/31Qpa9c1a6VwjQ6mMZD6yP (a cover plus four slides: la idea, cómo viaja una petición, las barreras, lo que vamos a ver; Spanish speaker notes on each slide).
+
+## 8. Grilling log
+
+- **Session 1 (Thu 2026-09-24): what an agent is, and the three AI surfaces.** The basic picture is right; the edges need work.
+  - Review before session 2: who can create or use agents (manage = `edit_users`, use = `edit_posts`, the Administrator role needs a real admin); deleting an agent (its posts and pages go to the Trash, your conversations survive, the defaults never come back); login stays blocked even with Agents off; don't pitch "puede hacer lo que cualquier usuario"; Mio is the window assistant, not an "agente".
+- **Session 2 (Fri 2026-09-25):** a run end to end, abilities, the provider layer.
