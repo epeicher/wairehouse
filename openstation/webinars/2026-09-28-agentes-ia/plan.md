@@ -1,65 +1,65 @@
 # Webinar: "Cómo crear agentes de IA con identidad propia en WordPress"
 
-**When:** Monday 2026-09-28, 18:00 CEST. Remote, recorded for YouTube, screen share.
-**Format:** 5 min intro + 25 min live demo, then Q&A. Someone else triages the questions and passes them to you at the end.
-**Audience:** the wider WordPress community in Spanish. Technical and non-technical people, all familiar with wp-admin.
-**Language:** you speak Spanish; the plan is in English, and the on-stage lines are in Spanish.
+**Cuándo:** lunes 28 de septiembre de 2026, 18:00 CEST. En remoto, grabado para YouTube, compartiendo pantalla.
+**Formato:** 5 min de introducción + 25 min de demo en directo, y después preguntas. Otra persona filtra las preguntas y te las pasa al final.
+**Público:** la comunidad WordPress hispanohablante en general. Perfiles técnicos y no técnicos, todos familiarizados con wp-admin.
+**Idioma:** todo en español. Los botones y textos del sitio van en inglés entre comillas o en negrita, tal como aparecen en pantalla (el sitio está en inglés).
 
-Facts verified against the code at trunk `f4450a97` and against the local site (:8890) on 2026-09-24. The question bank is in [`question-bank.md`](question-bank.md).
+Datos comprobados contra el código en trunk `f4450a97` y contra el sitio local (:8890) el 24/09/2026. El banco de preguntas está en [`question-bank.md`](question-bank.md).
 
 ---
 
-## 1. What the session description promises, and how we deliver each one
+## 1. Qué promete la descripción de la sesión y cómo lo cumplimos
 
-| Promise in the description | What we show | What NOT to overclaim |
+| Promesa de la descripción | Qué enseñamos | Qué NO prometer de más |
 |---|---|---|
-| "funcionan como usuarios reales de WordPress: tienen permisos, un rol definido" | wp-admin → Users: agents are listed with a role, a face avatar and the "Type: Agent" column. Localizer is an **Author**; the rest are Editors | – |
-| "un historial de cada acción que realizan" | (1) The post's **Revisions** screen: the revision an agent made is signed by the agent's user. (2) The Posts list filtered by author: Localizer's drafts are authored by Localizer. (3) The chat window keeps every conversation, with a "Tool calls (n)" list showing exactly which tools ran | There is no visible log of *every* action. Media edits (alt text) leave no revision, and the internal run log has no UI. Say: "todo lo que un agente escribe en tu contenido queda firmado con su usuario" |
-| "crear un agente (un traductor o un revisor de estilo)" | Localizer is the translator (it ships with the plugin). The style reviewer ("Revisor de estilo") we **build live** in the wizard | – |
-| "asignarle exactamente lo que puede tocar" | Three dials: the **role** (Powers step), the **Tools** checklist with its "read-only" / "can modify" badges, and the **triggers** (which kinds of content it accepts). Live beat: a read-only style reviewer can't apply its own suggestions until you tick `update-post` | The "ask before applying" behaviour is an instruction plus buttons, not a server lock. The real limit is the tools you tick and the role |
-| "enviarle contenido arrastrándolo o con un clic derecho" | Drag a post onto tl;dr. Right-click → "Send to Localizer" | "Send to" works for posts, pages, media and users, not for comments |
-| "revisar después qué hizo cada agente" | Same trail as row 2, shown as a closing segment | "View contributions" only counts **published** posts and comments, so it looks empty for these agents. Don't use it on stage |
+| "funcionan como usuarios reales de WordPress: tienen permisos, un rol definido" | wp-admin → **Users**: los agentes aparecen con su rol, su cara como avatar y la columna **Type: Agent**. Localizer es **Autor**; los demás son Editores | – |
+| "un historial de cada acción que realizan" | (1) La pantalla de **Revisions** del post: la revisión que hizo el agente va firmada con su usuario. (2) La lista de entradas filtrada por autor: los borradores de Localizer tienen a Localizer como autor. (3) La ventana de chat guarda cada conversación, con una lista **Tool calls (n)** que muestra exactamente qué herramientas usó | No hay un registro visible de *cada* acción. Los cambios en medios (texto alternativo) no dejan revisión, y el registro interno de ejecuciones no tiene interfaz. Di: "todo lo que un agente escribe en tu contenido queda firmado con su usuario" |
+| "crear un agente (un traductor o un revisor de estilo)" | El traductor es Localizer (viene con el plugin). El "Revisor de estilo" lo **creamos en directo** con el asistente de creación | – |
+| "asignarle exactamente lo que puede tocar" | Tres palancas: el **rol** (paso **Powers**), la lista de herramientas (**Tools**) con sus etiquetas "read-only" / "can modify", y los **disparadores** (qué tipo de contenido acepta). Momento en directo: un revisor de estilo de solo lectura no puede aplicar sus sugerencias hasta que marcas `update-post` | Lo de "preguntar antes de aplicar" es una instrucción más unos botones, no un bloqueo del servidor. El límite real son las herramientas que marcas y el rol |
+| "enviarle contenido arrastrándolo o con un clic derecho" | Arrastrar un post sobre tl;dr. Clic derecho → **Send to Localizer** | "Send to" funciona con entradas, páginas, medios y usuarios, no con comentarios |
+| "revisar después qué hizo cada agente" | El mismo rastro de la fila 2, como bloque de cierre | **View contributions** solo cuenta entradas **publicadas** y comentarios, así que para estos agentes sale vacío. No lo uses en directo |
 
-## 2. Demo environment: openstation.blog
+## 2. Entorno de la demo: openstation.blog
 
-**Decided:** the demo runs on **openstation.blog**, with the UI in English. Present it as "nuestro sitio principal". You'll use your own posts there, and you'll confirm the requirements yourself.
+**Decidido:** la demo se hace en **openstation.blog**, con la interfaz en inglés. Preséntalo como "nuestro sitio principal". Usarás tus propias entradas, y los requisitos los confirmas tú.
 
-**Checklist for openstation.blog** (Roberto confirms). These are the same checks that passed on the local :8890 site on 2026-09-24:
-- [ ] WordPress 7.0 or later, so Core's AI Client is present.
-- [ ] A connector with **function calling** under Settings → Connectors. The local site used `ai-provider-for-anthropic`. Without function calling, agents can talk but can't use tools.
-- [ ] Agents turned on (WP Explorer → Agents → "Turn on Agents").
-- [ ] Your user's AI assistant toggle is on (Preferences → Features).
-- [ ] All five default agents exist. They are seeded the first time an admin loads wp-admin with Agents on, and only on a site with no agents yet.
-- [ ] **Background jobs run.** Every agent run is a background job that WordPress cron has to pick up. Send one test message: if it sits on "Queued — waiting for a WordPress worker…" for more than a few seconds, check that `DISABLE_WP_CRON` is off, or that a real cron hits `wp-cron.php` every minute.
-- [ ] Note which OpenStation version the site runs. #902 and #903 won't be deployed by Monday, which doesn't matter for this demo.
+**Lista de comprobación para openstation.blog** (la confirma Roberto). Son las mismas comprobaciones que pasaron en el sitio local :8890 el 24/09/2026:
+- [ ] WordPress 7.0 o superior, para que esté el cliente de IA de Core.
+- [ ] Un conector con **llamadas a funciones** (function calling) en Settings → Connectors. En local se usó `ai-provider-for-anthropic`. Sin function calling, los agentes pueden hablar pero no usar herramientas.
+- [ ] Agentes activados (WP Explorer → Agents → **Turn on Agents**).
+- [ ] El interruptor del asistente de IA de tu usuario, activado (Preferences → Features).
+- [ ] Existen los cinco agentes de serie. Se crean la primera vez que un administrador carga wp-admin con los agentes activados, y solo en un sitio que aún no tenga ninguno.
+- [ ] **Los trabajos en segundo plano funcionan.** Cada ejecución de un agente es un trabajo en segundo plano que tiene que recoger el cron de WordPress. Manda un mensaje de prueba: si se queda en "Queued — waiting for a WordPress worker…" más de unos segundos, comprueba que `DISABLE_WP_CRON` esté desactivado, o que un cron real llame a `wp-cron.php` cada minuto.
+- [ ] Apunta qué versión de OpenStation tiene el sitio. #902 y #903 no estarán desplegados el lunes, y para esta demo da igual.
 
-**Which default agents to demo.** This depends on whether the `ai/*` abilities are present (the AI experiments plugin):
-- ✅ **Localizer**: needs only `get-post` and `create-post`, and it always creates drafts. Safe either way.
-- ✅ **tl;dr**: `get-post` and `update-post` are enough; the model writes the summary itself.
-- ✅ **SEO Medic** (spare): the same core tools, and it shows the three-titles button flow well.
-- ⚠️ **Alt Text Librarian**: only with the `ai/*` abilities. Without `ai/alt-text-generation` it can't *see* the image.
-- ❌ **Comment Concierge**: one of its tool names is misspelled until #902 is deployed.
+**Qué agentes de serie enseñar.** Depende de si están las habilidades `ai/*` (el plugin de experimentos de IA):
+- ✅ **Localizer**: solo necesita `get-post` y `create-post`, y siempre crea borradores. Seguro en cualquier caso.
+- ✅ **tl;dr**: con `get-post` y `update-post` le basta; el propio modelo escribe el resumen.
+- ✅ **SEO Medic** (de reserva): las mismas herramientas básicas, y enseña muy bien el flujo de los tres títulos con botones.
+- ⚠️ **Alt Text Librarian**: solo con las habilidades `ai/*`. Sin `ai/alt-text-generation` no puede *ver* la imagen.
+- ❌ **Comment Concierge**: uno de sus nombres de herramienta está mal escrito hasta que se despliegue #902.
 
-**Working on a live site.** These agents write for real:
-- tl;dr updates a post.
-- The style reviewer, once it can write, updates a post.
-- Localizer creates a draft.
+**Trabajar en un sitio real.** Estos agentes escriben de verdad:
+- tl;dr actualiza una entrada.
+- El revisor de estilo, cuando ya pueda escribir, actualiza una entrada.
+- Localizer crea un borrador.
 
-Use demo posts you're happy to change, or revert afterwards from the post's Revisions screen, which is itself a good closing beat. Keep in mind the recording is public: anything on screen (post titles, other drafts, user names) will be on YouTube.
+Usa entradas de demo que no te importe cambiar, o reviértelas después desde la pantalla de Revisions del post (que además es un buen momento de cierre). Recuerda que la grabación es pública: todo lo que salga en pantalla (títulos de entradas, otros borradores, nombres de usuario) acabará en YouTube.
 
-## 3. Run of show (30 minutes)
+## 3. Escaleta (30 minutos)
 
-### Intro: 5 minutes (a 4-slide deck in Spanish, in the OpenStation brand)
+### Introducción: 5 minutos (presentación de 4 diapositivas en español, con la marca OpenStation)
 
-| Min | Beat | Say (Spanish) |
+| Min | Momento | Qué decir |
 |---|---|---|
-| 0:00 | Who you are, what OpenStation is (one line) | "OpenStation convierte wp-admin en un escritorio. Hoy vamos a hablar de la parte más nueva: los agentes." |
-| 0:45 | **The idea: an agent is a WordPress user** | "Un agente no es un chatbot pegado al lado. Es un usuario de WordPress: tiene nombre, cara, rol y permisos. Lo que escribe, lo firma." |
-| 1:45 | **How a request travels** (one diagram) | "Tú le mandas contenido → el agente lo lee y decide qué herramientas usar → las usa como su propio usuario → te responde y, si hace falta, te propone botones para aplicar." Mention: the tools are Core's **Abilities API**, the model goes through Core's **AI Client** and **Connectors**, and OpenStation never stores your API key |
-| 3:15 | **The guardrails** (one slide, four lines) | "No puede iniciar sesión. No puede hacer más que tú. Solo usa las herramientas que le marques. Y trata lo que lee (un comentario, un post) como datos, no como órdenes." |
-| 4:30 | What we'll see in the demo | "Vamos a usar dos agentes que vienen de serie, crear uno nuevo desde cero y ver después qué ha hecho cada uno." |
+| 0:00 | Quién eres y qué es OpenStation (una frase) | "OpenStation convierte wp-admin en un escritorio. Hoy vamos a hablar de la parte más nueva: los agentes." |
+| 0:45 | **La idea: un agente es un usuario de WordPress** | "Un agente no es un chatbot pegado al lado. Es un usuario de WordPress: tiene nombre, cara, rol y permisos. Lo que escribe, lo firma." |
+| 1:45 | **Cómo viaja una petición** (un diagrama) | "Tú le mandas contenido → el agente lo lee y decide qué herramientas usar → las usa como su propio usuario → te responde y, si hace falta, te propone botones para aplicar." Menciona que las herramientas son la **Abilities API** de Core, que el modelo llega a través del **cliente de IA** y los **Conectores** de Core, y que OpenStation nunca guarda tu API key |
+| 3:15 | **Las barreras** (una diapositiva, cuatro líneas) | "No puede iniciar sesión. No puede hacer más que tú. Solo usa las herramientas que le marques. Y trata lo que lee (un comentario, un post) como datos, no como órdenes." |
+| 4:30 | Qué vamos a ver en la demo | "Vamos a usar dos agentes que vienen de serie, crear uno nuevo desde cero y ver después qué ha hecho cada uno." |
 
-The diagram for 1:45:
+El diagrama del minuto 1:45:
 
 ```
 Tú ──(chat / arrastrar / clic derecho)──▶ Agente (usuario WP, rol Editor)
@@ -74,91 +74,118 @@ Tú ──(chat / arrastrar / clic derecho)──▶ Agente (usuario WP, rol Edi
                                Respuesta + botones "Aplicar / Descartar"
 ```
 
-### Demo: 25 minutes
+### Demo: 25 minutos
 
-| Min | Beat | Actions | Say / point out |
+| Min | Momento | Acciones | Qué decir / señalar |
 |---|---|---|---|
-| 0:00 | **Meet the cast** | WP Explorer → Agents: the five cards. Open **Localizer** → the Define / Tools / Triggers tabs | "Cada agente tiene instrucciones, herramientas y disparadores. Fijaos en el rol: Localizer es Autor, no Editor. Mínimo privilegio." |
-| 2:30 | **They really are users** | wp-admin → Users: the Type column, the faces, the roles. Open one profile | "Tienen email sintético y contraseña aleatoria, pero WordPress les bloquea el inicio de sesión en todas las vías: contraseña, contraseñas de aplicación, cookies." |
-| 4:00 | **Translator via right-click** | WP Explorer → Posts → right-click a Spanish post → **Send to Localizer**. It asks for the language → type "inglés" | **While "Working…" is on screen, explain the loop** (section 4). Then show the "Tool calls" list: `get_post`, `create_post` |
-| 8:00 | **The draft is signed by the agent** | Open the Posts list → Drafts: "[EN] …", with Localizer as its author | "No ha publicado nada: esta herramienta solo sabe crear borradores." |
-| 9:30 | **Drag & drop + approval buttons** | Drag another post onto the **tl;dr** agent (desktop tile or WP Explorer card). It proposes a TL;DR with buttons → click **Apply** | "El agente propone y yo decido. Cada botón es una nueva petición." |
-| 12:30 | **The trail** | Open that post → Revisions: the latest revision is by **tl;dr**, with its face | "Esto es WordPress de toda la vida: el historial de revisiones sabe que fue el agente." |
-| 14:00 | **Build the style reviewer live** | WP Explorer → Agents → **Cast a new agent** → the wizard (below) | – |
-| 20:30 | **Exactly what it can touch** | Send it a post. It suggests edits. Ask "aplica los cambios" → it says it can't. Edit the agent → Tools → tick `update-post` → ask again → it applies. Show the new revision, signed by the new agent | "Lo que no le das, no lo puede hacer. Y aunque tenga rol de Editor, nunca puede hacer más que la persona que se lo pide." |
-| 23:30 | **What it did, and what's next** | Chat sidebar: every conversation is saved per person (not even an admin can read someone else's). "Tool calls" per answer | "Lo que viene: agentes que se disparen solos con eventos de WordPress, como al guardar un post. Hoy se lanzan desde el chat, arrastrando o con clic derecho." |
-| 25:00 | Hand over to Q&A | – | – |
+| 0:00 | **Conoce a la plantilla** | WP Explorer → Agents: las cinco tarjetas. Abre **Localizer** → las pestañas **Define / Tools / Triggers** | "Cada agente tiene instrucciones, herramientas y disparadores. Fijaos en el rol: Localizer es Autor, no Editor. Mínimo privilegio." |
+| 2:30 | **Traducir con clic derecho** | WP Explorer → Posts → clic derecho sobre un post en español → **Send to Localizer**. Te pregunta el idioma → escribe "inglés" | "Le mando el post con un clic derecho, y como no le he dicho a qué idioma, me lo pregunta." |
+| 3:30 | **Son usuarios de verdad** (mientras Localizer traduce: espera 1 de la sección 4) | wp-admin → **Users** en otra ventana: la columna Type, las caras, los roles. Abre el perfil de Localizer | "Tienen email sintético y contraseña aleatoria, pero WordPress les bloquea el inicio de sesión en todas las vías: contraseña, contraseñas de aplicación, cookies." |
+| 6:00 | **Vuelta al chat** | Ya está la respuesta. Abre la lista **Tool calls**: `get_post`, `create_post` | "Aquí veis exactamente qué herramientas ha usado." |
+| 8:00 | **El borrador va firmado por el agente** | Abre la lista de entradas → Drafts: "[EN] …", con Localizer como autor | "No ha publicado nada: esta herramienta solo sabe crear borradores." |
+| 9:30 | **Arrastrar y soltar + botones de aprobación** | Arrastra otro post sobre el agente **tl;dr** (su icono en el escritorio o su tarjeta en WP Explorer). Propone un TL;DR con botones → pulsa **Apply** | "El agente propone y yo decido. Cada botón es una nueva petición." |
+| 12:30 | **El rastro** | Abre ese post → Revisions: la última revisión es de **tl;dr**, con su cara | "Esto es WordPress de toda la vida: el historial de revisiones sabe que fue el agente." |
+| 14:00 | **Crear el revisor de estilo en directo** | WP Explorer → Agents → **Cast a new agent** → el asistente de creación (abajo) | – |
+| 20:30 | **Exactamente lo que puede tocar** | Mándale un post. Sugiere cambios. Pídele "aplica los cambios" → dice que no puede. Edita el agente → Tools → marca `update-post` → vuelve a pedírselo → los aplica. Enseña la nueva revisión, firmada por el nuevo agente | "Lo que no le das, no lo puede hacer. Y aunque tenga rol de Editor, nunca puede hacer más que la persona que se lo pide." |
+| 23:30 | **Qué hizo cada uno y qué viene** | Barra lateral del chat: cada conversación se guarda por persona (ni un administrador puede leer las de otro). **Tool calls** en cada respuesta | "Lo que viene: agentes que se disparen solos con eventos de WordPress, como al guardar un post. Hoy se lanzan desde el chat, arrastrando o con clic derecho." |
+| 25:00 | Paso a las preguntas | – | – |
 
-**Wizard beat (14:00 → 20:30):**
-1. **Describe:** brief in Spanish: *"Revisa el estilo de un post en español: frases largas, voz pasiva, repeticiones, tono. Propón cambios concretos, cita la frase original y la versión mejorada. No cambies nada sin que te lo pida."* Click **Draft it for me** (one AI call that writes the instructions; it creates nothing yet).
-2. **Meet:** pick a face ("Surprise me" is a nice beat), name it "Revisor de estilo", and give it a voice line, for example "directo, amable, sin rodeos".
-3. **Powers:** role **Editor**. Tools: only `desktop-mode/get-post` (read-only). Say: "de momento, solo puede leer."
-4. **Summon:** tick **Send to** and **Drag**, accepting posts.
+**El asistente de creación (14:00 → 20:30):**
+1. **Describe:** la descripción, en español: *"Revisa el estilo de un post en español: frases largas, voz pasiva, repeticiones, tono. Propón cambios concretos, cita la frase original y la versión mejorada. No cambies nada sin que te lo pida."* Pulsa **Draft it for me** (una llamada a la IA que escribe las instrucciones; todavía no crea nada).
+2. **Meet:** elige una cara (**Surprise me** queda muy bien), llámalo "Revisor de estilo" y dale una voz, por ejemplo "directo, amable, sin rodeos".
+3. **Powers:** rol **Editor**. Herramientas: solo `desktop-mode/get-post` (solo lectura). Di: "de momento, solo puede leer."
+4. **Summon:** marca **Send to** y **Drag**, aceptando entradas.
 5. **Launch:** **Create and chat**.
 
-**Spare beat, if a run is quick or one fails:** SEO Medic on a post, which offers three titles as buttons.
+**Momento de reserva, si una ejecución va muy rápida o falla:** SEO Medic sobre un post, que propone tres títulos con botones.
 
-## 4. The explanation to give while the agent is working (about 60 seconds)
+## 4. Mientras el agente trabaja
 
-This is the "8-turn loop". Say it in plain words:
+Cada ejecución tarda un rato; mide cada una en el ensayo 1. No rellenes la espera explicando la maquinaria. Aprovéchala para enseñar algo que el público pueda ver:
+1. Di en una frase qué está haciendo el agente ("está leyendo el post y preparando el borrador").
+2. Pasa al relleno de esa espera.
+3. Cuando llegue la respuesta, termina la frase y vuelve a ella.
 
-> "Ahora mismo el agente está en un bucle. Le hemos mandado sus instrucciones, mi mensaje y la lista de herramientas que tiene permitidas. El modelo puede hacer dos cosas: contestar, y se acaba; o pedir usar una herramienta, por ejemplo 'lee el post 42'. WordPress ejecuta esa herramienta como el usuario del agente, con sus permisos, y le devuelve el resultado. Eso es un turno. Como mucho hace ocho; si llega al límite, le quitamos las herramientas y le obligamos a contestar con lo que tenga. Y todo esto va en segundo plano: si cierro la pestaña, el trabajo sigue."
+Tres o cuatro segundos de silencio no pasan nada; el indicador de carga ya enseña que algo está pasando.
 
-Facts behind it, in case of follow-ups:
-- 8 tool turns, then one forced turn with no tools.
-- Any number of tool calls per turn.
-- One automatic retry on a transient provider error.
-- 180 s timeout per model call.
-- Background job: one at a time per person per agent, polled every 2–10 s, never replayed if a worker dies.
-
-## 5. Preparation schedule
-
-| Day | Block | What |
+| Espera | Qué enseñar o hacer | Qué decir |
 |---|---|---|
-| **Thu 24** (today) | 30 min | Read this plan. Answer the open decisions (section 7) |
-| | 30 min | **Grilling 1**: what an agent is, and the three AI surfaces |
-| **Fri 25** | 60 min | **Rehearsal 1** on openstation.blog, the full demo untimed. Run the section 2 checklist first. Note every surprise: wording, slow runs, UI in the wrong language, anything missing |
-| | 30 min | **Grilling 2**: a run end to end, abilities, the provider layer |
-| **Sat 26** | 45 min | Intro slides and the Spanish script for the intro and the loop explanation |
-| | 30 min | **Grilling 3**: guardrails, what's not built yet, extending |
-| **Sun 27** | 45 min | **Rehearsal 2**, timed, recorded locally, on the clean demo state (section 6) |
-| | 30 min | **Mock Q&A**: I play YouTube viewers (a curious site owner, a plugin developer, a sceptic about AI costs and privacy) |
-| **Mon 28** | morning | No plugin updates or deploys on openstation.blog |
-| | 17:15 | Pre-flight (section 6). One warm-up run that is **not** on a demo post |
-| | 18:00 | Live |
+| **1. Localizer traduciendo** | El momento "son usuarios de verdad": wp-admin → **Users** en otra ventana, la columna Type, las caras, los roles, el perfil de Localizer | "Mientras traduce, os enseño algo: estos agentes son usuarios de verdad." |
+| **2. tl;dr preparando el resumen** | La pestaña **Triggers** de tl;dr: acepta entradas arrastrándolas y con **Send to** | "Cada agente decide qué contenido acepta y por dónde: a este le puedo arrastrar entradas o mandárselas con clic derecho." |
+| **3. "Draft it for me" escribiendo las instrucciones** | Señala la descripción que has escrito. Las instrucciones que genera se pueden editar antes de crear el agente | "Le he dado una descripción de una frase y está escribiendo las instrucciones completas. Luego las puedo retocar." |
+| **4. El revisor de estilo revisando su primer post** | Hazle al público una pregunta que se pueda recoger en el turno de preguntas | "¿Qué agente crearíais vosotros para vuestro sitio? Dejadlo en los comentarios y lo vemos al final." |
+| **5. El revisor aplicando, después de marcar `update-post`** | La diferencia entre el rol y las herramientas | "El rol dice lo que podría hacer en WordPress; las herramientas, lo que yo le dejo hacer aquí." |
+| **Cualquier espera de más de 30 s** | Una frase y, si sigue, el momento de reserva (SEO Medic) | "Esto va en segundo plano: aunque cerrara la pestaña, seguiría trabajando." |
 
-## 6. Pre-flight and demo state
+Antes de contar con la espera 2, comprueba en el ensayo 1 que tl;dr rechaza algo que no sea una entrada (una imagen), para saber qué hace de verdad ese ajuste de Triggers en pantalla.
 
-**Clean state (set up on Sunday, before rehearsal 2) on openstation.blog:**
-- [ ] 3–4 demo posts **in Spanish**: one to translate, one for the TL;DR, one with a deliberately clumsy style for the reviewer, and one spare. Your own posts, or ask me to draft them.
-- [ ] Delete the "Revisor de estilo" from rehearsal, so the live one is created fresh. Also delete the rehearsal drafts ("[EN] …").
-- [ ] Revert the rehearsal edits on the demo posts (Revisions → restore), so the "before" state is clean again.
-- [ ] Put tl;dr on the desktop (agent detail → **Send to Desktop**) so the drag-and-drop target is visible.
-- [ ] Your chat sidebar lists your own past conversations. Delete the ones you don't want on camera, and keep one good rehearsal conversation per demo agent as a backup.
+Si alguien pregunta en el turno de preguntas cómo funciona una ejecución por dentro, la respuesta está en la sesión de preguntas 2 y en `question-bank.md` (el límite de turnos, los trabajos en segundo plano, los reintentos). Simplemente no ocupa tiempo de demo.
 
-**Monday 17:15:**
-- [ ] openstation.blog loads, logged in as you, with the OpenStation desktop showing.
-- [ ] The Anthropic key works and has credit. One warm-up chat with any agent, off the demo posts.
-- [ ] Browser: one clean window, 110–125% zoom, notifications off, bookmarks bar hidden, extensions that inject UI disabled.
-- [ ] macOS Do Not Disturb on. Close Slack and email.
-- [ ] Rate limits are not a risk (60 runs per agent per hour, 120 per person per hour), but avoid a dozen rehearsal runs in the hour before going live.
+**Tiempos del ensayo 1** (rellenar):
 
-**If something fails live:**
-- A run hangs on "Queued — waiting for a WordPress worker…" for more than 30 s: reload the desktop (any page load wakes WordPress cron), or move to the next beat and come back to it.
-- A run errors: read the error out loud (the messages are designed to be human-readable), then say "esto también es parte de trabajar con IA" and use the saved rehearsal conversation in the sidebar as "uno que hice antes". Rehearse with your own user on openstation.blog, so those backups exist in your sidebar.
+| Ejecución | Segundos |
+|---|---|
+| Localizer pregunta el idioma | |
+| Localizer traduce | |
+| tl;dr propone | |
+| tl;dr aplica | |
+| Draft it for me | |
+| El revisor revisa | |
+| El revisor aplica | |
 
-## 7. Decisions (settled 2026-09-24)
+## 5. Calendario de preparación
 
-- **UI language:** English. Present it as "nuestro sitio principal".
-- **Environment:** openstation.blog. Roberto installs what's needed and confirms the checklist in section 2.
-- **Demo content:** Roberto's own posts on openstation.blog. He'll ask for drafted posts if needed.
-- **Intro:** a 4-slide deck in Spanish, in the OpenStation brand (https://nuriapenya.github.io/open-station-brand/).
-- **"Exactly what it can touch":** the two-step beat. The style reviewer starts read-only and can't apply its own suggestions until `update-post` is ticked.
+| Día | Bloque | Qué |
+|---|---|---|
+| **Jue 24** (hecho) | 30 min | Leer este plan. Tomar las decisiones pendientes (sección 7) |
+| | 30 min | **Sesión de preguntas 1**: qué es un agente y las tres superficies de IA |
+| **Vie 25** (hoy) | 60 min | **Ensayo 1** en openstation.blog, la demo entera sin cronometrar. Primero, la lista de comprobación de la sección 2. Apunta cada sorpresa: textos, ejecuciones lentas, interfaz en el idioma equivocado, cualquier cosa que falte |
+| | 30 min | **Sesión de preguntas 2**: una ejecución de principio a fin, las habilidades y la capa del proveedor |
+| **Sáb 26** | 45 min | Diapositivas de la introducción y el guion en español de la introducción y de los rellenos de espera (sección 4) |
+| | 30 min | **Sesión de preguntas 3**: barreras, lo que aún no está hecho, cómo extenderlo |
+| **Dom 27** | 45 min | **Ensayo 2**, cronometrado y grabado en local, sobre el estado limpio de la demo (sección 6) |
+| | 30 min | **Simulacro de preguntas**: hago de espectadores de YouTube (alguien con un sitio que tiene curiosidad, un desarrollador de plugins, un escéptico con los costes y la privacidad de la IA) |
+| **Lun 28** | mañana | Nada de actualizaciones de plugins ni despliegues en openstation.blog |
+| | 17:15 | Comprobaciones previas (sección 6). Una ejecución de calentamiento que **no** sea sobre un post de la demo |
+| | 18:00 | En directo |
 
-**Deck:** https://claude.ai/artifact/31Qpa9c1a6VwjQ6mMZD6yP (a cover plus four slides: la idea, cómo viaja una petición, las barreras, lo que vamos a ver; Spanish speaker notes on each slide).
+## 6. Comprobaciones previas y estado de la demo
 
-## 8. Grilling log
+**Estado limpio en openstation.blog (prepararlo el domingo, antes del ensayo 2):**
+- [ ] 3–4 entradas de demo **en español**: una para traducir, una para el TL;DR, una con un estilo torpe a propósito para el revisor, y una de reserva. Tus propias entradas, o pídeme que las redacte.
+- [ ] Borra el "Revisor de estilo" del ensayo, para crear el del directo desde cero. Borra también los borradores del ensayo ("[EN] …").
+- [ ] Revierte los cambios del ensayo en las entradas de demo (Revisions → restaurar), para que el estado de "antes" vuelva a estar limpio.
+- [ ] Pon tl;dr en el escritorio (detalle del agente → **Send to Desktop**) para que se vea dónde arrastrar.
+- [ ] La barra lateral del chat muestra tus conversaciones anteriores. Borra las que no quieras que salgan en cámara, y guarda una buena conversación de ensayo por cada agente de la demo como plan B.
 
-- **Session 1 (Thu 2026-09-24): what an agent is, and the three AI surfaces.** The basic picture is right; the edges need work.
-  - Review before session 2: who can create or use agents (manage = `edit_users`, use = `edit_posts`, the Administrator role needs a real admin); deleting an agent (its posts and pages go to the Trash, your conversations survive, the defaults never come back); login stays blocked even with Agents off; don't pitch "puede hacer lo que cualquier usuario"; Mio is the window assistant, not an "agente".
-- **Session 2 (Fri 2026-09-25):** a run end to end, abilities, the provider layer.
+**Lunes a las 17:15:**
+- [ ] openstation.blog carga, con tu sesión iniciada y el escritorio de OpenStation a la vista.
+- [ ] La clave de Anthropic funciona y tiene saldo. Un chat de calentamiento con cualquier agente, fuera de las entradas de demo.
+- [ ] Navegador: una ventana limpia, zoom al 110–125%, notificaciones desactivadas, barra de marcadores oculta, extensiones que añaden elementos a la página desactivadas.
+- [ ] macOS en No molestar. Cierra Slack y el correo.
+- [ ] Los límites de uso no son un riesgo (60 ejecuciones por agente y hora, 120 por persona y hora), pero evita hacer una docena de ensayos en la hora anterior al directo.
+
+**Si algo falla en directo:**
+- Una ejecución se queda en "Queued — waiting for a WordPress worker…" más de 30 s: recarga el escritorio (cualquier carga de página despierta el cron de WordPress), o pasa al siguiente momento y vuelve después.
+- Una ejecución da error: lee el error en voz alta (los mensajes están pensados para entenderse), di "esto también es parte de trabajar con IA" y usa la conversación de ensayo guardada en la barra lateral como "uno que hice antes". Ensaya con tu propio usuario en openstation.blog, para que esos planes B estén en tu barra lateral.
+
+## 7. Decisiones (cerradas el 24/09/2026)
+
+- **Idioma de la interfaz:** inglés. Preséntalo como "nuestro sitio principal".
+- **Entorno:** openstation.blog. Roberto instala lo necesario y confirma la lista de la sección 2.
+- **Contenido de la demo:** las entradas de Roberto en openstation.blog. Pedirá entradas redactadas si hace falta.
+- **Introducción:** una presentación de 4 diapositivas en español, con la marca OpenStation (https://nuriapenya.github.io/open-station-brand/).
+- **"Exactamente lo que puede tocar":** el momento en dos pasos. El revisor de estilo empieza en solo lectura y no puede aplicar sus sugerencias hasta que se marca `update-post`.
+
+**Presentación:** https://claude.ai/artifact/31Qpa9c1a6VwjQ6mMZD6yP (portada y cuatro diapositivas: la idea, cómo viaja una petición, las barreras, lo que vamos a ver; notas del orador en español en cada una).
+
+## 8. Registro de las sesiones de preguntas
+
+- **Sesión 1 (jue 24/09/2026): qué es un agente y las tres superficies de IA.** La idea general está bien; faltan los detalles.
+  - Repasar antes de la sesión 2:
+    - quién puede crear o usar agentes (gestionar = `edit_users`, usar = `edit_posts`; el rol de Administrador exige ser administrador de verdad);
+    - qué pasa al borrar un agente (sus entradas y páginas van a la papelera, tus conversaciones se quedan, los de serie no vuelven);
+    - el inicio de sesión sigue bloqueado aunque apagues los agentes;
+    - no presentarlo como "puede hacer lo que cualquier usuario";
+    - Mio es el asistente de cada ventana, no un "agente".
+- **Sesión 2 (vie 25/09/2026):** una ejecución de principio a fin, las habilidades y la capa del proveedor.
