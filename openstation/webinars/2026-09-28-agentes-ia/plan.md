@@ -5,7 +5,7 @@
 **Público:** la comunidad WordPress hispanohablante en general. Perfiles técnicos y no técnicos, todos familiarizados con wp-admin.
 **Idioma:** todo en español. Los botones y textos del sitio van en inglés entre comillas o en negrita, tal como aparecen en pantalla (el sitio está en inglés).
 
-Datos comprobados contra el código en trunk `f4450a97` y contra el sitio local (:8890) el 24/09/2026. El banco de preguntas está en [`question-bank.md`](question-bank.md).
+Datos comprobados contra el código en trunk `f4450a97` y contra el sitio local (:8890) el 24/09/2026. El banco de preguntas está en [`question-bank.md`](question-bank.md), y dónde guardan sus datos los agentes (tablas, campos y diagrama), en el [anexo de datos](anexo-datos-agentes.md).
 
 ---
 
