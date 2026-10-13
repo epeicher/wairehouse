@@ -153,3 +153,6 @@ vite.config.ts.timestamp-*
 # Generated at deploy time by build-docs-index.sh (see .github/workflows/pages.yml).
 # Kept out of git so the Pages build doesn't need a bot commit to stay in sync.
 docs/index.html
+
+# Rendered at deploy time by openstation/experiments/build-html.mjs, same reason.
+docs/openstation/experiments/*.html
