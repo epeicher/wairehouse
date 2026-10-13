@@ -15,8 +15,8 @@ Datos comprobados contra el código en trunk `f4450a97` y contra el sitio local 
 |---|---|---|
 | "funcionan como usuarios reales de WordPress: tienen permisos, un rol definido" | wp-admin → **Users**: los agentes aparecen con su rol, su cara como avatar y la columna **Type: Agent**. Localizer es **Autor**; los demás son Editores | – |
 | "un historial de cada acción que realizan" | (1) La pantalla de **Revisions** del post: la revisión que hizo el agente va firmada con su usuario. (2) La lista de entradas filtrada por autor: los borradores de Localizer tienen a Localizer como autor. (3) La ventana de chat guarda cada conversación, con una lista **Tool calls (n)** que muestra exactamente qué herramientas usó | No hay un registro visible de *cada* acción. Los cambios en medios (texto alternativo) no dejan revisión, y el registro interno de ejecuciones no tiene interfaz. Di: "todo lo que un agente escribe en tu contenido queda firmado con su usuario" |
-| "crear un agente (un traductor o un revisor de estilo)" | El traductor es Localizer (viene con el plugin). El "Revisor de estilo" lo **creamos en directo** con el asistente de creación | – |
-| "asignarle exactamente lo que puede tocar" | Tres palancas: el **rol** (paso **Powers**), la lista de herramientas (**Tools**) con sus etiquetas "read-only" / "can modify", y los **disparadores** (qué tipo de contenido acepta). Momento en directo: un revisor de estilo de solo lectura no puede aplicar sus sugerencias hasta que marcas `update-post` | Lo de "preguntar antes de aplicar" es una instrucción más unos botones, no un bloqueo del servidor. El límite real son las herramientas que marcas y el rol |
+| "crear un agente (un traductor o un revisor de estilo)" | El traductor es Localizer (viene con el plugin). En directo **creamos un agente nuevo** con el asistente de creación: uno que añade una sección "Preguntas y respuestas" al final de una entrada o una página | La descripción dice "por ejemplo": el revisor de estilo era un ejemplo, no hace falta mencionarlo |
+| "asignarle exactamente lo que puede tocar" | Tres palancas: el **rol** (paso **Powers**), la lista de herramientas (**Tools**) con sus etiquetas "read-only" / "can modify", y los **disparadores** (qué tipo de contenido acepta). Momento en directo: el agente de preguntas y respuestas empieza en solo lectura y no puede añadir la sección hasta que marcas `update-post` | Lo de "preguntar antes de aplicar" es una instrucción más unos botones, no un bloqueo del servidor. El límite real son las herramientas que marcas y el rol |
 | "enviarle contenido arrastrándolo o con un clic derecho" | Arrastrar un post sobre tl;dr. Clic derecho → **Send to Localizer** | "Send to" funciona con entradas, páginas, medios y usuarios, no con comentarios |
 | "revisar después qué hizo cada agente" | El mismo rastro de la fila 2, como bloque de cierre | **View contributions** solo cuenta entradas **publicadas** y comentarios, así que para estos agentes sale vacío. No lo uses en directo |
 
@@ -42,24 +42,27 @@ Datos comprobados contra el código en trunk `f4450a97` y contra el sitio local 
 
 **Trabajar en un sitio real.** Estos agentes escriben de verdad:
 - tl;dr actualiza una entrada.
-- El revisor de estilo, cuando ya pueda escribir, actualiza una entrada.
+- El agente de preguntas y respuestas, cuando ya pueda escribir, actualiza una entrada o una página.
 - Localizer crea un borrador.
+
+**Ojo con `update-post`:** reemplaza el contenido *entero*, así que el agente tiene que devolver todo el texto original más la sección nueva. Por eso la descripción del agente (sección 3) le pide conservar el original y comprobarlo después de guardar, y por eso conviene una entrada corta. Si algo sale mal, la pantalla de Revisions lo deja como estaba.
 
 Usa entradas de demo que no te importe cambiar, o reviértelas después desde la pantalla de Revisions del post (que además es un buen momento de cierre). Recuerda que la grabación es pública: todo lo que salga en pantalla (títulos de entradas, otros borradores, nombres de usuario) acabará en YouTube.
 
 ## 3. Escaleta (30 minutos)
 
-### Introducción: 5 minutos (presentación de 4 diapositivas en español, con la marca OpenStation)
+### Introducción: 5 minutos (diapositivas 1 a 6, en español, con la marca OpenStation; la 7 cierra la demo)
 
 | Min | Momento | Qué decir |
 |---|---|---|
-| 0:00 | Quién eres y qué es OpenStation (una frase) | "OpenStation convierte wp-admin en un escritorio. Hoy vamos a hablar de la parte más nueva: los agentes." |
-| 0:45 | **La idea: un agente es un usuario de WordPress** | "Un agente no es un chatbot pegado al lado. Es un usuario de WordPress: tiene nombre, cara, rol y permisos. Lo que escribe, lo firma." |
-| 1:45 | **Cómo viaja una petición** (un diagrama) | "Tú le mandas contenido → el agente lo lee y decide qué herramientas usar → las usa como su propio usuario → te responde y, si hace falta, te propone botones para aplicar." Menciona que las herramientas son la **Abilities API** de Core, que el modelo llega a través del **cliente de IA** y los **Conectores** de Core, y que OpenStation nunca guarda tu API key |
-| 3:15 | **Las barreras** (una diapositiva, cuatro líneas) | "No puede iniciar sesión. No puede hacer más que tú. Solo usa las herramientas que le marques. Y trata lo que lee (un comentario, un post) como datos, no como órdenes." |
-| 4:30 | Qué vamos a ver en la demo | "Vamos a usar dos agentes que vienen de serie, crear uno nuevo desde cero y ver después qué ha hecho cada uno." |
+| 0:00 | Portada: quién eres y qué es OpenStation (una frase) | "OpenStation convierte wp-admin en un escritorio. Hoy vamos a hablar de la parte más nueva: los agentes." |
+| 0:30 | **Cómo instalar OpenStation** (diapositiva 2) | "Antes de empezar, cómo conseguirlo: la web openstation.me, la página del plugin en wordpress.org, o desde vuestro propio WordPress, en Plugins, buscando OpenStation. Para los agentes necesitáis WordPress 7.0, un conector de IA y activarlos en WP Explorer." |
+| 1:15 | **La idea: un agente es un usuario de WordPress** (diapositiva 3) | "Un agente no es un chatbot pegado al lado. Es un usuario de WordPress: tiene nombre, cara, rol y permisos. Lo que escribe, lo firma." |
+| 2:15 | **Cómo viaja una petición** (diapositiva 4, un diagrama) | "Tú le mandas contenido → el agente lo lee y decide qué herramientas usar → las usa como su propio usuario → te responde y, si hace falta, te propone botones para aplicar." Menciona que las herramientas son la **Abilities API** de Core, que el modelo llega a través del **cliente de IA** y los **Conectores** de Core, y que OpenStation nunca guarda tu API key |
+| 3:30 | **Las barreras** (diapositiva 5, cuatro líneas) | "No puede iniciar sesión. No puede hacer más que tú. Solo usa las herramientas que le marques. Y trata lo que lee (un comentario, un post) como datos, no como órdenes." |
+| 4:30 | **Qué vamos a ver en la demo** (diapositiva 6) | "Vamos a usar dos agentes que vienen de serie, crear uno nuevo desde cero y ver después qué ha hecho cada uno." |
 
-El diagrama del minuto 1:45:
+El diagrama de la diapositiva 4 (minuto 2:15):
 
 ```
 Tú ──(chat / arrastrar / clic derecho)──▶ Agente (usuario WP, rol Editor)
@@ -85,16 +88,16 @@ Tú ──(chat / arrastrar / clic derecho)──▶ Agente (usuario WP, rol Edi
 | 8:00 | **El borrador va firmado por el agente** | Abre la lista de entradas → Drafts: "[EN] …", con Localizer como autor | "No ha publicado nada: esta herramienta solo sabe crear borradores." |
 | 9:30 | **Arrastrar y soltar + botones de aprobación** | Arrastra otro post sobre el agente **tl;dr** (su icono en el escritorio o su tarjeta en WP Explorer). Propone un TL;DR con botones → pulsa **Apply** | "El agente propone y yo decido. Cada botón es una nueva petición." |
 | 12:30 | **El rastro** | Abre ese post → Revisions: la última revisión es de **tl;dr**, con su cara | "Esto es WordPress de toda la vida: el historial de revisiones sabe que fue el agente." |
-| 14:00 | **Crear el revisor de estilo en directo** | WP Explorer → Agents → **Cast a new agent** → el asistente de creación (abajo) | – |
-| 20:30 | **Exactamente lo que puede tocar** | Mándale un post. Sugiere cambios. Pídele "aplica los cambios" → dice que no puede. Edita el agente → Tools → marca `update-post` → vuelve a pedírselo → los aplica. Enseña la nueva revisión, firmada por el nuevo agente | "Lo que no le das, no lo puede hacer. Y aunque tenga rol de Editor, nunca puede hacer más que la persona que se lo pide." |
+| 14:00 | **Crear el agente de preguntas y respuestas en directo** | WP Explorer → Agents → **Cast a new agent** → el asistente de creación (abajo) | "Os enseño a crear uno desde cero: uno que añade una sección de preguntas y respuestas al final de una entrada o una página." |
+| 20:30 | **Exactamente lo que puede tocar** | Mándale una entrada o página corta. Propone las preguntas y respuestas. Pídele "añádela" → dice que no puede. Edita el agente → Tools → marca `update-post` → vuelve a pedírselo → añade la sección. Abre la entrada: la sección está al final. En Revisions, compara las dos últimas: la revisión va firmada por el nuevo agente y solo se ha añadido la sección | "Lo que no le das, no lo puede hacer. Y aunque tenga rol de Editor, nunca puede hacer más que la persona que se lo pide." |
 | 23:30 | **Qué hizo cada uno y qué viene** | Barra lateral del chat: cada conversación se guarda por persona (ni un administrador puede leer las de otro). **Tool calls** en cada respuesta | "Lo que viene: agentes que se disparen solos con eventos de WordPress, como al guardar un post. Hoy se lanzan desde el chat, arrastrando o con clic derecho." |
-| 25:00 | Paso a las preguntas | – | – |
+| 25:00 | **Preguntas y respuestas** | Vuelve a la presentación, diapositiva 7 (**Preguntas y respuestas**), y déjala a la vista mientras respondes. Lleva los enlaces de openstation.me y wordpress.org | "Muchas gracias. Vamos con vuestras preguntas." |
 
 **El asistente de creación (14:00 → 20:30):**
-1. **Describe:** la descripción, en español: *"Revisa el estilo de un post en español: frases largas, voz pasiva, repeticiones, tono. Propón cambios concretos, cita la frase original y la versión mejorada. No cambies nada sin que te lo pida."* Pulsa **Draft it for me** (una llamada a la IA que escribe las instrucciones; todavía no crea nada).
-2. **Meet:** elige una cara (**Surprise me** queda muy bien), llámalo "Revisor de estilo" y dale una voz, por ejemplo "directo, amable, sin rodeos".
-3. **Powers:** rol **Editor**. Herramientas: solo `desktop-mode/get-post` (solo lectura). Di: "de momento, solo puede leer."
-4. **Summon:** marca **Send to** y **Drag**, aceptando entradas.
+1. **Describe:** la descripción, en español: *"Añade al final de una entrada o página una sección «Preguntas y respuestas» con 3 a 5 preguntas que se haría un lector, respondidas solo con lo que dice el texto. Usa bloques de WordPress: un encabezado y un párrafo por respuesta. Conserva todo el contenido original tal cual y añade la sección solo al final. Primero enséñame la propuesta y no cambies nada hasta que te lo confirme. Después de guardar, vuelve a leer la entrada y comprueba que el contenido original sigue entero."* Pulsa **Draft it for me** (una llamada a la IA que escribe las instrucciones; todavía no crea nada).
+2. **Meet:** elige una cara (**Surprise me** queda muy bien), llámalo "Preguntas y respuestas" (o el nombre que prefieras) y dale una voz, por ejemplo "claro, útil, sin relleno".
+3. **Powers:** rol **Editor** (hace falta para editar páginas y entradas de otros). Herramientas: solo `desktop-mode/get-post` (solo lectura). Di: "de momento, solo puede leer."
+4. **Summon:** marca **Send to** y **Drag**, aceptando entradas y páginas.
 5. **Launch:** **Create and chat**.
 
 **Momento de reserva, si una ejecución va muy rápida o falla:** SEO Medic sobre un post, que propone tres títulos con botones.
@@ -113,8 +116,8 @@ Tres o cuatro segundos de silencio no pasan nada; el indicador de carga ya ense�
 | **1. Localizer traduciendo** | El momento "son usuarios de verdad": wp-admin → **Users** en otra ventana, la columna Type, las caras, los roles, el perfil de Localizer | "Mientras traduce, os enseño algo: estos agentes son usuarios de verdad." |
 | **2. tl;dr preparando el resumen** | La pestaña **Triggers** de tl;dr: acepta entradas arrastrándolas y con **Send to** | "Cada agente decide qué contenido acepta y por dónde: a este le puedo arrastrar entradas o mandárselas con clic derecho." |
 | **3. "Draft it for me" escribiendo las instrucciones** | Señala la descripción que has escrito. Las instrucciones que genera se pueden editar antes de crear el agente | "Le he dado una descripción de una frase y está escribiendo las instrucciones completas. Luego las puedo retocar." |
-| **4. El revisor de estilo revisando su primer post** | Hazle al público una pregunta que se pueda recoger en el turno de preguntas | "¿Qué agente crearíais vosotros para vuestro sitio? Dejadlo en los comentarios y lo vemos al final." |
-| **5. El revisor aplicando, después de marcar `update-post`** | La diferencia entre el rol y las herramientas | "El rol dice lo que podría hacer en WordPress; las herramientas, lo que yo le dejo hacer aquí." |
+| **4. Preguntas y respuestas preparando su propuesta** | Hazle al público una pregunta que se pueda recoger en el turno de preguntas | "¿Qué agente crearíais vosotros para vuestro sitio? Dejadlo en los comentarios y lo vemos al final." |
+| **5. Preguntas y respuestas añadiendo la sección, después de marcar `update-post`** | La diferencia entre el rol y las herramientas | "El rol dice lo que podría hacer en WordPress; las herramientas, lo que yo le dejo hacer aquí." |
 | **Cualquier espera de más de 30 s** | Una frase y, si sigue, el momento de reserva (SEO Medic) | "Esto va en segundo plano: aunque cerrara la pestaña, seguiría trabajando." |
 
 Antes de contar con la espera 2, comprueba en el ensayo 1 que tl;dr rechaza algo que no sea una entrada (una imagen), para saber qué hace de verdad ese ajuste de Triggers en pantalla.
@@ -130,8 +133,8 @@ Si alguien pregunta en el turno de preguntas cómo funciona una ejecución por d
 | tl;dr propone | |
 | tl;dr aplica | |
 | Draft it for me | |
-| El revisor revisa | |
-| El revisor aplica | |
+| Preguntas y respuestas propone | |
+| Preguntas y respuestas añade la sección | |
 
 ## 5. Calendario de preparación
 
@@ -152,9 +155,9 @@ Si alguien pregunta en el turno de preguntas cómo funciona una ejecución por d
 ## 6. Comprobaciones previas y estado de la demo
 
 **Estado limpio en openstation.blog (prepararlo el domingo, antes del ensayo 2):**
-- [ ] 3–4 entradas de demo **en español**: una para traducir, una para el TL;DR, una con un estilo torpe a propósito para el revisor, y una de reserva. Tus propias entradas, o pídeme que las redacte.
-- [ ] Borra el "Revisor de estilo" del ensayo, para crear el del directo desde cero. Borra también los borradores del ensayo ("[EN] …").
-- [ ] Revierte los cambios del ensayo en las entradas de demo (Revisions → restaurar), para que el estado de "antes" vuelva a estar limpio.
+- [ ] 3–4 entradas de demo **en español**: una para traducir, una para el TL;DR, una entrada o página corta para el agente de preguntas y respuestas, y una de reserva. Tus propias entradas, o pídeme que las redacte.
+- [ ] Borra el agente "Preguntas y respuestas" del ensayo, para crear el del directo desde cero (sus borradores irían a la papelera, pero este agente no crea ninguno). Borra también los borradores del ensayo ("[EN] …").
+- [ ] Revierte los cambios del ensayo en las entradas de demo (Revisions → restaurar), para que el estado de "antes" vuelva a estar limpio. Sobre todo, quita la sección de preguntas y respuestas que añadió el ensayo.
 - [ ] Pon tl;dr en el escritorio (detalle del agente → **Send to Desktop**) para que se vea dónde arrastrar.
 - [ ] La barra lateral del chat muestra tus conversaciones anteriores. Borra las que no quieras que salgan en cámara, y guarda una buena conversación de ensayo por cada agente de la demo como plan B.
 
@@ -174,10 +177,12 @@ Si alguien pregunta en el turno de preguntas cómo funciona una ejecución por d
 - **Idioma de la interfaz:** inglés. Preséntalo como "nuestro sitio principal".
 - **Entorno:** openstation.blog. Roberto instala lo necesario y confirma la lista de la sección 2.
 - **Contenido de la demo:** las entradas de Roberto en openstation.blog. Pedirá entradas redactadas si hace falta.
-- **Introducción:** una presentación de 4 diapositivas en español, con la marca OpenStation (https://nuriapenya.github.io/open-station-brand/).
-- **"Exactamente lo que puede tocar":** el momento en dos pasos. El revisor de estilo empieza en solo lectura y no puede aplicar sus sugerencias hasta que se marca `update-post`.
+- **Presentación:** 7 diapositivas en español, con la marca OpenStation (https://nuriapenya.github.io/open-station-brand/): las 6 primeras en la introducción y la 7 ("Preguntas y respuestas") al terminar la demo.
+- **El agente que se crea en directo:** "Preguntas y respuestas", que añade esa sección al final de una entrada o una página (sustituye al revisor de estilo; decidido el 28/09/2026).
+- **"Exactamente lo que puede tocar":** el momento en dos pasos. El agente empieza en solo lectura y no puede añadir la sección hasta que se marca `update-post`.
+- **Cómo instalarlo:** al principio, diapositiva 2, justo después de la portada, con tres caminos: openstation.me (enlaza al plugin), https://wordpress.org/plugins/desktop-mode/, o Plugins → Add Plugin → buscar "OpenStation" en cualquier WordPress (decidido el 28/09/2026).
 
-**Presentación:** https://claude.ai/artifact/31Qpa9c1a6VwjQ6mMZD6yP (portada y cuatro diapositivas: la idea, cómo viaja una petición, las barreras, lo que vamos a ver; notas del orador en español en cada una).
+**Presentación:** https://claude.ai/artifact/31Qpa9c1a6VwjQ6mMZD6yP (portada; cómo instalar OpenStation; la idea; cómo viaja una petición; las barreras; lo que vamos a ver; y preguntas y respuestas para el cierre. Notas del orador en español en cada una).
 
 ## 8. Registro de las sesiones de preguntas
 
