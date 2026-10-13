@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 2, "G": 2, "H": 1 },
+  "total": 20,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "`src/desktop.ts` adds `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` among the windowless System rows (the updated comment lists 'Fullscreen, Tile all windows, Log out'), and the new `pickGridDimensions` (`minor = floor(sqrt(n))`, `major = ceil(n/minor)`) gives 2x1, 3x1 and 2x2 on landscape for 2, 3 and 4 windows.",
+    "C": "The menu row calls the existing `manager.tile()`, and the only layout changes are to the grid rule in `geometry.ts` and the row sharing in `arrange.ts`, which still uses `shareRowByMinWidth` and the existing work-area rect.",
+    "D": "The diff doesn't touch `assets/js/` and adds no raw fetch, confirm or alert, no `:host` tokens, no `@since` stamps and no ESLint disables.",
+    "E": "Two tests are added to the existing `tests/vitest/arrange.test.ts`: 'tile() with 3 windows on a landscape area splits it in thirds' checks the exact left and width values, and 'short last row share its whole width' covers the new row-sharing behaviour.",
+    "F": "`docs/javascript-reference.md` now says '`tile()` is the System tile's **Tile all windows** row', and the `os.arrange.tile.dimensions` entry explains the new default grid and the short-last-row behaviour.",
+    "G": "The changes stay within the files needed (desktop.ts, geometry.ts, arrange.ts, docs and the existing test file), plus a one-line module description in `index.ts`; the short-last-row change in `arrange.ts` fits the 'use the available space' requirement, and no generated or `languages/` files are included.",
+    "H": "The final message says it ran `npm run build`, `npm run lint`, `npm run typecheck` and `npm run test:js` with all 6616 tests passing, and every gate passed."
+  },
+  "notable": "The agent fixed the three-window case at its root by replacing the aspect-ratio picker with a clear floor(sqrt(n)) rule and covered it with exact-geometry tests. It also openly flagged that this changes workspace 'tile' arrangements and the behaviour of filters that ask for more columns than there are windows."
+}

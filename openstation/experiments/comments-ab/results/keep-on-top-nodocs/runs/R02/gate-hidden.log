@@ -1,0 +1,14 @@
+
+ RUN  v4.1.5 /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R02
+
+ ✓ tests/vitest/zz-hidden-keep-on-top.test.ts > keep on top (hidden harness test) > a pinned window stays above a window focused later, which still gets focus 23ms
+ ✓ tests/vitest/zz-hidden-keep-on-top.test.ts > keep on top (hidden harness test) > a window opened after pinning lands below the pinned one 8ms
+ ✓ tests/vitest/zz-hidden-keep-on-top.test.ts > keep on top (hidden harness test) > unpinning restores normal stacking 10ms
+ ✓ tests/vitest/zz-hidden-keep-on-top.test.ts > keep on top (hidden harness test) > several pinned windows stack by focus among themselves, all above the rest 12ms
+ ✓ tests/vitest/zz-hidden-keep-on-top.test.ts > keep on top (hidden harness test) > the flag survives a snapshot and restore round-trip 16ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  12:38:53
+   Duration  599ms (transform 247ms, setup 242ms, import 63ms, tests 70ms, environment 154ms)
+

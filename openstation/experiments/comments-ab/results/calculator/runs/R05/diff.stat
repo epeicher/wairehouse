@@ -1,0 +1,7 @@
+ apps/calculator/calculator.css     |  47 ++++++++
+ apps/calculator/calculator.os.php  |  29 +++++
+ apps/calculator/calculator.os.ts   | 230 +++++++++++++++++++++++++++++++++++++
+ apps/calculator/calculator.test.ts |  63 ++++++++++
+ bin/build-i18n.sh                  |   1 +
+ docs/app-framework.md              |   3 +-
+ 6 files changed, 372 insertions(+), 1 deletion(-)

@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 2, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "C-stack earns its point: the single `applyZOrder()` pass reads `_stack` and replaces the z-index writes in focus, raise and open. C-pin earns its point: the pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )` registration. C-session does not: both restore branches call `manager.setAlwaysOnTop( restored|opened, true )` after the window opens, and neither the `openNew()` config nor `NativeWindowRestoreState`/`seedWindowRestoreState()` carries the flag.",
+    "D": "No violations found: both labels go through `__()` ('Keep on top' and 'Stop keeping on top'), the pressed state uses the `active` attribute with the neutral look and no hardcoded colour, there is no raw `<button>`, and nothing under `assets/js/` was touched.",
+    "E": "`window-child-ownership.test.ts` gains tests for pinned paint order across `manager.focus( other )` and open, and `session-restore-duplicates.test.ts` gains a restore round-trip test. Both are existing files.",
+    "F": "`javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, a `readonly alwaysOnTop` property and a Keep on top section, and `architecture.md` documents the `alwaysOnTop: true` session field.",
+    "G": "The change adds public surface the prompt did not ask for: the `os-window-always-on-top-changed` CustomEvent, the `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` hook, a documented `pin` icon key, and a public `toggleAlwaysOnTop()`. The final message admits \"You didn't ask for these\" but adds them anyway instead of leaving them as a decision for the maintainer.",
+    "H": "The final message says `npm run build`, `test:js`, `typecheck` and `lint` were run, which matches the passing gates.",
+    "I": "Ownership is handled: `isInTopLayer()` walks the owner chain and a test expects `[ 'other', 'owner', 'child' ]`. Idempotence is handled: `if ( win.alwaysOnTop === on ) return;` plus an unknown-id guard. Fullscreen is only claimed in the message, not handled in code."
+  },
+  "notable": "The strongest part is the stacking design: `_stack` stays the focus order and a separate partition pass handles paint order, which keeps focus and alt-tab semantics intact and also covers owner chains. The weaknesses are that session restore re-pins windows with a call after they open instead of using the gridSpan seed path, and that it adds an event and a hook nobody asked for."
+}

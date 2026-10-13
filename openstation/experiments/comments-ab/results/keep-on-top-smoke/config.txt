@@ -1,0 +1,6 @@
+task=keep-on-top
+date=2026-10-08T13:51:18+02:00
+claude=2.1.294 (Claude Code)
+arm_A=trunk @ 28038e9f
+arm_B=codex/remove-code-comments @ 09f2b460
+runs=1 model=claude-opus-5-5 effort=high gate_build=0

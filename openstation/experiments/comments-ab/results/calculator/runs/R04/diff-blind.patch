@@ -1,0 +1,391 @@
+diff --git c/apps/calculator/calculator.css w/apps/calculator/calculator.css
+new file mode 100644
+index 00000000..35caf05d
+--- /dev/null
++++ w/apps/calculator/calculator.css
+@@ -0,0 +1,51 @@
++.os-calc {
++	display: flex;
++	flex-direction: column;
++	gap: 12px;
++	block-size: 100%;
++	padding: 12px;
++	box-sizing: border-box;
++}
++
++.os-calc:focus {
++	outline: none;
++}
++
++.os-calc__screen {
++	display: flex;
++	flex-direction: column;
++	min-inline-size: 0;
++}
++
++.os-calc__expression {
++	min-block-size: 1.4em;
++	padding-inline: 14px;
++	text-align: end;
++	color: var( --os-ui-fg-muted, #646970 );
++	font-variant-numeric: tabular-nums;
++	overflow: hidden;
++	white-space: nowrap;
++	text-overflow: ellipsis;
++}
++
++.os-calc__keys {
++	flex: 1;
++	display: grid;
++	grid-template-columns: repeat( 4, minmax( 0, 1fr ) );
++	grid-auto-rows: minmax( 48px, 1fr );
++	gap: 8px;
++}
++
++.os-calc__key {
++	--os-ui-button-min-height: 48px;
++	font-size: 1.375rem;
++	font-variant-numeric: tabular-nums;
++}
++
++.os-calc__key--wide {
++	grid-column: span 2;
++}
++
++.os-calc__key--pending {
++	--os-ui-button-border: 2px solid var( --os-ui-fg, #1d2327 );
++}
+diff --git c/apps/calculator/calculator.os.php w/apps/calculator/calculator.os.php
+new file mode 100644
+index 00000000..f036eac6
+--- /dev/null
++++ w/apps/calculator/calculator.os.php
+@@ -0,0 +1,27 @@
++<?php
++
++namespace OpenStation\Apps\Calculator;
++
++use OpenStation\App;
++
++if ( ! defined( 'ABSPATH' ) ) {
++	defined( 'OPENSTATION_STANDALONE' ) || exit;
++}
++
++return App::define( 'openstation-calculator' )
++	->title( __( 'Calculator', 'desktop-mode' ) )
++	->icon( 'dashicons-calculator' )
++	->size( 320, 480 )
++	->min_size( 260, 400 )
++	->placement( 'dock' )
++	->desktop_icon( array( 'position' => 30 ) )
++	->capabilities( 'read' )
++	->state(
++		array(
++			'display'  => '0',
++			'stored'   => '',
++			'operator' => '',
++			'fresh'    => false,
++			'error'    => false,
++		)
++	);
+diff --git c/apps/calculator/calculator.os.ts w/apps/calculator/calculator.os.ts
+new file mode 100644
+index 00000000..54f15486
+--- /dev/null
++++ w/apps/calculator/calculator.os.ts
+@@ -0,0 +1,222 @@
++import { __, defineApp, html } from '@openstation/app';
++
++export type Operator = '+' | '-' | '*' | '/';
++
++export interface CalcState extends Record< string, unknown > {
++	display: string;
++	stored: string;
++	operator: Operator | '';
++	fresh: boolean;
++	error: boolean;
++}
++
++type Data = Record< string, never >;
++
++const MAX_DIGITS = 15;
++
++const SYMBOLS: Record< Operator, string > = { '+': '+', '-': '−', '*': '×', '/': '÷' };
++
++const CLEARED: CalcState = { display: '0', stored: '', operator: '', fresh: false, error: false };
++
++function isOperator( value: unknown ): value is Operator {
++	return typeof value === 'string' && Object.prototype.hasOwnProperty.call( SYMBOLS, value );
++}
++
++export function formatNumber( n: number ): string | null {
++	if ( ! Number.isFinite( n ) ) {
++		return null;
++	}
++	return String( Number.parseFloat( n.toPrecision( 12 ) ) );
++}
++
++export function compute( a: string, op: Operator, b: string ): string | null {
++	const y = Number.parseFloat( b );
++	if ( op === '/' && y === 0 ) {
++		return null;
++	}
++	const x = Number.parseFloat( a );
++	switch ( op ) {
++		case '+':
++			return formatNumber( x + y );
++		case '-':
++			return formatNumber( x - y );
++		case '*':
++			return formatNumber( x * y );
++		case '/':
++			return formatNumber( x / y );
++	}
++}
++
++const failed = (): CalcState => ( { ...CLEARED, display: '', error: true, fresh: true } );
++
++export function inputDigit( s: CalcState, digit: string ): CalcState {
++	if ( ! /^[0-9]$/.test( digit ) ) {
++		return s;
++	}
++	const base = s.error ? CLEARED : s;
++	if ( base.fresh ) {
++		return { ...base, display: digit, fresh: false };
++	}
++	if ( base.display.replace( /[^0-9]/g, '' ).length >= MAX_DIGITS ) {
++		return base;
++	}
++	if ( base.display === '0' || base.display === '-0' ) {
++		return { ...base, display: base.display.replace( '0', digit ) };
++	}
++	return { ...base, display: base.display + digit };
++}
++
++export function inputDecimal( s: CalcState ): CalcState {
++	const base = s.error ? CLEARED : s;
++	if ( base.fresh ) {
++		return { ...base, display: '0.', fresh: false };
++	}
++	return base.display.includes( '.' ) ? base : { ...base, display: `${ base.display }.` };
++}
++
++export function chooseOperator( s: CalcState, op: Operator ): CalcState {
++	if ( s.error ) {
++		return s;
++	}
++	if ( s.operator !== '' && ! s.fresh && s.stored !== '' ) {
++		const result = compute( s.stored, s.operator, s.display );
++		if ( result === null ) {
++			return failed();
++		}
++		return { ...s, display: result, stored: result, operator: op, fresh: true };
++	}
++	return { ...s, stored: s.display, operator: op, fresh: true };
++}
++
++export function equals( s: CalcState ): CalcState {
++	if ( s.error || s.operator === '' || s.stored === '' ) {
++		return { ...s, fresh: true };
++	}
++	const result = compute( s.stored, s.operator, s.display );
++	if ( result === null ) {
++		return failed();
++	}
++	return { ...s, display: result, stored: '', operator: '', fresh: true };
++}
++
++export function backspace( s: CalcState ): CalcState {
++	if ( s.error ) {
++		return CLEARED;
++	}
++	if ( s.fresh ) {
++		return s;
++	}
++	const display = s.display.slice( 0, -1 );
++	return { ...s, display: display === '' || display === '-' ? '0' : display };
++}
++
++export function negate( s: CalcState ): CalcState {
++	if ( s.error || s.display === '0' ) {
++		return s;
++	}
++	const display = s.display.startsWith( '-' ) ? s.display.slice( 1 ) : `-${ s.display }`;
++	return { ...s, display };
++}
++
++export function percent( s: CalcState ): CalcState {
++	if ( s.error ) {
++		return s;
++	}
++	const result = formatNumber( Number.parseFloat( s.display ) / 100 );
++	return result === null ? failed() : { ...s, display: result, fresh: true };
++}
++
++export function keyAction( key: string ): { action: string; args?: Record< string, unknown > } | null {
++	if ( /^[0-9]$/.test( key ) ) {
++		return { action: 'digit', args: { value: key } };
++	}
++	if ( key === 'x' || key === 'X' ) {
++		return { action: 'operator', args: { value: '*' } };
++	}
++	if ( isOperator( key ) ) {
++		return { action: 'operator', args: { value: key } };
++	}
++	switch ( key ) {
++		case '.':
++		case ',':
++			return { action: 'decimal' };
++		case 'Enter':
++		case '=':
++			return { action: 'equals' };
++		case 'Escape':
++		case 'Delete':
++			return { action: 'clear' };
++		case 'Backspace':
++			return { action: 'backspace' };
++		case '%':
++			return { action: 'percent' };
++	}
++	return null;
++}
++
++export default defineApp< CalcState, Data >( 'openstation-calculator', {
++	local: {
++		digit: ( s, args ) => inputDigit( s, String( args.value ?? '' ) ),
++		decimal: ( s ) => inputDecimal( s ),
++		operator: ( s, args ) => ( isOperator( args.value ) ? chooseOperator( s, args.value ) : s ),
++		equals: ( s ) => equals( s ),
++		clear: () => ( { ...CLEARED } ),
++		backspace: ( s ) => backspace( s ),
++		negate: ( s ) => negate( s ),
++		percent: ( s ) => percent( s ),
++	},
++
++	placeholder: () => ( {} ),
++
++	mounted: ( ctx ) => {
++		const onKey = ( ev: KeyboardEvent ): void => {
++			if ( ev.ctrlKey || ev.metaKey || ev.altKey ) {
++				return;
++			}
++			const hit = keyAction( ev.key );
++			if ( ! hit ) {
++				return;
++			}
++			ev.preventDefault();
++			ctx.local( hit.action, hit.args );
++		};
++		ctx.root.addEventListener( 'keydown', onKey );
++		ctx.root.querySelector< HTMLElement >( '.os-calc' )?.focus( { preventScroll: true } );
++		return () => ctx.root.removeEventListener( 'keydown', onKey );
++	},
++
++	view: ( { state } ) => {
++		const op = isOperator( state.operator ) ? state.operator : null;
++		const pending = op !== null && state.fresh ? op : null;
++		const digit = ( d: string, wide = false ) => html`
++			<os-button fill-cell variant="secondary" class=${ wide ? 'os-calc__key os-calc__key--wide' : 'os-calc__key' }
++				os-action="digit" os-arg-value=${ d }>${ d }</os-button>`;
++		const operator = ( o: Operator, label: string ) => html`
++			<os-button fill-cell variant="ghost" class=${ pending === o ? 'os-calc__key os-calc__key--pending' : 'os-calc__key' }
++				aria-label=${ label } os-action="operator" os-arg-value=${ o }>${ SYMBOLS[ o ] }</os-button>`;
++
++		return html`
++			<div class="os-calc" tabindex="-1">
++				<div class="os-calc__screen">
++					<div class="os-calc__expression" aria-hidden="true">${ op !== null && state.stored !== '' ? `${ state.stored } ${ SYMBOLS[ op ] }` : '' }</div>
++					<os-display size="xl" class="os-calc__display" value=${ state.error ? __( 'Error' ) : state.display }></os-display>
++				</div>
++				<div class="os-calc__keys">
++					<os-button fill-cell variant="ghost" class="os-calc__key" aria-label=${ __( 'All clear' ) } os-action="clear">AC</os-button>
++					<os-button fill-cell variant="ghost" class="os-calc__key" aria-label=${ __( 'Change sign' ) } os-action="negate">±</os-button>
++					<os-button fill-cell variant="ghost" class="os-calc__key" aria-label=${ __( 'Percent' ) } os-action="percent">%</os-button>
++					${ operator( '/', __( 'Divide' ) ) }
++					${ digit( '7' ) }${ digit( '8' ) }${ digit( '9' ) }
++					${ operator( '*', __( 'Multiply' ) ) }
++					${ digit( '4' ) }${ digit( '5' ) }${ digit( '6' ) }
++					${ operator( '-', __( 'Subtract' ) ) }
++					${ digit( '1' ) }${ digit( '2' ) }${ digit( '3' ) }
++					${ operator( '+', __( 'Add' ) ) }
++					${ digit( '0', true ) }
++					<os-button fill-cell variant="secondary" class="os-calc__key" aria-label=${ __( 'Decimal point' ) } os-action="decimal">.</os-button>
++					<os-button fill-cell variant="primary" class="os-calc__key" aria-label=${ __( 'Equals' ) } os-action="equals">=</os-button>
++				</div>
++			</div>
++		`;
++	},
++} );
+diff --git c/apps/calculator/calculator.test.ts w/apps/calculator/calculator.test.ts
+new file mode 100644
+index 00000000..464e04df
+--- /dev/null
++++ w/apps/calculator/calculator.test.ts
+@@ -0,0 +1,61 @@
++import { describe, expect, it, vi } from 'vitest';
++import { mockViewContext } from '../../src/app-runtime/testing';
++import app, { type CalcState } from './calculator.os';
++
++const INITIAL: CalcState = { display: '0', stored: '', operator: '', fresh: false, error: false };
++
++function press( ...keys: string[] ): CalcState {
++	let state: Record< string, unknown > = { ...INITIAL };
++	for ( const key of keys ) {
++		const [ action, value ] = key.split( ':' );
++		state = app.runLocal( action, state, value === undefined ? {} : { value }, {} );
++	}
++	return state as CalcState;
++}
++
++describe( 'calculator', () => {
++	it( 'chains operators left to right and rounds away float noise', () => {
++		expect( press( 'digit:2', 'operator:+', 'digit:3', 'operator:*', 'digit:4', 'equals' ).display ).toBe( '20' );
++		expect( press( 'digit:0', 'decimal', 'digit:1', 'operator:+', 'digit:0', 'decimal', 'digit:2', 'equals' ).display ).toBe( '0.3' );
++	} );
++
++	it( 'replaces a pending operator and repeats the left operand on a bare equals', () => {
++		expect( press( 'digit:5', 'operator:+', 'operator:-', 'digit:2', 'equals' ).display ).toBe( '3' );
++		expect( press( 'digit:5', 'operator:+', 'equals' ).display ).toBe( '10' );
++	} );
++
++	it( 'starts a new entry after a result and edits only the entry', () => {
++		expect( press( 'digit:1', 'operator:+', 'digit:1', 'equals', 'digit:7' ).display ).toBe( '7' );
++		expect( press( 'digit:1', 'digit:2', 'backspace', 'backspace' ).display ).toBe( '0' );
++		expect( press( 'digit:1', 'decimal', 'decimal', 'digit:5', 'negate' ).display ).toBe( '-1.5' );
++		expect( press( 'digit:5', 'digit:0', 'percent' ).display ).toBe( '0.5' );
++	} );
++
++	it( 'shows an error on division by zero and recovers on the next digit', () => {
++		const failed = press( 'digit:8', 'operator:/', 'digit:0', 'equals' );
++		expect( failed.error ).toBe( true );
++		expect( press( 'digit:8', 'operator:/', 'digit:0', 'equals', 'digit:4' ) ).toEqual( { ...INITIAL, display: '4' } );
++	} );
++
++	it( 'maps the keyboard onto the keypad without swallowing shortcuts', () => {
++		const root = document.createElement( 'div' );
++		const local = vi.fn();
++		const ctx = mockViewContext< CalcState, Record< string, never > >( { state: INITIAL, data: {}, root, local } );
++		const teardown = app.mounted( ctx as never );
++
++		const key = ( init: KeyboardEventInit ) => {
++			const ev = new KeyboardEvent( 'keydown', { bubbles: true, cancelable: true, ...init } );
++			root.dispatchEvent( ev );
++			return ev.defaultPrevented;
++		};
++		expect( key( { key: '7' } ) ).toBe( true );
++		expect( key( { key: 'Enter' } ) ).toBe( true );
++		expect( key( { key: '-', metaKey: true } ) ).toBe( false );
++		expect( key( { key: 'a' } ) ).toBe( false );
++		expect( local.mock.calls ).toEqual( [ [ 'digit', { value: '7' } ], [ 'equals', undefined ] ] );
++
++		if ( typeof teardown === 'function' ) {
++			teardown();
++		}
++	} );
++} );
+diff --git c/docs/app-framework.md w/docs/app-framework.md
+index 2a5f5245..65a4bc10 100644
+--- c/docs/app-framework.md
++++ w/docs/app-framework.md
+@@ -537,0 +538 @@ apps/plugins/, apps/comments/   the Plugins window (installed / browse / feature
++apps/calculator/                calculator.os.php + calculator.os.ts + calculator.css — the smallest client view: no data(), no server actions, every key a local action

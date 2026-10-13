@@ -1,0 +1,21 @@
+ assets/css/window-chrome.css                       |   4 +
+ docs/desktop-themes.md                             |   2 +-
+ docs/event-driven-framework.md                     |   2 +-
+ docs/hooks-reference.md                            |   2 +-
+ docs/javascript-reference.md                       |  22 ++++-
+ includes/desktop-themes/store.php                  |   1 +
+ includes/session.php                               |   6 ++
+ src/boot/session.ts                                |   2 +
+ src/desktop-themes/slots.ts                        |   1 +
+ src/native-windows.ts                              |   1 +
+ src/title-bar-buttons/paint-icon.ts                |   4 +-
+ src/title-bar-buttons/registry.ts                  |   2 +-
+ src/types.ts                                       |  15 ++-
+ .../os-window-button/os-window-button.ts           |  16 +--
+ src/window-chrome/controls/built-ins.ts            |  24 ++++-
+ src/window-chrome/controls/registry.ts             |   5 +-
+ src/window-manager/index.ts                        |  88 ++++++++++++++++-
+ src/window/index.ts                                |  60 ++++++++++-
+ tests/vitest/window-child-ownership.test.ts        | 110 +++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts |  14 +--
+ 20 files changed, 347 insertions(+), 34 deletions(-)

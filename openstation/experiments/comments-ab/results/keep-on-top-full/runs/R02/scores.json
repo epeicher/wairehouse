@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 22,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag also survives a real reload.",
+    "C": "C-stack: every former `_stack.forEach(... setZIndex( BASE_Z_INDEX + i ))` site in focus/raise/open now calls a single `applyZOrder()`, which derives bands from `_stack`. C-pin: the pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )`. C-session: the flag goes through `snapshot()`, both `restoreSession()` branches (lines 214 and 307), `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`.",
+    "D": "No violations: the label is `__( 'Keep on top' )`, the on state uses the `active` attribute and `aria-pressed` with no hardcoded colour, the icon lives inside `os-window-button`, and no `assets/js/` files or version stamps were touched.",
+    "E": "The existing `window-child-ownership.test.ts` gains cases asserting `paintOrder().at( -1 ) ).toBe( 'a' )` after `manager.focus( b )` and a later open, plus a snapshot round-trip.",
+    "F": "`javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, `readonly alwaysOnTop: boolean` to the Window interface and a Keep on top section, and `architecture.md` documents the `alwaysOnTop: true` session field.",
+    "G": "New public surface beyond the prompt: the `WindowConfig.alwaysOnTop` open-time option is documented in its own right, and a new `'pin'` icon key is added to the public `os-window-button` icon type list. There is also minor churn in an unrelated test comment (the 'post-0.6.2' wording was removed).",
+    "H": "The final message reports typecheck, lint (0 errors), test:js (6,610 pass) and build all succeeding, which matches the passing gates.",
+    "I": "Ownership is handled by `isKeptOnTop()` walking `ownerOf` with a cycle guard and tested in 'a child of a window kept on top paints above its owner'. Idempotence comes from `if ( this.alwaysOnTop === enabled ) return;` and `this.getById( windowId )?.setAlwaysOnTop`. The fullscreen claim has no explicit code in the diff."
+  },
+  "notable": "The attempt found and patched the PHP sanitizer that would otherwise silently drop the flag on save, and kept `_stack` as pure focus order by applying the pinned band only in a single z-index pass, which preserves `getFocused()` semantics."
+}

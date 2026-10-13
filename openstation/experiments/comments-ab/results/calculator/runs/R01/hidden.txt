@@ -1,0 +1,13 @@
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > adds from the keypad without a request 15ms
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > subtracts, multiplies and divides 4ms
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > clears back to zero 4ms
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > hides binary rounding noise 2ms
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > never shows Infinity or NaN after dividing by zero, and recovers 6ms
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > takes keyboard input while focused 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: a keypad button for "7": expected undefined to be truthy
+AssertionError: a keypad button for "9": expected undefined to be truthy
+AssertionError: a keypad button for "4": expected undefined to be truthy
+AssertionError: a keypad button for "0": expected undefined to be truthy
+AssertionError: a keypad button for "8": expected undefined to be truthy
+      Tests  5 failed | 1 passed (6)

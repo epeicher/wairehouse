@@ -1,0 +1,5 @@
+lint,pass
+typecheck,pass
+test_js,pass
+phpcs,pass
+hidden,pass

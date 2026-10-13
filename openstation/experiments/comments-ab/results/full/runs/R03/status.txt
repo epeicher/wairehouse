@@ -1,0 +1,6 @@
+ M docs/javascript-reference.md
+ M src/desktop.ts
+ M src/window-manager/arrange.ts
+ M src/window-manager/geometry.ts
+ M src/window-manager/index.ts
+ M tests/vitest/arrange.test.ts

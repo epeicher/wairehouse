@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 2, "G": 2, "H": 1 },
+  "total": 20,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "`src/desktop.ts` adds a `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` row in the System submenu, and `pickGridDimensions` now returns `{ cols: n, rows: 1 }` for n ≤ 3 (thirds) and `ceil(√n)` columns beyond that (2x2 for four), so two, three and four windows all behave as asked.",
+    "C": "The menu row calls the existing `manager.tile()`, and the change only adjusts the grid rule in `geometry.ts` plus the per-row span calculation in `arrange.ts`; there is no new layout code and no DOM measuring.",
+    "D": "The diff has no `assets/js/` edits, no raw fetch/confirm/alert, no `:host` tokens, no version stamps and no new eslint-disable lines.",
+    "E": "Two cases were added to the existing `tests/vitest/arrange.test.ts`: 'tile() puts 3 windows in thirds of one row', which the old picker fails, and a short-last-row width test, so both cover the changed grid rule.",
+    "F": "`docs/javascript-reference.md` drops `tile()` from the 'no UI of their own' list, adds \"`tile()` is the System menu's **Tile all windows** row\", and describes the new grid rule next to `os.arrange.tile.starting`.",
+    "G": "Only the five relevant files changed; the `mins` to `members.map(...)` rewrite in `arrange.ts` is what makes the short last row fill the width, and nothing was reformatted or regenerated.",
+    "H": "The final message lists `npm run build`, `npm run lint`, `npm run typecheck` and `npm run test:js` as passing, which matches the gates, and it is open about not running PHPUnit or a live shell."
+  },
+  "notable": "The fix is a clean, reuse-first change with a regression test that fails on the old code, and the agent openly flags that changing the shared `tile()` also changes workspace tiling. The weakness is that the new picker ignores aspect ratio entirely, so portrait work areas also get three thin columns."
+}

@@ -1,0 +1,502 @@
+diff --git c/apps/calculator/calculator.css w/apps/calculator/calculator.css
+new file mode 100644
+index 00000000..b5283625
+--- /dev/null
++++ w/apps/calculator/calculator.css
+@@ -0,0 +1,54 @@
++/**
++ * Calculator — window styles.
++ *
++ * Layout only: the readout on top, a 4-column keypad that grows with
++ * the window so the caps stay large. The caps and the readout paint
++ * themselves through their own tokens; this sheet declares no colour
++ * beyond the muted text token every app reads.
++ */
++
++.os-calc {
++	display: flex;
++	flex-direction: column;
++	gap: 12px;
++	block-size: 100%;
++	padding: 12px;
++	box-sizing: border-box;
++}
++
++.os-calc__screen {
++	flex: none;
++	display: flex;
++	flex-direction: column;
++	align-items: flex-end;
++	gap: 2px;
++	min-inline-size: 0;
++}
++
++/* The pending left operand and operator, e.g. "12 ×". Always holds
++   its line so the readout does not jump when it appears. */
++.os-calc__expression {
++	min-block-size: 1.4em;
++	font-size: 14px;
++	font-variant-numeric: tabular-nums;
++	color: var( --os-ui-fg-muted, #646970 );
++}
++
++.os-calc__display {
++	align-self: stretch;
++}
++
++.os-calc__keys {
++	flex: 1;
++	display: grid;
++	grid-template-columns: repeat( 4, 1fr );
++	grid-auto-rows: 1fr;
++	gap: 8px;
++	min-block-size: 0;
++	--os-ui-key-min-height: 44px;
++	--os-ui-key-font-size: 22px;
++}
++
++.os-calc__key--wide {
++	grid-column: span 2;
++}
+diff --git c/apps/calculator/calculator.os.php w/apps/calculator/calculator.os.php
+new file mode 100644
+index 00000000..6f59529c
+--- /dev/null
++++ w/apps/calculator/calculator.os.php
+@@ -0,0 +1,51 @@
++<?php
++/**
++ * Calculator — a four-function calculator, as an OpenStation app.
++ *
++ * This file is the window: title, icon, size, the dock tile and the
++ * desktop shortcut, and the state schema. There is no server action
++ * and no `data()`: every key press is a `local` reducer in
++ * `calculator.os.ts`, so arithmetic never waits for a request.
++ *
++ * @package OpenStation
++ */
++
++namespace OpenStation\Apps\Calculator;
++
++use OpenStation\App;
++
++// Direct access, unless a standalone host is booting on bare PHP.
++if ( ! defined( 'ABSPATH' ) ) {
++	defined( 'OPENSTATION_STANDALONE' ) || exit;
++}
++
++/** A calculator body: the readout across the top, a 3×2 keypad below. */
++const ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="12" y="6" width="40" height="52" rx="7" fill="none" stroke="currentColor" stroke-width="4.5"/><rect x="20" y="14" width="24" height="10" rx="2" fill="currentColor"/><circle cx="24" cy="34" r="3.5" fill="currentColor"/><circle cx="40" cy="34" r="3.5" fill="currentColor"/><circle cx="24" cy="47" r="3.5" fill="currentColor"/><circle cx="40" cy="47" r="3.5" fill="currentColor"/></svg>';
++
++return App::define( 'openstation-calculator' )
++	->title( __( 'Calculator', 'desktop-mode' ) )
++	->icon( ICON )
++	->size( 320, 480 )
++	->min_size( 260, 380 )
++	->desktop_icon()
++	// Nothing here reads or writes the site, so any user with a shell
++	// may use it.
++	->capabilities( 'read' )
++	// The body takes focus on open, so typed digits land here — and
++	// only here: the keyboard handler listens on the window body,
++	// never on the document.
++	->autofocus()
++	->state(
++		array(
++			// What the readout shows: the entry being typed, or a result.
++			'display' => '0',
++			// The left operand, waiting for its operator's right one.
++			'stored'  => '',
++			// The pending operator: `+`, `-`, `*`, `/`, or '' for none.
++			'op'      => '',
++			// The next digit starts a new entry instead of extending it.
++			'fresh'   => false,
++			// The last result was not a number (division by zero).
++			'error'   => false,
++		)
++	);
+diff --git c/apps/calculator/calculator.os.ts w/apps/calculator/calculator.os.ts
+new file mode 100644
+index 00000000..1dfa09e5
+--- /dev/null
++++ w/apps/calculator/calculator.os.ts
+@@ -0,0 +1,253 @@
++/**
++ * Calculator — the client half.
++ *
++ * A four-function calculator: a readout and a keypad of `<os-key>`
++ * caps. Every press is the one `press` local action — a pure reducer
++ * over the state `calculator.os.php` declared — so nothing here ever
++ * makes a request.
++ *
++ * The caps carry no `key` / `code` attribute on purpose: `<os-key>`
++ * matches those against keydowns on the whole document, so a digit
++ * typed into any other window would land here too. The physical
++ * keyboard is mapped by `keyInput()` instead, from a listener on this
++ * window's own body (`mounted()`).
++ */
++
++import { __, defineApp, html } from '@openstation/app';
++
++// ------------------------------------------------------------ types
++
++export type Operator = '+' | '-' | '*' | '/';
++
++export interface State extends Record< string, unknown > {
++	display: string;
++	stored: string;
++	op: Operator | '';
++	fresh: boolean;
++	error: boolean;
++}
++
++/** One key press: a digit, `.`, an operator, or a command. */
++export type Input = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | Operator | '=' | 'clear' | 'back' | 'sign';
++
++// ------------------------------------------------------------ model
++
++export const INITIAL: State = { display: '0', stored: '', op: '', fresh: false, error: false };
++
++/** Digits an entry may hold; past this a double stops being exact. */
++const MAX_DIGITS = 15;
++
++const OPERATORS: readonly string[] = [ '+', '-', '*', '/' ];
++
++/** Glyphs the keypad and the expression line show for each operator. */
++export const SYMBOLS: Record< Operator, string > = { '+': '+', '-': '−', '*': '×', '/': '÷' };
++
++/**
++ * A number as the readout shows it: rounded to 12 significant digits,
++ * so `0.1 + 0.2` reads `0.3` rather than the double's tail, or `null`
++ * when it is not a finite number.
++ */
++export function formatNumber( value: number ): string | null {
++	if ( ! Number.isFinite( value ) ) {
++		return null;
++	}
++	const rounded = Number.parseFloat( value.toPrecision( 12 ) );
++	// `-0` stringifies as `0` already; Object.is keeps it from reading `-0` anywhere.
++	return String( Object.is( rounded, -0 ) ? 0 : rounded );
++}
++
++/** Apply a binary operator to two readout strings. */
++export function compute( left: string, op: Operator, right: string ): string | null {
++	const a = Number( left );
++	const b = Number( right );
++	switch ( op ) {
++		case '+':
++			return formatNumber( a + b );
++		case '-':
++			return formatNumber( a - b );
++		case '*':
++			return formatNumber( a * b );
++		case '/':
++			return formatNumber( a / b );
++	}
++}
++
++/** The state after a result: shown, nothing pending, or the error. */
++function settle( state: State, result: string | null, nextOp: Operator | '' ): State {
++	if ( result === null ) {
++		return { ...INITIAL, display: '', error: true, fresh: true };
++	}
++	return { ...state, display: result, stored: nextOp ? result : '', op: nextOp, fresh: true, error: false };
++}
++
++/** The calculator's one reducer: the state after pressing `input`. */
++export function press( current: State, input: Input ): State {
++	// After an error, every key starts over; a digit or point also
++	// becomes the first key of the new entry.
++	const state = current.error ? { ...INITIAL } : current;
++	if ( current.error && ! /^[0-9.]$/.test( input ) ) {
++		return state;
++	}
++
++	if ( input === 'clear' ) {
++		return { ...INITIAL };
++	}
++
++	if ( /^[0-9]$/.test( input ) ) {
++		if ( state.fresh || state.display === '0' ) {
++			return { ...state, display: input, fresh: false };
++		}
++		if ( state.display === '-0' ) {
++			return { ...state, display: `-${ input }` };
++		}
++		if ( state.display.replace( /[^0-9]/g, '' ).length >= MAX_DIGITS ) {
++			return state;
++		}
++		return { ...state, display: state.display + input };
++	}
++
++	if ( input === '.' ) {
++		if ( state.fresh ) {
++			return { ...state, display: '0.', fresh: false };
++		}
++		return state.display.includes( '.' ) ? state : { ...state, display: `${ state.display }.` };
++	}
++
++	if ( input === 'back' ) {
++		if ( state.fresh ) {
++			return state;
++		}
++		const shorter = state.display.slice( 0, -1 );
++		return { ...state, display: shorter === '' || shorter === '-' ? '0' : shorter };
++	}
++
++	if ( input === 'sign' ) {
++		const display = state.display.startsWith( '-' ) ? state.display.slice( 1 ) : `-${ state.display }`;
++		// A sign on a fresh result edits it, so typing on continues it.
++		return { ...state, display, fresh: false };
++	}
++
++	if ( OPERATORS.includes( input ) ) {
++		const op = input as Operator;
++		// Chaining: `5 + 3 ×` settles `8` and waits for the × operand.
++		if ( state.op && ! state.fresh ) {
++			return settle( state, compute( state.stored, state.op, state.display ), op );
++		}
++		// A second operator in a row replaces the first (`5 + −` is
++		// `5 −`); otherwise the readout becomes the left operand.
++		return { ...state, stored: state.op ? state.stored : state.display, op, fresh: true };
++	}
++
++	// `=`. With no right operand typed yet, the left one stands in:
++	// `5 + =` is 10, as on a pocket calculator.
++	if ( ! state.op ) {
++		return { ...state, fresh: true };
++	}
++	return settle( state, compute( state.stored, state.op, state.fresh ? state.stored : state.display ), '' );
++}
++
++/**
++ * The calculator input a physical key means, or `null` when it means
++ * none. A held Ctrl / Alt / Cmd is a shortcut, never a digit.
++ */
++export function keyInput( ev: Pick< KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey' > ): Input | null {
++	if ( ev.ctrlKey || ev.altKey || ev.metaKey ) {
++		return null;
++	}
++	const { key } = ev;
++	if ( /^[0-9]$/.test( key ) || OPERATORS.includes( key ) ) {
++		return key as Input;
++	}
++	switch ( key ) {
++		case '.':
++		case ',':
++			return '.';
++		case '=':
++		case 'Enter':
++			return '=';
++		case 'Backspace':
++			return 'back';
++		case 'Escape':
++		case 'Delete':
++			return 'clear';
++	}
++	return null;
++}
++
++// ------------------------------------------------------------- view
++
++interface Cap {
++	input: Input;
++	label: string;
++	/** Digits wear the default filled cap; '' omits the attribute. */
++	variant: '' | 'ghost' | 'primary';
++	wide?: boolean;
++	/** Tooltip for a cap whose glyph is not self-explanatory. */
++	hint?: string;
++}
++
++function keypad(): Cap[] {
++	const digit = ( d: Input ): Cap => ( { input: d, label: d, variant: '' } );
++	const operator = ( op: Operator ): Cap => ( { input: op, label: SYMBOLS[ op ], variant: 'ghost' } );
++	return [
++		{ input: 'clear', label: 'AC', variant: 'ghost', hint: __( 'All clear (Esc)' ) },
++		{ input: 'sign', label: '±', variant: 'ghost', hint: __( 'Change sign' ) },
++		{ input: 'back', label: '⌫', variant: 'ghost', hint: __( 'Delete last digit (Backspace)' ) },
++		operator( '/' ),
++		digit( '7' ), digit( '8' ), digit( '9' ), operator( '*' ),
++		digit( '4' ), digit( '5' ), digit( '6' ), operator( '-' ),
++		digit( '1' ), digit( '2' ), digit( '3' ), operator( '+' ),
++		{ ...digit( '0' ), wide: true },
++		digit( '.' ),
++		// The one accent on the pad, as `<os-key>` intends it.
++		{ input: '=', label: '=', variant: 'primary' },
++	];
++}
++
++export default defineApp< State, Record< string, never > >( 'openstation-calculator', {
++	local: {
++		press: ( state, args ) => press( state, String( args.input ) as Input ),
++	},
++
++	// Nothing to wait for: the frame paints the moment the window opens.
++	placeholder: () => ( {} ),
++
++	view: ( { local, state } ) => {
++		const expression = state.op ? `${ state.stored } ${ SYMBOLS[ state.op ] }` : '';
++		return html`
++			<div class="os-calc">
++				<div class="os-calc__screen">
++					<div class="os-calc__expression" aria-hidden="true">${ expression }</div>
++					<os-display class="os-calc__display" size="xl" value=${ state.error ? __( 'Error' ) : state.display }></os-display>
++				</div>
++				<div class="os-calc__keys">
++					${ keypad().map( ( cap ) => html`
++						<os-key class=${ cap.wide ? 'os-calc__key os-calc__key--wide' : 'os-calc__key' }
++							data-input=${ cap.input }
++							label=${ cap.label }
++							variant=${ cap.variant }
++							title=${ cap.hint ?? '' }
++							@os-key=${ () => local( 'press', { input: cap.input } ) }></os-key>
++					` ) }
++				</div>
++			</div>
++		`;
++	},
++
++	mounted: ( ctx ) => {
++		// The window body, so a press lands whether focus is on a cap
++		// or on the body itself (where `autofocus` puts it on open).
++		const scope = ctx.root.closest< HTMLElement >( '.os-window__body' ) ?? ctx.root;
++		const onKeyDown = ( ev: KeyboardEvent ): void => {
++			const input = keyInput( ev );
++			if ( input === null ) {
++				return;
++			}
++			// Enter on a focused cap would also click it.
++			ev.preventDefault();
++			ctx.local( 'press', { input } );
++		};
++		scope.addEventListener( 'keydown', onKeyDown );
++		return () => scope.removeEventListener( 'keydown', onKeyDown );
++	},
++} );
+diff --git c/apps/calculator/calculator.test.ts w/apps/calculator/calculator.test.ts
+new file mode 100644
+index 00000000..11291e78
+--- /dev/null
++++ w/apps/calculator/calculator.test.ts
+@@ -0,0 +1,99 @@
++/**
++ * Calculator — the reducer, the key map, and the view's wiring.
++ */
++import { describe, expect, it, vi } from 'vitest';
++import '../../src/ui/components/os-key/os-key';
++import '../../src/ui/components/os-display/os-display';
++import { mockViewContext } from '../../src/app-runtime/testing';
++import app, { INITIAL, keyInput, press, type Input, type State } from './calculator.os';
++
++/** The state after pressing each input in turn from a cleared calculator. */
++const run = ( ...inputs: Input[] ): State => inputs.reduce( press, { ...INITIAL } );
++
++describe( 'press', () => {
++	it( 'does the arithmetic a pocket calculator does', () => {
++		expect( run( '1', '2', '+', '3', '=' ).display ).toBe( '15' );
++		// Chaining settles left to right, and shows the running total.
++		const chained = run( '2', '+', '3', '*' );
++		expect( [ chained.display, chained.stored, chained.op ] ).toEqual( [ '5', '5', '*' ] );
++		expect( run( '2', '+', '3', '*', '4', '=' ).display ).toBe( '20' );
++		// A second operator replaces the first; `=` with no right operand reuses the left.
++		expect( run( '9', '+', '-', '4', '=' ).display ).toBe( '5' );
++		expect( run( '5', '+', '=' ).display ).toBe( '10' );
++		// The double's tail never reaches the readout.
++		expect( run( '.', '1', '+', '.', '2', '=' ).display ).toBe( '0.3' );
++		// A digit after a result starts a new entry.
++		expect( run( '2', '*', '3', '=', '7' ).display ).toBe( '7' );
++	} );
++
++	it( 'reports division by zero and recovers on the next key', () => {
++		const broken = run( '8', '/', '0', '=' );
++		expect( broken.error ).toBe( true );
++		expect( press( broken, '+' ) ).toEqual( INITIAL );
++		expect( press( broken, '4' ) ).toMatchObject( { display: '4', error: false } );
++	} );
++
++	it( 'edits the entry: zeros, one point, a digit cap, backspace and sign', () => {
++		expect( run( '0', '0', '7' ).display ).toBe( '7' );
++		expect( run( '1', '.', '.', '5' ).display ).toBe( '1.5' );
++		expect( run( ...( Array( 20 ).fill( '9' ) as Input[] ) ).display ).toHaveLength( 15 );
++		expect( run( '4', '2', 'back' ).display ).toBe( '4' );
++		expect( run( '4', 'sign', 'back' ).display ).toBe( '0' );
++		expect( run( 'sign', '3' ).display ).toBe( '-3' );
++		expect( run( '6', 'sign', '+', '2', '=' ).display ).toBe( '-4' );
++		expect( run( '6', '+', '2', 'clear' ) ).toEqual( INITIAL );
++	} );
++} );
++
++describe( 'keyInput', () => {
++	const key = ( k: string, mods: Partial< KeyboardEvent > = {} ) =>
++		keyInput( { key: k, ctrlKey: false, altKey: false, metaKey: false, ...mods } );
++
++	it( 'maps the keys a numpad and a keyboard type, and no shortcut', () => {
++		expect( [ '7', '*', ',', 'Enter', '=', 'Backspace', 'Escape' ].map( ( k ) => key( k ) ) )
++			.toEqual( [ '7', '*', '.', '=', '=', 'back', 'clear' ] );
++		expect( key( 'a' ) ).toBeNull();
++		expect( key( 'c', { metaKey: true } ) ).toBeNull();
++		expect( key( '7', { ctrlKey: true } ) ).toBeNull();
++	} );
++} );
++
++describe( 'view', () => {
++	it( 'presses through the caps and the window keyboard, never the document', () => {
++		const body = document.createElement( 'div' );
++		body.className = 'os-window__body';
++		const root = document.createElement( 'div' );
++		body.appendChild( root );
++		document.body.appendChild( body );
++		const local = vi.fn();
++		const ctx = mockViewContext< State, Record< string, never > >( { state: { ...INITIAL, op: '*', stored: '12' }, data: {}, root, local } );
++		app.render( ctx );
++		const teardown = app.mounted( ctx );
++
++		expect( root.querySelector( 'os-display' )?.getAttribute( 'value' ) ).toBe( '0' );
++		expect( root.querySelector( '.os-calc__expression' )?.textContent ).toBe( '12 ×' );
++		// The caps must not match keys document-wide (see the file header).
++		expect( root.querySelector( 'os-key[key], os-key[code]' ) ).toBeNull();
++
++		root.querySelector( 'os-key[data-input="7"]' )!.dispatchEvent( new CustomEvent( 'os-key', { bubbles: true } ) );
++		expect( local ).toHaveBeenLastCalledWith( 'press', { input: '7' } );
++
++		// A key typed in another window does nothing here…
++		local.mockClear();
++		document.body.dispatchEvent( new KeyboardEvent( 'keydown', { key: '5', bubbles: true } ) );
++		expect( local ).not.toHaveBeenCalled();
++
++		// …one typed with focus in this window presses, and Enter does not also click the focused cap.
++		const enter = new KeyboardEvent( 'keydown', { key: 'Enter', bubbles: true, cancelable: true } );
++		root.querySelector( 'os-key' )!.dispatchEvent( enter );
++		expect( local ).toHaveBeenLastCalledWith( 'press', { input: '=' } );
++		expect( enter.defaultPrevented ).toBe( true );
++
++		if ( typeof teardown === 'function' ) {
++			teardown();
++		}
++		body.dispatchEvent( new KeyboardEvent( 'keydown', { key: '1', bubbles: true } ) );
++		expect( local ).toHaveBeenCalledTimes( 1 );
++		body.remove();
++	} );
++} );
+diff --git c/docs/app-framework.md w/docs/app-framework.md
+index 2a5f5245..6cbd30e5 100644
+--- c/docs/app-framework.md
++++ w/docs/app-framework.md
+@@ -34,7 +34,7 @@ Drop that file in a directory the framework scans (see [Where apps live](#where-
+ 
+ An app has two possible halves. The **`.os.php`** is always there: the window, the state schema, the server actions, the data. A **server view** (`->view()`) paints the body in PHP and re-renders it on every interaction — the right shape for forms, settings, dashboards, lists with actions. When an interaction must be instant — a filter over rows already in the browser — the app adds a **client view**, a **`.os.ts`** beside the `.os.php`, and the same state model moves into the browser: see [The client view](#the-client-view--osts). Either way the window, its chrome, its effects and its dispatch contract are identical.
+ 
+-Eleven of OpenStation's own windows are apps — the three reference apps below, Trash and WP Explorer (`apps/trash/`, `apps/my-wordpress/`), and the six list windows ported together (see [`migration-list-apps.md`](./migration-list-apps.md)): **Posts** and **Pages** (`apps/posts/`, `apps/pages/` — the list-window shape: a `data()` over `openstation_app_rest_page()`, paging / filtering / sorting as state, the table an `os-preserve`d element driven from `updated()`, and two PixiJS canvases mounted lazily into preserved hosts; Pages reuses the Posts parts), **Users** and **User Edit** (`apps/users/`, `apps/user-edit/` — the singleton that retargets through `reopen` on its `userId` param, and a custom element shared by two bundles), **Plugins** (`apps/plugins/` — in-process Core REST for the mutations, admin-ajax for what needs `wp-admin`, the landing tab a param) and **Comments** (`apps/comments/` — a conversation view whose scope is its `post` param). **Code Blue** — `apps/code-blue/` — is the error-log reader, rebuilt from a PHP module plus a 1,726-line TypeScript bundle into an `.os.php` (window, actions, data) and an `.os.ts` (the body, with range / search / sort / legend / expand running locally): same features, under half the lines, every filter instant. **Station Home** — `apps/station-home/` — is the native Dashboard, and the one to read for the *server* view: an `.os.php`, a snapshot model and a body painted in PHP, no client script at all — Refresh is the built-in, the Customize picker is one state key, a switch is an action, a restore is the `show` lifecycle. **OpenStation Preferences** — `apps/os-settings/` — is the one to read for an app that *edits shell state*: the settings are not its state (they are applied before the first paint and written by more than one window), so its client view reads them through `wp.os.getOsSettings()` and writes them through `wp.os.updateOsSettings()`, the same public API a third-party settings tab uses; its declared state is the page, and its server surface is the handful of writes that are site truth rather than a preference. Read one of them after this page.
++Twelve of OpenStation's own windows are apps — the three reference apps below, Trash and WP Explorer (`apps/trash/`, `apps/my-wordpress/`), the Calculator (`apps/calculator/` — the smallest client view there is: a state schema and a `local` reducer, no `data()` and no server action), and the six list windows ported together (see [`migration-list-apps.md`](./migration-list-apps.md)): **Posts** and **Pages** (`apps/posts/`, `apps/pages/` — the list-window shape: a `data()` over `openstation_app_rest_page()`, paging / filtering / sorting as state, the table an `os-preserve`d element driven from `updated()`, and two PixiJS canvases mounted lazily into preserved hosts; Pages reuses the Posts parts), **Users** and **User Edit** (`apps/users/`, `apps/user-edit/` — the singleton that retargets through `reopen` on its `userId` param, and a custom element shared by two bundles), **Plugins** (`apps/plugins/` — in-process Core REST for the mutations, admin-ajax for what needs `wp-admin`, the landing tab a param) and **Comments** (`apps/comments/` — a conversation view whose scope is its `post` param). **Code Blue** — `apps/code-blue/` — is the error-log reader, rebuilt from a PHP module plus a 1,726-line TypeScript bundle into an `.os.php` (window, actions, data) and an `.os.ts` (the body, with range / search / sort / legend / expand running locally): same features, under half the lines, every filter instant. **Station Home** — `apps/station-home/` — is the native Dashboard, and the one to read for the *server* view: an `.os.php`, a snapshot model and a body painted in PHP, no client script at all — Refresh is the built-in, the Customize picker is one state key, a switch is an action, a restore is the `show` lifecycle. **OpenStation Preferences** — `apps/os-settings/` — is the one to read for an app that *edits shell state*: the settings are not its state (they are applied before the first paint and written by more than one window), so its client view reads them through `wp.os.getOsSettings()` and writes them through `wp.os.updateOsSettings()`, the same public API a third-party settings tab uses; its declared state is the page, and its server surface is the handful of writes that are site truth rather than a preference. Read one of them after this page.
+ 
+ ---
+ 
+@@ -535,6 +535,7 @@ apps/os-settings/               os-settings.os.php + os-settings.os.ts + parts/*
+ apps/posts/, apps/pages/        the Posts and Pages list windows (Pages imports the Posts parts); the Categories mind map and Tags cloud under apps/posts/parts/
+ apps/users/, apps/user-edit/    the Users list and the User Edit singleton; <os-user-profile> under apps/users/parts/, shared by both bundles
+ apps/plugins/, apps/comments/   the Plugins window (installed / browse / featured, admin-ajax parts) and the Comments conversation view
++apps/calculator/                calculator.os.php + calculator.os.ts + calculator.css — the smallest client view: no data(), no server action, one local reducer
+ src/app-runtime/list-ui.ts      statusControl(), pager(), mountMenuCheckboxes() — the list-window furniture
+ ```
+ 

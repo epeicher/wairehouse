@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 1, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "C-stack: a single private `restack()` reads `_stack` and replaces the z-index loops in focus(), raise() and open. C-pin: the pin is a `registerWindowControl( { id: 'core/always-on-top', placement: 'controls', ... } )` registration. C-session: the flag goes through snapshot(), both restoreSession branches (lines 214 and 307), `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`.",
+    "D": "No violations found: labels use `__( 'Keep on top' )` / `__( 'Stop keeping on top' )`, the on state reuses the button's existing `active` look rather than a hardcoded colour, there are no assets/js edits and no version stamps.",
+    "E": "Five cases were added to the existing `window-child-ownership.test.ts`, including 'stays above windows focused or opened after it' and a snapshot round-trip.",
+    "F": "`javascript-reference.md` adds `manager.setAlwaysOnTop(...)` and `readonly alwaysOnTop: boolean`, but no listed SessionWindow or WindowConfig field shape in the docs mentions `alwaysOnTop`.",
+    "G": "It adds public surface the prompt did not ask for: a new `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` action and an `alwaysOnTop` WindowConfig open-time option, both documented as public, plus a new 'pin' icon key.",
+    "H": "The final message reports typecheck, lint (0 errors), test:js (6611 passed) and build (exit 0), which matches the passing gates.",
+    "I": "Ownership is handled by the `keptOnTop` owner-chain walk and tested in 'a child rides above its kept-on-top owner'; idempotence comes from `if ( ! win || win.alwaysOnTop === !! enabled ) return;`."
+  },
+  "notable": "The stacking rule is clean: one `restack()` pass that respects owner chains, plus the PHP sanitizer line that makes reload actually work. The main weakness is scope creep, with a new public hook and a new WindowConfig open option added without being proposed first."
+}

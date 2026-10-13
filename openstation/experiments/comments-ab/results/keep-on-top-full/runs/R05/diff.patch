@@ -1,0 +1,650 @@
+diff --git c/docs/event-driven-framework.md w/docs/event-driven-framework.md
+index 6f23c8ba..bcca71cc 100644
+--- c/docs/event-driven-framework.md
++++ w/docs/event-driven-framework.md
+@@ -106,7 +106,7 @@ stateDiagram-v2
+ | `os-window-child-blocked` | `{ windowId, childWindowId }` — a focus request for `windowId` went to its child window instead; the owner cannot come to the front while the child is open |
+ | `os-window-closing`     | `{ windowId, element }` |
+ | `os-window-closed`      | `{ windowId }` |
+-| `os-window-changed`     | `{ windowId?: string, reason: 'moved' \| 'resized' \| 'state' \| 'cascade' \| 'tile', state?: WindowState }` — batch-arrange dispatches (`'cascade'` / `'tile'`) omit `windowId`/`state` |
++| `os-window-changed`     | `{ windowId?: string, reason: 'moved' \| 'resized' \| 'state' \| 'always-on-top' \| 'cascade' \| 'tile', state?: WindowState }` — batch-arrange dispatches (`'cascade'` / `'tile'`) omit `windowId`/`state` |
+ 
+ Same payloads on `wp.hooks` actions:
+ `HOOKS.WINDOW_OPENED`, `…_FOCUSED`, `…_BLURRED`, `…_CHILD_BLOCKED`,
+diff --git c/docs/examples/window-controls.md w/docs/examples/window-controls.md
+index 59a2c749..8c1ec556 100644
+--- c/docs/examples/window-controls.md
++++ w/docs/examples/window-controls.md
+@@ -1,6 +1,6 @@
+ # Window controls
+ 
+-The title-bar control cluster (close / minimize / maximize / focus) is rendered from a registry plugins can extend, reorder, hide, or replace per-window. Built-in controls live in the same registry as plugin controls, addressed by the stable ids `core/minimize`, `core/maximize`, `core/focus-tab`, `core/close`. (Detach and reload moved into the title-bar three-dots menu and are no longer registry controls.)
++The title-bar control cluster (keep on top / close / minimize / maximize / focus) is rendered from a registry plugins can extend, reorder, hide, or replace per-window. Built-in controls live in the same registry as plugin controls, addressed by the stable ids `core/always-on-top`, `core/minimize`, `core/maximize`, `core/focus-tab`, `core/close`. (Detach and reload moved into the title-bar three-dots menu and are no longer registry controls.)
+ 
+ This is **Layer 2** of the four-layer window-chrome customization framework. See [Window themes](./window-theme.md) for Layer 1.
+ 
+diff --git c/docs/examples/window-lifecycle.md w/docs/examples/window-lifecycle.md
+index 48083d56..b49d1af3 100644
+--- c/docs/examples/window-lifecycle.md
++++ w/docs/examples/window-lifecycle.md
+@@ -67,6 +67,7 @@ wp.os.whenReady( () => {
+ | `os.window.unmaximized` | `{ windowId }` | Back to floating (e.g. drag-restore) |
+ | `os.window.fullscreen-entered` | `{ windowId }` | Covers the entire viewport |
+ | `os.window.fullscreen-exited` | `{ windowId }` | Back to whichever state preceded |
++| `os.window.always-on-top-changed` | `{ windowId, alwaysOnTop }` | Kept on top, or back to normal stacking |
+ | `os.window.moved` | `{ windowId, x, y }` | Fires with `drag-end` |
+ | `os.window.resized` | `{ windowId, width, height }` | Fires with `resize-end` |
+ | `os.window.title-changed` | `{ windowId, title }` | Iframe-sourced title updates |
+diff --git c/docs/hooks-reference.md w/docs/hooks-reference.md
+index 8b806fbc..ba9ae43b 100644
+--- c/docs/hooks-reference.md
++++ w/docs/hooks-reference.md
+@@ -4638,7 +4638,7 @@ openstation_register_window_control( $args );
+ 
+ `$args`: `id`, `label`, `icon`, `placement` (`'left'|'right'|'controls'`, default `'left'`), `order` (default 100), `script`.
+ 
+-Built-in control ids registered by the framework: `core/minimize`, `core/maximize`, `core/focus-tab`, `core/close`. (`core/detach` and `core/reload` are no longer title-bar controls — detach/reload moved into the title-bar three-dots menu.) Plugins can `unregisterWindowControl()` any of them globally, or use per-window `appearance.controls.{order, hide, custom}` for window-scoped mutations.
++Built-in control ids registered by the framework: `core/always-on-top`, `core/minimize`, `core/maximize`, `core/focus-tab`, `core/close`. (`core/detach` and `core/reload` are no longer title-bar controls — detach/reload moved into the title-bar three-dots menu.) Plugins can `unregisterWindowControl()` any of them globally, or use per-window `appearance.controls.{order, hide, custom}` for window-scoped mutations.
+ 
+ Actions:
+ - `openstation_window_control_script_registered( $handle )`
+diff --git c/docs/javascript-reference.md w/docs/javascript-reference.md
+index 391319a0..bdc67184 100644
+--- c/docs/javascript-reference.md
++++ w/docs/javascript-reference.md
+@@ -279,15 +279,15 @@ Only panel tabs fire this. A submenu tab on an iframe window navigates instead,
+ ---
+ 
+ ### `os-window-changed` — Experimental
+-Internal event used by the session saver. Fires for geometry changes (drag-end, resize-end) and state transitions (minimize, maximize, fullscreen, restore). Signature may change — prefer the per-operation events above for external use.
++Internal event used by the session saver. Fires for geometry changes (drag-end, resize-end), state transitions (minimize, maximize, fullscreen, restore) and keep-on-top changes. Signature may change — prefer the per-operation events above for external use.
+ 
+ **`detail` shape:**
+ 
+ ```typescript
+-{ windowId?: string, reason: 'moved' | 'resized' | 'state' | 'cascade' | 'tile', state?: WindowState }
++{ windowId?: string, reason: 'moved' | 'resized' | 'state' | 'always-on-top' | 'cascade' | 'tile', state?: WindowState }
+ ```
+ 
+-Batch-arrange dispatches (`reason: 'cascade'` / `'tile'`) omit `windowId` and `state` — only the per-window dispatches (`'moved'`, `'resized'`, `'state'`) carry them.
++Batch-arrange dispatches (`reason: 'cascade'` / `'tile'`) omit `windowId` and `state` — only the per-window dispatches (`'moved'`, `'resized'`, `'state'`, `'always-on-top'`) carry them.
+ 
+ ---
+ 
+@@ -916,6 +916,7 @@ manager.prewarm( config ): Promise< boolean >;                           // buil
+ manager.discardPrewarmed(): void;                                        // drop the current speculative window, announcing nothing
+ manager.focus( winOrId: Window | string ): void;                         // id or instance; unknown ids are a no-op
+ manager.raise( windowId: string ): void;                                 // restack to just below the top WITHOUT focusing; no focus/blur events
++manager.setAlwaysOnTop( windowId: string, enabled: boolean ): void;      // keep a window above every window that isn't, whichever has focus; persisted with the session
+ 
+ // Child windows (ownership)
+ manager.openChild( parentWindowId: string, config ): Promise< Window >;   // a real window its owner can never sit above
+@@ -1252,6 +1253,7 @@ interface Window {
+     readonly config:  WindowConfig;
+     readonly element: HTMLElement; // outer .os-window node
+     state: 'normal' | 'minimized' | 'maximized' | 'fullscreen' | 'snapped-left' | 'snapped-right';
++    readonly alwaysOnTop: boolean; // kept on top; change with manager.setAlwaysOnTop()
+ 
+     // State predicates — equivalent to `state === '…'`
+     // but easier to discover and harder to misspell at the call site.
+@@ -5245,6 +5247,7 @@ All window actions include at minimum `{ windowId: string }` — additional fiel
+ | `os.window.unmaximized` | action | Stable | `{ windowId, element }` |
+ | `os.window.fullscreen-entered` | action | Stable | `{ windowId, element }` |
+ | `os.window.fullscreen-exited` | action | Stable | `{ windowId, element }` |
++| `os.window.always-on-top-changed` | action | Stable | `{ windowId, alwaysOnTop }` — the window was kept on top or returned to normal stacking (title-bar pin or `manager.setAlwaysOnTop()`) |
+ | `os.window.auto-exit-fullscreen` | filter | Stable | `( shouldExit: boolean, ctx: { windowId, focusedTo } ) => boolean` — decides whether a fullscreen window should auto-exit when focus moves elsewhere. Default `true`. Return `false` to keep persistent-fullscreen surfaces (slideshow, video, game) in fullscreen across focus changes. |
+ | `os.window.focus-on-drag-hover` | filter | Stable | `( shouldFocus: boolean, ctx: { windowId, payloadType } ) => boolean` — decides whether the window under the cursor is raised (focused) after a ~250 ms hover dwell during any drag. `payloadType` is the DragManager payload's `type` slug (`'desktop-file'`, `'shortcut'`, plugin-defined), the bridge payload's `kind` (`'attachment'`, `'post'`, `'user'`), `'os-file'` for OS file drags, or `'external'` for any other native drag. Default `true`. Return `false` to keep HUD/palette/pinned-reference windows from stealing z-order during drags. |
+ | `os.window.drag-start` | action | Stable | `{ windowId }` |
+diff --git c/includes/session.php w/includes/session.php
+index 3f765a8e..1223a1c2 100644
+--- c/includes/session.php
++++ w/includes/session.php
+@@ -538,6 +538,12 @@ function openstation_sanitize_session( $session, $network = null ) {
+ 				$entry['unplaced'] = true;
+ 			}
+ 
++			// A window the user kept on top. Only written when true so
++			// plain sessions keep their shape.
++			if ( ! empty( $win['alwaysOnTop'] ) ) {
++				$entry['alwaysOnTop'] = true;
++			}
++
+ 			// Marks the entry for the shell's restore path: native
+ 			// windows reopen through the native-window registry, not by
+ 			// pointing an iframe at a URL. Only written when true so
+diff --git c/src/boot/session.ts w/src/boot/session.ts
+index 867ef40e..19d74a8d 100644
+--- c/src/boot/session.ts
++++ w/src/boot/session.ts
+@@ -211,6 +211,7 @@ export async function restoreSession(
+ 			// the geometry from the live work area rather than from
+ 			// the clamped pixels above.
+ 			...( win.gridSpan ? { gridSpan: win.gridSpan } : {} ),
++			...( win.alwaysOnTop ? { alwaysOnTop: true } : {} ),
+ 		};
+ 	}
+ 	if ( Object.keys( nativeSeeds ).length > 0 ) {
+@@ -303,6 +304,7 @@ export async function restoreSession(
+ 			// Cells outrank the clamped pixels — see `gridSpan` on
+ 			// `WindowConfig`.
+ 			...( win.gridSpan ? { gridSpan: win.gridSpan } : {} ),
++			...( win.alwaysOnTop ? { alwaysOnTop: true } : {} ),
+ 		} );
+ 
+ 		// Rehydrate any external sub-tabs the user had open on this
+diff --git c/src/hooks.ts w/src/hooks.ts
+index d5d5ecc1..05b6f872 100644
+--- c/src/hooks.ts
++++ w/src/hooks.ts
+@@ -618,6 +618,12 @@ export const HOOKS = {
+ 	 * Payload: `{ windowId: string, element: HTMLElement }`.
+ 	 */
+ 	WINDOW_FULLSCREEN_EXITED: 'os.window.fullscreen-exited',
++	/**
++	 * Action, fires when a window is kept on top or returned to normal
++	 * stacking (`windowManager.setAlwaysOnTop()`, or the title-bar
++	 * pin). Payload: `{ windowId: string, alwaysOnTop: boolean }`.
++	 */
++	WINDOW_ALWAYS_ON_TOP_CHANGED: 'os.window.always-on-top-changed',
+ 	/**
+ 	 * Filter, decides whether a fullscreen ("focus mode") window
+ 	 * should auto-exit when focus moves to a different window.
+diff --git c/src/native-windows.ts w/src/native-windows.ts
+index 3d5df8be..8c383a20 100644
+--- c/src/native-windows.ts
++++ w/src/native-windows.ts
+@@ -1108,6 +1108,7 @@ export type NativeWindowRestoreState = Partial<
+ 		| 'initialState'
+ 		| 'params'
+ 		| 'gridSpan'
++		| 'alwaysOnTop'
+ 	>
+ >;
+ 
+diff --git c/src/types.ts w/src/types.ts
+index 869c4f00..8ac35519 100644
+--- c/src/types.ts
++++ w/src/types.ts
+@@ -198,6 +198,13 @@ export interface WindowConfig {
+ 	 * or maximized window comes back in the same shape the user left it.
+ 	 */
+ 	initialState?: WindowState;
++	/**
++	 * Open the window kept on top: it stacks above every window that
++	 * isn't, whichever of those has focus. Session restore passes it;
++	 * after open, read `win.alwaysOnTop` and change it with
++	 * `windowManager.setAlwaysOnTop()`.
++	 */
++	alwaysOnTop?: boolean;
+ 	/**
+ 	 * Native window flag. When true, the window's body is rendered
+ 	 * directly in the parent DOM via {@link WindowConfig.render} instead
+@@ -1941,6 +1948,11 @@ export interface SessionWindow {
+ 	 * keeps its shape.
+ 	 */
+ 	unplaced?: boolean;
++	/**
++	 * `true` for a window the user kept on top. Only written when
++	 * true, so every other session keeps its shape.
++	 */
++	alwaysOnTop?: boolean;
+ 	url: string;
+ 	title: string;
+ 	icon: string;
+diff --git c/src/ui/components/os-window-button/os-window-button.ts w/src/ui/components/os-window-button/os-window-button.ts
+index 4a474ad6..57ad6410 100644
+--- c/src/ui/components/os-window-button/os-window-button.ts
++++ w/src/ui/components/os-window-button/os-window-button.ts
+@@ -26,7 +26,7 @@
+  *
+  * Attributes:
+  *   - `icon="minimize" | "maximize" | "fullscreen" | "fullscreen-exit"
+- *          | "detach" | "reload" | "close" | "menu"` — picks a built-in SVG
++ *          | "detach" | "reload" | "pin" | "close" | "menu"` — picks a built-in SVG
+  *   - `icon-src="https://… | data:image/…"` — paints an external
+  *     image as a CSS MASK tinted with `currentColor`, not as an
+  *     `<img>`. That is what preserves the `--os-ui-btn-*` /
+@@ -105,6 +105,8 @@ const ICONS: Record<string, string> = {
+ 		'<g transform="translate(0.6 0.6) scale(0.021)" fill="currentColor">' +
+ 		'<path d="m504.554 233.704-76.447 91.467c-6.329 7.572-15.417 11.479-24.571 11.479a31.872 31.872 0 0 1-20.504-7.447l-91.467-76.447c-13.561-11.334-15.366-31.515-4.032-45.075s31.515-15.366 45.075-4.032l37.506 31.347c-10.274-74.891-74.668-132.774-152.337-132.774C132.984 102.223 64 171.207 64 256s68.984 153.777 153.777 153.777c17.673 0 32 14.327 32 32s-14.327 32-32 32c-58.17 0-112.859-22.653-153.991-63.785C22.653 368.859 0 314.17 0 256s22.653-112.859 63.786-153.992c41.132-41.132 95.821-63.785 153.991-63.785s112.859 22.653 153.992 63.785c32.517 32.516 53.471 73.508 60.829 117.991l22.849-27.339c11.334-13.56 31.515-15.364 45.075-4.032 13.56 11.335 15.365 31.516 4.032 45.076z"/>' +
+ 		'</g>',
++	pin:
++		'<path d="M4.25 2h3.5M5 2v2.75L3.5 6.5h5L7 4.75V2M6 6.5V10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+ 	close:
+ 		'<path d="M3.25 3.25l5.5 5.5M3.25 8.75l5.5-5.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>',
+ 	menu:
+@@ -179,7 +181,7 @@ export class OsWindowButton extends Component {
+ 			{ name: 'aria-pressed', type: "'true' | 'false' | 'mixed'", description: 'Optional toggle state forwarded to the focusable shadow button.' },
+ 			{
+ 				name: 'icon',
+-				type: "'minimize' | 'maximize' | 'fullscreen' | 'fullscreen-exit' | 'detach' | 'reload' | 'close' | 'menu'",
++				type: "'minimize' | 'maximize' | 'fullscreen' | 'fullscreen-exit' | 'detach' | 'reload' | 'pin' | 'close' | 'menu'",
+ 				description: 'Which built-in inline SVG to paint. Omit to supply your own via the slot.',
+ 			},
+ 			{
+diff --git c/src/window-chrome/controls/built-ins.ts w/src/window-chrome/controls/built-ins.ts
+index 9f15221b..6fb8b0db 100644
+--- c/src/window-chrome/controls/built-ins.ts
++++ w/src/window-chrome/controls/built-ins.ts
+@@ -1,6 +1,6 @@
+ /**
+- * Built-in window controls — minimize, maximize, fullscreen,
+- * close.
++ * Built-in window controls — keep on top, minimize, maximize,
++ * fullscreen, close.
+  *
+  * `core/detach` (Open in classic wp-admin) and `core/reload` used to live
+  * here but moved into the title-bar three-dots menu — those
+@@ -25,13 +25,28 @@ import { __ } from '../../i18n';
+ import { registerWindowControl } from './registry';
+ 
+ /**
+- * Register the four built-in title-bar controls. Idempotent — calling
++ * Register the five built-in title-bar controls. Idempotent — calling
+  * it twice replaces the entries with identical definitions.
+  *
+  * Called once by the shell during boot. Plugins should NOT call this;
+  * the `core/*` ids are reserved.
+  */
+ export function registerBuiltInControls(): void {
++	// Label and pressed state follow the window; `Window` syncs both
++	// after every paint of the cluster.
++	registerWindowControl( {
++		id: 'core/always-on-top',
++		label: __( 'Keep on top' ),
++		icon: 'pin',
++		placement: 'controls',
++		order: 8,
++		core: true,
++		match: () => true,
++		onClick: ( win ) => {
++			win.toggleAlwaysOnTop();
++		},
++	} );
++
+ 	registerWindowControl( {
+ 		id: 'core/minimize',
+ 		label: __( 'Minimize' ),
+diff --git c/src/window-chrome/controls/registry.ts w/src/window-chrome/controls/registry.ts
+index 20b24b86..c02090b6 100644
+--- c/src/window-chrome/controls/registry.ts
++++ w/src/window-chrome/controls/registry.ts
+@@ -58,7 +58,7 @@ export interface WindowControlDef {
+ 	 *   - **Inline SVG string** — `'<svg viewBox="0 0 24 24">…</svg>'`.
+ 	 *   - **Built-in key** — `'minimize'` / `'maximize'` /
+ 	 *     `'fullscreen'` / `'fullscreen-exit'` / `'detach'` /
+-	 *     `'close'` / `'menu'`.
++	 *     `'pin'` / `'close'` / `'menu'`.
+ 	 *
+ 	 * Required when `render` is omitted; ignored when `render` is
+ 	 * provided.
+diff --git c/src/window-manager/index.ts w/src/window-manager/index.ts
+index d3c42513..8929abe0 100644
+--- c/src/window-manager/index.ts
++++ w/src/window-manager/index.ts
+@@ -1296,6 +1296,8 @@ export class WindowManager {
+ 			}
+ 			this.focus( w );
+ 		};
++		win.onAlwaysOnTopRequest = ( w: Window, enabled: boolean ) =>
++			this.setAlwaysOnTop( w.id, enabled );
+ 		win.onClose = ( w: Window ) => this.remove( w );
+ 		win.onMinimize = ( w: Window ) => {
+ 			// Children go away with their owner — a child left floating
+@@ -1507,7 +1509,7 @@ export class WindowManager {
+ 				slot--;
+ 			}
+ 			this._stack.splice( slot, 0, win );
+-			this._stack.forEach( ( w, i ) => w.setZIndex( BASE_Z_INDEX + i ) );
++			this.restack();
+ 		} else {
+ 			this.focus( win );
+ 		}
+@@ -1699,9 +1701,10 @@ export class WindowManager {
+ 		// window it is supposed to be blocking.
+ 		this.enforceOwnershipOrder();
+ 
+-		// Update z-indices and focused state.
++		// Update z-indices and focused state. The stack top is the
++		// focused window even when a kept-on-top one paints over it.
++		this.restack();
+ 		this._stack.forEach( ( w, i ) => {
+-			w.setZIndex( BASE_Z_INDEX + i );
+ 			w.setFocused( i === this._stack.length - 1 );
+ 		} );
+ 
+@@ -1757,9 +1760,61 @@ export class WindowManager {
+ 		this._stack.splice( idx, 1 );
+ 		this._stack.splice( this._stack.length - 1, 0, win );
+ 		this.enforceOwnershipOrder();
+-		this._stack.forEach( ( w, i ) => {
+-			w.setZIndex( BASE_Z_INDEX + i );
++		this.restack();
++	}
++
++	/**
++	 * Keep a window above every window that isn't kept on top, or
++	 * return it to normal stacking. Kept-on-top windows stack among
++	 * themselves in focus order, and focus itself is unchanged: a
++	 * normal window can hold focus while a kept-on-top one paints
++	 * over it. A child of a kept-on-top window rides above it with
++	 * its owner.
++	 *
++	 * Persisted with the session. Unknown ids and no-op calls are
++	 * ignored.
++	 *
++	 * @param windowId Window to change.
++	 * @param enabled  `true` to keep it on top.
++	 */
++	public setAlwaysOnTop( windowId: string, enabled: boolean ): void {
++		const win = this.getById( windowId );
++		if ( ! win || win.alwaysOnTop === !! enabled ) {
++			return;
++		}
++		win._applyAlwaysOnTop( !! enabled );
++		this.restack();
++		doAction( HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED, {
++			windowId: win.id,
++			alwaysOnTop: win.alwaysOnTop,
+ 		} );
++		document.dispatchEvent(
++			new CustomEvent( 'os-window-changed', {
++				detail: { windowId: win.id, reason: 'always-on-top', state: win.state },
++			} ),
++		);
++	}
++
++	/**
++	 * Write every window's z-index from the stack: windows that are
++	 * not kept on top first, then the ones that are (directly, or
++	 * through an owner), each band in stack order. The stack itself
++	 * stays in focus order.
++	 */
++	private restack(): void {
++		const keptOnTop = ( w: Window ): boolean => {
++			const seen = new Set< Window >();
++			for ( let cur: Window | undefined = w; cur && ! seen.has( cur ); cur = this.ownerOf( cur ) ) {
++				if ( cur.alwaysOnTop ) {
++					return true;
++				}
++				seen.add( cur );
++			}
++			return false;
++		};
++		const top = this._stack.filter( keptOnTop );
++		const rest = this._stack.filter( ( w ) => ! top.includes( w ) );
++		[ ...rest, ...top ].forEach( ( w, i ) => w.setZIndex( BASE_Z_INDEX + i ) );
+ 	}
+ 
+ 	/**
+@@ -2771,6 +2826,7 @@ export class WindowManager {
+ 				// Cells, alongside the pixels. On restore the cells win,
+ 				// which is what keeps a 2×2 a 2×2 on a different display.
+ 				...( w._gridSpan ? { gridSpan: { ...w._gridSpan } } : {} ),
++				...( w.alwaysOnTop ? { alwaysOnTop: true } : {} ),
+ 			};
+ 		} );
+ 		// Same two exclusions as `persistable` — a focused id pointing
+diff --git c/src/window/index.ts w/src/window/index.ts
+index 89d639e9..1298ddaf 100644
+--- c/src/window/index.ts
++++ w/src/window/index.ts
+@@ -600,8 +600,18 @@ export class Window {
+ 	 */
+ 	public _activeTabId: 'primary' | string = 'primary';
+ 
++	/** See {@link alwaysOnTop}. */
++	private _alwaysOnTop = false;
++
+ 	/** Callbacks for external events. */
+ 	public onFocusRequest: ( ( win: Window ) => void ) | null = null;
++	/**
++	 * Invoked when the title-bar pin asks to flip keep-on-top. The
++	 * manager wires it to `setAlwaysOnTop()`, which owns the restack.
++	 */
++	public onAlwaysOnTopRequest:
++		| ( ( win: Window, enabled: boolean ) => void )
++		| null = null;
+ 	public onClose: ( ( win: Window ) => void ) | null = null;
+ 	public onMinimize: ( ( win: Window ) => void ) | null = null;
+ 	/**
+@@ -721,6 +731,8 @@ export class Window {
+ 		this._titleBar = this.element.querySelector( '.os-window__titlebar' ) as HTMLElement;
+ 		this._titleEl = this.element.querySelector( '.os-window__title' ) as HTMLElement;
+ 		this._boundOnMessage = ( e: MessageEvent ) => handleWindowMessage( this, e );
++		this._alwaysOnTop = !! config.alwaysOnTop;
++		this.element.classList.toggle( 'os-window--always-on-top', this._alwaysOnTop );
+ 
+ 		this.bindEvents();
+ 		if ( this.iframe ) {
+@@ -1609,6 +1621,7 @@ export class Window {
+ 			this._windowControlsTeardown = null;
+ 		}
+ 		this._windowControlsTeardown = paintWindowControls( this, controlsHost );
++		this.updateAlwaysOnTopButtonState();
+ 	}
+ 
+ 	/**
+@@ -1992,6 +2005,48 @@ export class Window {
+ 		return this.state === 'fullscreen';
+ 	}
+ 
++	/**
++	 * Whether this window is kept on top: it stacks above every
++	 * window that isn't, even while one of those has focus. Change it
++	 * with `windowManager.setAlwaysOnTop()`.
++	 */
++	public get alwaysOnTop(): boolean {
++		return this._alwaysOnTop;
++	}
++
++	/** Flip keep-on-top, as the title-bar pin does. */
++	public toggleAlwaysOnTop(): void {
++		this.onAlwaysOnTopRequest?.( this, ! this._alwaysOnTop );
++	}
++
++	/**
++	 * Record keep-on-top and repaint the pin. Stacking is the
++	 * manager's job; call `windowManager.setAlwaysOnTop()` instead.
++	 *
++	 * @internal
++	 */
++	public _applyAlwaysOnTop( enabled: boolean ): void {
++		this._alwaysOnTop = enabled;
++		this.element.classList.toggle( 'os-window--always-on-top', enabled );
++		this.updateAlwaysOnTopButtonState();
++	}
++
++	/** Reflect keep-on-top on the pin (active look, aria-pressed, label). */
++	private updateAlwaysOnTopButtonState(): void {
++		const btn = this.element.querySelector< HTMLElement >(
++			'.os-window__btn--always-on-top',
++		);
++		if ( ! btn ) {
++			return;
++		}
++		btn.toggleAttribute( 'active', this._alwaysOnTop );
++		btn.setAttribute( 'aria-pressed', this._alwaysOnTop ? 'true' : 'false' );
++		btn.setAttribute(
++			'aria-label',
++			this._alwaysOnTop ? __( 'Stop keeping on top' ) : __( 'Keep on top' ),
++		);
++	}
++
+ 	/**
+ 	 * Predicate: is this window currently snapped to a screen edge?
+ 	 * Returns `true` for both half-screen positions; pass an explicit
+diff --git c/tests/vitest/window-child-ownership.test.ts w/tests/vitest/window-child-ownership.test.ts
+index 5c567499..54150c6d 100644
+--- c/tests/vitest/window-child-ownership.test.ts
++++ w/tests/vitest/window-child-ownership.test.ts
+@@ -11,12 +11,17 @@
+  * cascades (close, minimize, restore), and the two deliberate
+  * escape hatches: a minimized child stops blocking, and children stay
+  * out of session snapshots.
++ *
++ * Keep-on-top lives here too: it is the other rule that paints a
++ * window somewhere other than its focus-order slot.
+  */
+ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+ import { WindowManager } from '../../src/window-manager';
+ import { NATIVE_GEOMETRY_STORAGE_KEY } from '../../src/window-manager/native-window-geometry';
+ import { HOOKS } from '../../src/hooks';
+ import { clearHooksStub, installHooksStub } from './helpers/hooks-stub';
++import { _resetWindowControlRegistryForTests } from '../../src/window-chrome/controls/registry';
++import { registerBuiltInControls } from '../../src/window-chrome/controls/built-ins';
+ 
+ function cfg( id: string, extra: Record< string, unknown > = {} ) {
+ 	return {
+@@ -575,3 +580,97 @@ describe( 'child windows — session persistence', () => {
+ 		expect( manager.snapshot().focused ).toBe( '' );
+ 	} );
+ } );
++
++/** Window ids in painted order (by z-index), lowest first. */
++function paintOrder( manager: WindowManager ): string[] {
++	return [ ...manager._stack ]
++		.sort( ( a, b ) => Number( a.element.style.zIndex ) - Number( b.element.style.zIndex ) )
++		.map( ( w ) => w.id );
++}
++
++describe( 'keep on top', () => {
++	let desktop: HTMLElement;
++	let manager: WindowManager;
++
++	beforeEach( () => {
++		installHooksStub();
++		_resetWindowControlRegistryForTests();
++		desktop = makeDesktop();
++		document.body.appendChild( desktop );
++		manager = new WindowManager( desktop );
++	} );
++
++	afterEach( () => {
++		for ( const w of manager.getAll() ) {
++			w.destroy();
++		}
++		desktop.remove();
++		_resetWindowControlRegistryForTests();
++		clearHooksStub();
++	} );
++
++	test( 'stays above windows focused or opened after it, without taking focus', async () => {
++		await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'pinned' ) );
++		manager.setAlwaysOnTop( 'pinned', true );
++
++		const a = manager.getById( 'a' )!;
++		manager.focus( a );
++		await manager.open( cfg( 'b' ) );
++
++		expect( paintOrder( manager ) ).toEqual( [ 'a', 'b', 'pinned' ] );
++		expect( manager.getFocused()?.id ).toBe( 'b' );
++
++		// Back to its focus-order slot: lowest, since `a` and `b` were
++		// both focused after it.
++		manager.setAlwaysOnTop( 'pinned', false );
++		expect( paintOrder( manager ) ).toEqual( [ 'pinned', 'a', 'b' ] );
++	} );
++
++	test( 'several kept-on-top windows stack among themselves in focus order', async () => {
++		await manager.open( cfg( 'p1' ) );
++		await manager.open( cfg( 'p2' ) );
++		await manager.open( cfg( 'plain' ) );
++		manager.setAlwaysOnTop( 'p1', true );
++		manager.setAlwaysOnTop( 'p2', true );
++
++		manager.focus( 'p1' );
++		expect( paintOrder( manager ) ).toEqual( [ 'plain', 'p2', 'p1' ] );
++	} );
++
++	test( 'a child rides above its kept-on-top owner', async () => {
++		await manager.open( cfg( 'owner' ) );
++		manager.setAlwaysOnTop( 'owner', true );
++		await manager.openChild( 'owner', cfg( 'child' ) );
++		await manager.open( cfg( 'other' ) );
++
++		expect( paintOrder( manager ) ).toEqual( [ 'other', 'owner', 'child' ] );
++	} );
++
++	test( 'the title-bar pin toggles it and reflects the state', async () => {
++		registerBuiltInControls();
++		const win = await manager.open( cfg( 'w' ) );
++		const pin = win.element.querySelector( '.os-window__btn--always-on-top' )!;
++
++		pin.dispatchEvent( new CustomEvent( 'os-button-activate' ) );
++
++		expect( win.alwaysOnTop ).toBe( true );
++		expect( pin.getAttribute( 'aria-pressed' ) ).toBe( 'true' );
++	} );
++
++	test( 'round-trips through the session snapshot', async () => {
++		await manager.open( cfg( 'plain' ) );
++		await manager.open( cfg( 'pinned' ) );
++		manager.setAlwaysOnTop( 'pinned', true );
++
++		const saved = manager.snapshot().windows;
++		expect( saved.find( ( w ) => w.id === 'pinned' )?.alwaysOnTop ).toBe( true );
++		expect( saved.find( ( w ) => w.id === 'plain' ) ).not.toHaveProperty( 'alwaysOnTop' );
++
++		// Restore passes the flag back as open-time config.
++		const restored = await manager.openNew( cfg( 'restored', { alwaysOnTop: true } ) );
++		await manager.open( cfg( 'later' ) );
++		expect( restored.alwaysOnTop ).toBe( true );
++		expect( paintOrder( manager ).slice( -2 ) ).toEqual( [ 'pinned', 'restored' ] );
++	} );
++} );
+diff --git c/tests/vitest/window-chrome-controls-render.test.ts w/tests/vitest/window-chrome-controls-render.test.ts
+index 67b131fa..ba2a98f9 100644
+--- c/tests/vitest/window-chrome-controls-render.test.ts
++++ w/tests/vitest/window-chrome-controls-render.test.ts
+@@ -77,13 +77,14 @@ describe( 'resolveWindowControls', () => {
+ 	test( 'returns built-ins in registered order for an iframe window', () => {
+ 		// `core/detach` + `core/reload` used to live here — they
+ 		// moved into the title-bar three-dots menu (see
+-		// `src/window/dom.ts`). The cluster now ships four entries.
++		// `src/window/dom.ts`). The cluster now ships five entries.
+ 		registerBuiltInControls();
+ 		const win = fakeWin( 'edit-post' );
+ 		const resolved = resolveWindowControls(
+ 			win as unknown as Parameters< typeof resolveWindowControls >[ 0 ],
+ 		);
+ 		expect( resolved.controls.map( ( c ) => c.id ) ).toEqual( [
++			'core/always-on-top',
+ 			'core/minimize',
+ 			'core/maximize',
+ 			'core/focus-tab',
+@@ -122,6 +123,7 @@ describe( 'resolveWindowControls', () => {
+ 			{ hide: [ 'core/focus-tab' ] },
+ 		);
+ 		expect( resolved.controls.map( ( c ) => c.id ) ).toEqual( [
++			'core/always-on-top',
+ 			'core/minimize',
+ 			'core/maximize',
+ 			'core/close',
+@@ -143,9 +145,10 @@ describe( 'resolveWindowControls', () => {
+ 			'core/maximize',
+ 		] );
+ 		// Whatever isn't named in `order` keeps registry order — for
+-		// the post-0.6.2 cluster that's just `core/focus-tab`. The
+-		// detach + reload built-ins moved to the title-bar menu.
++		// the post-0.6.2 cluster that's the pin and `core/focus-tab`.
++		// The detach + reload built-ins moved to the title-bar menu.
+ 		expect( resolved.controls.map( ( c ) => c.id ).slice( 3 ) ).toEqual( [
++			'core/always-on-top',
+ 			'core/focus-tab',
+ 		] );
+ 	} );
+@@ -206,9 +209,9 @@ describe( 'paintWindowControls', () => {
+ 			host,
+ 		);
+ 
+-		// minimize / maximize / focus-tab / close — detach + reload
+-		// moved to the three-dots menu.
+-		expect( host.children.length ).toBe( 4 );
++		// keep-on-top / minimize / maximize / focus-tab / close —
++		// detach + reload moved to the three-dots menu.
++		expect( host.children.length ).toBe( 5 );
+ 		expect( host.querySelector( '.os-window__btn--close' ) ).not.toBeNull();
+ 		expect( host.querySelector( '.os-window__btn--minimize' ) ).not.toBeNull();
+ 		expect( host.querySelector( '.os-window__btn--reload' ) ).toBeNull();

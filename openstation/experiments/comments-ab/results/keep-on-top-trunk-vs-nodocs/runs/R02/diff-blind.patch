@@ -1,0 +1,759 @@
+diff --git c/assets/css/mobile.css w/assets/css/mobile.css
+index a6a2d12e..dd2b99be 100644
+--- c/assets/css/mobile.css
++++ w/assets/css/mobile.css
+@@ -194,0 +195,10 @@ html[data-os-mode="mobile"] .os-window:not( .os-window--focused ) {
++/*
++ * "Keep on top" is a desk idea. A phone shows the one app in front,
++ * and a kept-on-top window that isn't it would still paint its own
++ * box over that app (`content-visibility` only skips the contents).
++ * `!important` beats the inline z-index the manager writes.
++ */
++html[data-os-mode="mobile"] .os-window--always-on-top:not( .os-window--focused ) {
++	z-index: auto !important;
++}
++
+diff --git c/includes/desktop-themes/store.php w/includes/desktop-themes/store.php
+index 5bbd6bd7..d2e7c5a2 100644
+--- c/includes/desktop-themes/store.php
++++ w/includes/desktop-themes/store.php
+@@ -238,0 +239 @@ function openstation_desktop_theme_icon_slots() {
++		'WINDOW_CONTROL_PIN',
+diff --git c/includes/session.php w/includes/session.php
+index 3f765a8e..1223a1c2 100644
+--- c/includes/session.php
++++ w/includes/session.php
+@@ -540,0 +541,6 @@ function openstation_sanitize_session( $session, $network = null ) {
++			// A window the user kept on top. Only written when true so
++			// plain sessions keep their shape.
++			if ( ! empty( $win['alwaysOnTop'] ) ) {
++				$entry['alwaysOnTop'] = true;
++			}
++
+diff --git c/src/boot/session.ts w/src/boot/session.ts
+index 867ef40e..19d74a8d 100644
+--- c/src/boot/session.ts
++++ w/src/boot/session.ts
+@@ -213,0 +214 @@ export async function restoreSession(
++			...( win.alwaysOnTop ? { alwaysOnTop: true } : {} ),
+@@ -305,0 +307 @@ export async function restoreSession(
++			...( win.alwaysOnTop ? { alwaysOnTop: true } : {} ),
+diff --git c/src/desktop-themes/slots.ts w/src/desktop-themes/slots.ts
+index 2c849185..06163ab1 100644
+--- c/src/desktop-themes/slots.ts
++++ w/src/desktop-themes/slots.ts
+@@ -35,0 +36 @@ export const DESKTOP_THEME_SLOTS = {
++	WINDOW_CONTROL_PIN: 'WINDOW_CONTROL_PIN',
+diff --git c/src/hooks.ts w/src/hooks.ts
+index d5d5ecc1..4cd12e7d 100644
+--- c/src/hooks.ts
++++ w/src/hooks.ts
+@@ -620,0 +621,5 @@ export const HOOKS = {
++	/**
++	 * Action, fires when a window's "Keep on top" is turned on or off.
++	 * Payload: `{ windowId: string, alwaysOnTop: boolean }`.
++	 */
++	WINDOW_ALWAYS_ON_TOP_CHANGED: 'os.window.always-on-top-changed',
+diff --git c/src/native-windows.ts w/src/native-windows.ts
+index 912b41e0..ff8b1c3a 100644
+--- c/src/native-windows.ts
++++ w/src/native-windows.ts
+@@ -1184,0 +1185 @@ export type NativeWindowRestoreState = Partial<
++		| 'alwaysOnTop'
+diff --git c/src/types.ts w/src/types.ts
+index 869c4f00..0aad74af 100644
+--- c/src/types.ts
++++ w/src/types.ts
+@@ -385,0 +386,8 @@ export interface WindowConfig {
++	/**
++	 * Open the window already kept on top: it stacks above every
++	 * window that isn't, whichever of them has focus. Passed by
++	 * session restore; at runtime toggle it with
++	 * `windowManager.setAlwaysOnTop()` and read it back from
++	 * `Window.alwaysOnTop`.
++	 */
++	alwaysOnTop?: boolean;
+@@ -483,2 +491,2 @@ export type WindowThemeRef =
+- *     `core/minimize`, `core/maximize`, `core/focus-tab`,
+- *     `core/detach`, `core/close`. Plugin custom controls register
++ *     `core/pin`, `core/minimize`, `core/maximize`,
++ *     `core/focus-tab`, `core/close`. Plugin custom controls register
+@@ -1943,0 +1952,5 @@ export interface SessionWindow {
++	/**
++	 * `true` for a window the user kept on top. Only written when
++	 * true, so every other session keeps its shape.
++	 */
++	alwaysOnTop?: boolean;
+diff --git c/src/ui/components/os-window-button/os-window-button.ts w/src/ui/components/os-window-button/os-window-button.ts
+index c9be4314..df524439 100644
+--- c/src/ui/components/os-window-button/os-window-button.ts
++++ w/src/ui/components/os-window-button/os-window-button.ts
+@@ -28 +28 @@
+- *   - `icon="minimize" | "maximize" | "fullscreen" | "fullscreen-exit"
++ *   - `icon="pin" | "minimize" | "maximize" | "fullscreen" | "fullscreen-exit"
+@@ -109,0 +110,4 @@ const ICONS: Record<string, string> = {
++	// A pushpin leaning left: head top-right, needle bottom-left.
++	pin:
++		'<path d="M7.25 1.75l3 3-1.5.5-1.75 1.75.25 1.75-4-4 1.75.25L6.75 3.25z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" fill="none"/>' +
++		'<path d="M4.5 7.5L2 10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>',
+@@ -182 +186 @@ export class OsWindowButton extends Component {
+-				type: "'minimize' | 'maximize' | 'fullscreen' | 'fullscreen-exit' | 'detach' | 'reload' | 'close' | 'menu'",
++				type: "'pin' | 'minimize' | 'maximize' | 'fullscreen' | 'fullscreen-exit' | 'detach' | 'reload' | 'close' | 'menu'",
+diff --git c/src/window-chrome/controls/built-ins.ts w/src/window-chrome/controls/built-ins.ts
+index 9f15221b..b89ba014 100644
+--- c/src/window-chrome/controls/built-ins.ts
++++ w/src/window-chrome/controls/built-ins.ts
+@@ -3 +3 @@
+- * close.
++ * keep on top, close.
+@@ -28 +28 @@ import { registerWindowControl } from './registry';
+- * Register the four built-in title-bar controls. Idempotent — calling
++ * Register the five built-in title-bar controls. Idempotent — calling
+@@ -73,0 +74,18 @@ export function registerBuiltInControls(): void {
++	// "Keep on top". A toggle: the label stays the same and the window
++	// paints `aria-pressed` / `active` on it — see
++	// `Window.updatePinButtonState()`. Ordered after the built-ins a
++	// plugin control below 10 expects to precede, and before close,
++	// which stays last.
++	registerWindowControl( {
++		id: 'core/pin',
++		label: __( 'Keep on top' ),
++		icon: 'pin',
++		placement: 'controls',
++		order: 40,
++		core: true,
++		match: () => true,
++		onClick: ( win ) => {
++			win.toggleAlwaysOnTop();
++		},
++	} );
++
+diff --git c/src/window-chrome/controls/registry.ts w/src/window-chrome/controls/registry.ts
+index 20b24b86..b04262a3 100644
+--- c/src/window-chrome/controls/registry.ts
++++ w/src/window-chrome/controls/registry.ts
+@@ -6 +6,2 @@
+- * (`core/minimize`, `core/maximize`, `core/focus-tab`, `core/close`)
++ * (`core/pin`, `core/minimize`, `core/maximize`, `core/focus-tab`,
++ * `core/close`)
+@@ -59 +60 @@ export interface WindowControlDef {
+-	 *   - **Built-in key** — `'minimize'` / `'maximize'` /
++	 *   - **Built-in key** — `'pin'` / `'minimize'` / `'maximize'` /
+diff --git c/src/window-manager/index.ts w/src/window-manager/index.ts
+index d3c42513..d595f4d3 100644
+--- c/src/window-manager/index.ts
++++ w/src/window-manager/index.ts
+@@ -1288,0 +1289,5 @@ export class WindowManager {
++		// Before the window joins the stack, so the first z-order pass
++		// already puts it in the top layer.
++		if ( config.alwaysOnTop ) {
++			win._applyAlwaysOnTop( true );
++		}
+@@ -1289,0 +1295,3 @@ export class WindowManager {
++		win.onAlwaysOnTopRequest = ( w: Window, enabled: boolean ) => {
++			this.setAlwaysOnTop( w.id, enabled );
++		};
+@@ -1510 +1518 @@ export class WindowManager {
+-			this._stack.forEach( ( w, i ) => w.setZIndex( BASE_Z_INDEX + i ) );
++			this.applyZOrder();
+@@ -1702 +1710,5 @@ export class WindowManager {
+-		// Update z-indices and focused state.
++		// Update z-indices and focused state. Focus follows the stack;
++		// z-index follows it too, except that windows kept on top are
++		// lifted above the rest — so the focused window can sit under
++		// one of them.
++		this.applyZOrder();
+@@ -1704 +1715,0 @@ export class WindowManager {
+-			w.setZIndex( BASE_Z_INDEX + i );
+@@ -1760 +1771,79 @@ export class WindowManager {
+-		this._stack.forEach( ( w, i ) => {
++		this.applyZOrder();
++	}
++
++	/**
++	 * Turn "Keep on top" on or off for a window.
++	 *
++	 * A window kept on top stacks above every window that isn't, and
++	 * stays there while another window is focused or opened. Several
++	 * can be kept on top at once; among themselves they stack in the
++	 * normal focus order. Turning it off drops the window back into
++	 * that order where its focus history puts it. Focus itself does not
++	 * move either way.
++	 *
++	 * The flag is saved with the session, so it survives a reload.
++	 *
++	 * ```js
++	 * wp.os.windowManager.setAlwaysOnTop( 'edit-php', true );
++	 * wp.os.windowManager.getById( 'edit-php' ).alwaysOnTop; // true
++	 * ```
++	 *
++	 * @param windowId Window to change. Unknown ids are a no-op.
++	 * @param enabled  `true` to keep it on top, `false` to stop.
++	 * @return `false` when no window has that id, otherwise `true`.
++	 */
++	public setAlwaysOnTop( windowId: string, enabled: boolean ): boolean {
++		const win = this.getById( windowId );
++		if ( ! win ) {
++			return false;
++		}
++		const next = !! enabled;
++		if ( win.alwaysOnTop === next ) {
++			return true;
++		}
++		win._applyAlwaysOnTop( next );
++		this.applyZOrder();
++
++		const detail = { windowId: win.id, alwaysOnTop: next };
++		document.dispatchEvent(
++			new CustomEvent( 'os-window-always-on-top-changed', { detail } ),
++		);
++		doAction( HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED, detail );
++		return true;
++	}
++
++	/**
++	 * Whether `win` stacks in the kept-on-top layer: it is kept on top
++	 * itself, or an owner up its chain is. A child has to follow its
++	 * owner into that layer — left below, it would sit under the very
++	 * window it is meant to block.
++	 */
++	private isInTopLayer( win: Window ): boolean {
++		// `seen` guards against an ownership cycle, as in
++		// `blockingChildOf`.
++		const seen = new Set< Window >();
++		let current: Window | undefined = win;
++		while ( current && ! seen.has( current ) ) {
++			if ( current.alwaysOnTop ) {
++				return true;
++			}
++			seen.add( current );
++			current = this.ownerOf( current );
++		}
++		return false;
++	}
++
++	/**
++	 * Write every window's z-index from `_stack`: the windows that
++	 * aren't kept on top first, then the ones that are, each group in
++	 * stack (focus) order. `_stack` itself is left alone — its top is
++	 * still the focused window, which `getFocused()` and the blur /
++	 * focus pairing depend on.
++	 */
++	private applyZOrder(): void {
++		const below: Window[] = [];
++		const above: Window[] = [];
++		for ( const w of this._stack ) {
++			( this.isInTopLayer( w ) ? above : below ).push( w );
++		}
++		[ ...below, ...above ].forEach( ( w, i ) => {
+@@ -2773,0 +2863 @@ export class WindowManager {
++				...( w.alwaysOnTop ? { alwaysOnTop: true } : {} ),
+diff --git c/src/window/index.ts w/src/window/index.ts
+index e3ef4a20..0b258cd1 100644
+--- c/src/window/index.ts
++++ w/src/window/index.ts
+@@ -233,0 +234,3 @@ export class Window {
++	/** Backing field for {@link alwaysOnTop}. */
++	private _alwaysOnTop = false;
++
+@@ -629,0 +633,6 @@ export class Window {
++	/**
++	 * Invoked when the title-bar pin asks to turn "Keep on top" on or
++	 * off. The manager wires it to `setAlwaysOnTop()`, which owns the
++	 * stacking; a window with no manager applies the flag itself.
++	 */
++	public onAlwaysOnTopRequest: ( ( win: Window, enabled: boolean ) => void ) | null = null;
+@@ -1138,2 +1147,2 @@ export class Window {
+-	 * toggle. Exposed as `_emitChange` so sibling modules (tabs,
+-	 * pointer) can fire the same event.
++	 * toggle, keep-on-top toggle. Exposed as `_emitChange` so sibling
++	 * modules (tabs, pointer) can fire the same event.
+@@ -1143 +1152,3 @@ export class Window {
+-	public _emitChange( reason: 'moved' | 'resized' | 'state' ): void {
++	public _emitChange(
++		reason: 'moved' | 'resized' | 'state' | 'always-on-top',
++	): void {
+@@ -1584,0 +1596,55 @@ export class Window {
++	/**
++	 * Whether the window is kept on top — stacked above every window
++	 * that isn't, even while one of those has focus. Change it through
++	 * `windowManager.setAlwaysOnTop()` or {@link toggleAlwaysOnTop}.
++	 */
++	public get alwaysOnTop(): boolean {
++		return this._alwaysOnTop;
++	}
++
++	/**
++	 * Flip "Keep on top" — what the title-bar pin does. Routed through
++	 * the manager when there is one, because the flag alone stacks
++	 * nothing: every window's z-index has to be rewritten around it.
++	 */
++	public toggleAlwaysOnTop(): void {
++		const next = ! this._alwaysOnTop;
++		if ( this.onAlwaysOnTopRequest ) {
++			this.onAlwaysOnTopRequest( this, next );
++		} else {
++			this._applyAlwaysOnTop( next );
++		}
++	}
++
++	/**
++	 * Record the flag and repaint what shows it. Stacking is the
++	 * manager's job; this only owns the window's own side.
++	 *
++	 * @internal
++	 */
++	public _applyAlwaysOnTop( enabled: boolean ): void {
++		if ( this._alwaysOnTop === enabled ) {
++			return;
++		}
++		this._alwaysOnTop = enabled;
++		this.element.classList.toggle( 'os-window--always-on-top', enabled );
++		this.updatePinButtonState();
++		this._emitChange( 'always-on-top' );
++	}
++
++	/**
++	 * Reflect "Keep on top" on the title-bar pin. The label stays put
++	 * and `aria-pressed` carries the state, which is how a toggle
++	 * button reads to assistive technology.
++	 */
++	private updatePinButtonState(): void {
++		const btn = this.element.querySelector< HTMLElement >(
++			'.os-window__btn--pin',
++		);
++		if ( ! btn ) {
++			return;
++		}
++		btn.toggleAttribute( 'active', this._alwaysOnTop );
++		btn.setAttribute( 'aria-pressed', this._alwaysOnTop ? 'true' : 'false' );
++	}
++
+@@ -1628,0 +1695,2 @@ export class Window {
++		// The painter builds every button fresh, unpressed.
++		this.updatePinButtonState();
+diff --git c/tests/vitest/window-always-on-top.test.ts w/tests/vitest/window-always-on-top.test.ts
+new file mode 100644
+index 00000000..677c926d
+--- /dev/null
++++ w/tests/vitest/window-always-on-top.test.ts
+@@ -0,0 +1,376 @@
++/**
++ * "Keep on top".
++ *
++ * A window kept on top stacks above every window that isn't, whichever
++ * of them is focused or newly opened. Several can be kept on top at
++ * once and stack among themselves in focus order. Focus itself is not
++ * part of the deal: the stack top is still the focused window, it just
++ * may paint under a kept-on-top one.
++ *
++ * The tests pin the stacking against z-index — what the user sees —
++ * rather than `_stack`, which stays in focus order on purpose. They
++ * also cover the title-bar pin and the round trip through the session.
++ */
++import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
++import { restoreSession } from '../../src/boot/session';
++import { HOOKS } from '../../src/hooks';
++import type { NativeWindowRestoreState } from '../../src/native-windows';
++import {
++	_resetWindowControlRegistryForTests,
++} from '../../src/window-chrome/controls/registry';
++import { registerBuiltInControls } from '../../src/window-chrome/controls/built-ins';
++import { WindowManager } from '../../src/window-manager';
++import { clearHooksStub, installHooksStub } from './helpers/hooks-stub';
++import type { DesktopConfig, SessionWindow } from '../../src/types';
++
++const ORIGIN = window.location.origin;
++
++function cfg( id: string, extra: Record< string, unknown > = {} ) {
++	return {
++		id,
++		url: `${ ORIGIN }/wp-admin/${ id }.php`,
++		title: id,
++		icon: 'dashicons-admin-generic',
++		...extra,
++	};
++}
++
++function makeDesktop(): HTMLElement {
++	const desktop = document.createElement( 'div' );
++	desktop.id = 'os-area';
++	Object.defineProperty( desktop, 'getBoundingClientRect', {
++		value: () =>
++			( {
++				left: 0,
++				top: 0,
++				right: 1600,
++				bottom: 900,
++				width: 1600,
++				height: 900,
++				x: 0,
++				y: 0,
++				toJSON: () => ( {} ),
++			} ) as DOMRect,
++	} );
++	Object.defineProperty( desktop, 'clientWidth', {
++		value: 1600,
++		configurable: true,
++	} );
++	Object.defineProperty( desktop, 'clientHeight', {
++		value: 900,
++		configurable: true,
++	} );
++	return desktop;
++}
++
++/** Window ids in painted order — lowest z-index first. */
++function paintOrder( manager: WindowManager ): string[] {
++	return [ ...manager.getAll() ]
++		.sort(
++			( a, b ) =>
++				Number( a.element.style.zIndex ) - Number( b.element.style.zIndex ),
++		)
++		.map( ( w ) => w.id );
++}
++
++describe( 'keep on top — stacking', () => {
++	let desktop: HTMLElement;
++	let manager: WindowManager;
++
++	beforeEach( () => {
++		installHooksStub();
++		desktop = makeDesktop();
++		document.body.appendChild( desktop );
++		manager = new WindowManager( desktop );
++	} );
++
++	afterEach( () => {
++		for ( const w of manager.getAll() ) {
++			w.destroy();
++		}
++		desktop.remove();
++		clearHooksStub();
++	} );
++
++	test( 'stays above a window that takes focus', async () => {
++		const a = await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++
++		manager.setAlwaysOnTop( 'a', true );
++		manager.focus( 'b' );
++
++		expect( manager.getFocused()?.id ).toBe( 'b' );
++		expect( paintOrder( manager ) ).toEqual( [ 'b', 'a' ] );
++		expect( a.alwaysOnTop ).toBe( true );
++	} );
++
++	test( 'stays above a window opened after it', async () => {
++		await manager.open( cfg( 'a' ) );
++		manager.setAlwaysOnTop( 'a', true );
++
++		const b = await manager.open( cfg( 'b' ) );
++
++		expect( b.isFocused() ).toBe( true );
++		expect( paintOrder( manager ) ).toEqual( [ 'b', 'a' ] );
++	} );
++
++	test( 'does not move focus when turned on', async () => {
++		const a = await manager.open( cfg( 'a' ) );
++		const b = await manager.open( cfg( 'b' ) );
++
++		manager.setAlwaysOnTop( 'a', true );
++
++		expect( b.isFocused() ).toBe( true );
++		expect( a.isFocused() ).toBe( false );
++		expect( paintOrder( manager ) ).toEqual( [ 'b', 'a' ] );
++	} );
++
++	test( 'several kept on top stack among themselves in focus order', async () => {
++		await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++		await manager.open( cfg( 'c' ) );
++		manager.setAlwaysOnTop( 'a', true );
++		manager.setAlwaysOnTop( 'b', true );
++
++		manager.focus( 'a' );
++		expect( paintOrder( manager ) ).toEqual( [ 'c', 'b', 'a' ] );
++
++		manager.focus( 'b' );
++		expect( paintOrder( manager ) ).toEqual( [ 'c', 'a', 'b' ] );
++
++		manager.focus( 'c' );
++		expect( paintOrder( manager ) ).toEqual( [ 'c', 'a', 'b' ] );
++	} );
++
++	test( 'turning it off restores normal stacking', async () => {
++		await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++		manager.setAlwaysOnTop( 'a', true );
++		manager.focus( 'b' );
++
++		manager.setAlwaysOnTop( 'a', false );
++
++		expect( manager.getById( 'a' )?.alwaysOnTop ).toBe( false );
++		expect( paintOrder( manager ) ).toEqual( [ 'a', 'b' ] );
++		// And it is an ordinary window again: focus brings it up.
++		manager.focus( 'a' );
++		expect( paintOrder( manager ) ).toEqual( [ 'b', 'a' ] );
++		manager.focus( 'b' );
++		expect( paintOrder( manager ) ).toEqual( [ 'a', 'b' ] );
++	} );
++
++	test( 'raise() cannot lift a window over one kept on top', async () => {
++		await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++		await manager.open( cfg( 'c' ) );
++		manager.setAlwaysOnTop( 'a', true );
++
++		manager.raise( 'b' );
++
++		expect( paintOrder( manager ).at( -1 ) ).toBe( 'a' );
++	} );
++
++	test( 'a child of a kept-on-top owner stays above its owner', async () => {
++		await manager.open( cfg( 'owner' ) );
++		await manager.openChild( 'owner', cfg( 'child' ) );
++		await manager.open( cfg( 'other' ) );
++
++		manager.setAlwaysOnTop( 'owner', true );
++
++		expect( paintOrder( manager ) ).toEqual( [ 'other', 'owner', 'child' ] );
++	} );
++
++	test( 'reports, fires the hook and the event once per change', async () => {
++		await manager.open( cfg( 'a' ) );
++		const hook = vi.fn();
++		window.wp!.hooks!.addAction(
++			HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED,
++			'test/always-on-top',
++			hook,
++		);
++		const event = vi.fn();
++		document.addEventListener( 'os-window-always-on-top-changed', event );
++		const changed = vi.fn();
++		document.addEventListener( 'os-window-changed', changed );
++
++		expect( manager.setAlwaysOnTop( 'a', true ) ).toBe( true );
++		// Already on: no second notification.
++		expect( manager.setAlwaysOnTop( 'a', true ) ).toBe( true );
++		expect( manager.setAlwaysOnTop( 'missing', true ) ).toBe( false );
++
++		expect( hook ).toHaveBeenCalledTimes( 1 );
++		expect( hook ).toHaveBeenCalledWith( { windowId: 'a', alwaysOnTop: true } );
++		expect( event ).toHaveBeenCalledTimes( 1 );
++		// The session saver listens for this.
++		expect( changed ).toHaveBeenCalledTimes( 1 );
++		expect(
++			( changed.mock.calls[ 0 ][ 0 ] as CustomEvent ).detail.reason,
++		).toBe( 'always-on-top' );
++
++		document.removeEventListener( 'os-window-always-on-top-changed', event );
++		document.removeEventListener( 'os-window-changed', changed );
++	} );
++} );
++
++describe( 'keep on top — title-bar pin', () => {
++	let desktop: HTMLElement;
++	let manager: WindowManager;
++
++	beforeEach( () => {
++		installHooksStub();
++		_resetWindowControlRegistryForTests();
++		registerBuiltInControls();
++		desktop = makeDesktop();
++		document.body.appendChild( desktop );
++		manager = new WindowManager( desktop );
++	} );
++
++	afterEach( () => {
++		for ( const w of manager.getAll() ) {
++			w.destroy();
++		}
++		desktop.remove();
++		_resetWindowControlRegistryForTests();
++		clearHooksStub();
++	} );
++
++	test( 'clicking the pin toggles keep on top through the manager', async () => {
++		const a = await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++		const pin = a.element.querySelector(
++			'.os-window__controls .os-window__btn--pin',
++		) as HTMLElement;
++		expect( pin ).not.toBeNull();
++		expect( pin.getAttribute( 'aria-pressed' ) ).toBe( 'false' );
++
++		pin.dispatchEvent( new CustomEvent( 'os-button-activate', { bubbles: true } ) );
++
++		expect( a.alwaysOnTop ).toBe( true );
++		expect( pin.getAttribute( 'aria-pressed' ) ).toBe( 'true' );
++		expect( pin.hasAttribute( 'active' ) ).toBe( true );
++		expect( a.element.classList.contains( 'os-window--always-on-top' ) ).toBe(
++			true,
++		);
++		expect( paintOrder( manager ) ).toEqual( [ 'b', 'a' ] );
++
++		pin.dispatchEvent( new CustomEvent( 'os-button-activate', { bubbles: true } ) );
++
++		expect( a.alwaysOnTop ).toBe( false );
++		expect( pin.getAttribute( 'aria-pressed' ) ).toBe( 'false' );
++		expect( pin.hasAttribute( 'active' ) ).toBe( false );
++	} );
++
++	test( 'the pressed state survives a controls repaint', async () => {
++		const a = await manager.open( cfg( 'a' ) );
++		manager.setAlwaysOnTop( 'a', true );
++
++		a.repaintWindowControls();
++
++		const pin = a.element.querySelector( '.os-window__btn--pin' ) as HTMLElement;
++		expect( pin.getAttribute( 'aria-pressed' ) ).toBe( 'true' );
++	} );
++} );
++
++describe( 'keep on top — session', () => {
++	let desktop: HTMLElement;
++	let manager: WindowManager;
++
++	beforeEach( () => {
++		installHooksStub();
++		desktop = makeDesktop();
++		document.body.appendChild( desktop );
++		manager = new WindowManager( desktop );
++	} );
++
++	afterEach( () => {
++		for ( const w of manager.getAll() ) {
++			w.destroy();
++		}
++		desktop.remove();
++		clearHooksStub();
++	} );
++
++	test( 'the snapshot carries the flag, and only for windows that have it', async () => {
++		await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++		manager.setAlwaysOnTop( 'a', true );
++
++		const byId = Object.fromEntries(
++			manager.snapshot().windows.map( ( w ) => [ w.id, w ] ),
++		);
++
++		expect( byId.a.alwaysOnTop ).toBe( true );
++		expect( 'alwaysOnTop' in byId.b ).toBe( false );
++	} );
++
++	test( 'a reload brings the window back kept on top', async () => {
++		await manager.open( cfg( 'a' ) );
++		await manager.open( cfg( 'b' ) );
++		manager.setAlwaysOnTop( 'a', true );
++		manager.focus( 'b' );
++		const saved = manager.snapshot();
++		for ( const w of manager.getAll() ) {
++			w.destroy();
++		}
++
++		const fresh = new WindowManager( desktop );
++		manager = fresh;
++		await restoreSession(
++			fresh,
++			{
++				adminUrl: `${ ORIGIN }/wp-admin/`,
++				currentPage: `${ ORIGIN }/wp-admin/`,
++				dockItems: [],
++				session: saved,
++			} as unknown as DesktopConfig,
++			desktop,
++		);
++
++		expect( fresh.getById( 'a' )?.alwaysOnTop ).toBe( true );
++		expect( fresh.getById( 'b' )?.alwaysOnTop ).toBe( false );
++		expect( fresh.getFocused()?.id ).toBe( 'b' );
++		expect( paintOrder( fresh ) ).toEqual( [ 'b', 'a' ] );
++	} );
++
++	test( 'native windows get the flag in their restore state', async () => {
++		const native: SessionWindow = {
++			id: 'my-native',
++			baseId: 'my-native',
++			desktopId: 'desktop-1',
++			native: true,
++			url: '#my-native',
++			title: 'Native',
++			icon: 'dashicons-admin-generic',
++			state: 'normal',
++			x: 10,
++			y: 10,
++			width: 400,
++			height: 300,
++			alwaysOnTop: true,
++		};
++		const seen: Array< NativeWindowRestoreState | undefined > = [];
++
++		await restoreSession(
++			manager,
++			{
++				adminUrl: `${ ORIGIN }/wp-admin/`,
++				currentPage: `${ ORIGIN }/wp-admin/`,
++				dockItems: [],
++				session: {
++					windows: [ native ],
++					desktops: [ { id: 'desktop-1', label: 'Desktop 1' } ],
++					activeDesktop: 'desktop-1',
++					focused: '',
++					updated: 1,
++				},
++			} as unknown as DesktopConfig,
++			desktop,
++			( _id, _baseId, state ) => {
++				seen.push( state );
++				return false;
++			},
++		);
++
++		expect( seen[ 0 ]?.alwaysOnTop ).toBe( true );
++	} );
++} );
+diff --git c/tests/vitest/window-chrome-controls-render.test.ts w/tests/vitest/window-chrome-controls-render.test.ts
+index 67b131fa..b0060879 100644
+--- c/tests/vitest/window-chrome-controls-render.test.ts
++++ w/tests/vitest/window-chrome-controls-render.test.ts
+@@ -80 +80 @@ describe( 'resolveWindowControls', () => {
+-		// `src/window/dom.ts`). The cluster now ships four entries.
++		// `src/window/dom.ts`). The cluster now ships five entries.
+@@ -89,0 +90 @@ describe( 'resolveWindowControls', () => {
++			'core/pin',
+@@ -126,0 +128 @@ describe( 'resolveWindowControls', () => {
++			'core/pin',
+@@ -146,2 +148,2 @@ describe( 'resolveWindowControls', () => {
+-		// the post-0.6.2 cluster that's just `core/focus-tab`. The
+-		// detach + reload built-ins moved to the title-bar menu.
++		// the post-0.6.2 cluster that's `core/focus-tab` and `core/pin`.
++		// The detach + reload built-ins moved to the title-bar menu.
+@@ -149,0 +152 @@ describe( 'resolveWindowControls', () => {
++			'core/pin',
+@@ -209,3 +212,4 @@ describe( 'paintWindowControls', () => {
+-		// minimize / maximize / focus-tab / close — detach + reload
+-		// moved to the three-dots menu.
+-		expect( host.children.length ).toBe( 4 );
++		// minimize / maximize / focus-tab / pin / close — detach +
++		// reload moved to the three-dots menu.
++		expect( host.children.length ).toBe( 5 );
++		expect( host.querySelector( '.os-window__btn--pin' ) ).not.toBeNull();
+@@ -233,0 +238,16 @@ describe( 'paintWindowControls', () => {
++	test( 'click on core/pin dispatches win.toggleAlwaysOnTop()', () => {
++		registerBuiltInControls();
++		const win = { ...fakeWin( 'edit-post' ), toggleAlwaysOnTop: vi.fn() };
++		const host = document.createElement( 'div' );
++		paintWindowControls(
++			win as unknown as Parameters< typeof paintWindowControls >[ 0 ],
++			host,
++		);
++		const pinBtn = host.querySelector( '.os-window__btn--pin' ) as HTMLElement;
++		expect( pinBtn.getAttribute( 'aria-label' ) ).toBe( 'Keep on top' );
++		pinBtn.dispatchEvent(
++			new CustomEvent( 'os-button-activate', { bubbles: true } ),
++		);
++		expect( win.toggleAlwaysOnTop ).toHaveBeenCalledTimes( 1 );
++	} );
++

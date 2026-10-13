@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 2, "G": 2, "H": 1 },
+  "total": 19,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "`src/desktop.ts` adds a `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` row in the System rows (the agent says it sits right after Fullscreen, but the zero-context hunk can't show the neighbouring row), and `pickGridDimensions` now returns `{ cols: n, rows: 1 }` when `n <= 3 && width >= height`, so three windows go in thirds while two stay at 2x1 and four keep the existing 2x2.",
+    "C": "The menu row calls the existing `manager.tile()`, and the only layout changes are a small early return in the picker and a tweak to the `mins` computation in `arrange.ts`.",
+    "D": "No edits under `assets/js/`, no raw fetch/confirm/alert, no `:host` tokens, no `@since` stamps and no new ESLint disables.",
+    "E": "Two cases go into the existing `tests/vitest/arrange.test.ts`: three windows in thirds (equal 514px widths, same top) and the short-last-row stretch (778px each); both cover behaviour that could regress.",
+    "F": "`docs/javascript-reference.md` replaces the 'no UI of their own' claim for `tile()` with 'the System tile's **Tile all windows** row', keeps the claim only for `cascade()`/`setSnapEnabled()`, and documents the new grid rules.",
+    "G": "Only the five relevant files change; the `arrange.ts` edit (`members.map(...)` for `mins`) goes beyond the letter of the task, but it serves the 'use the available space' requirement and has a test.",
+    "H": "The final message says it ran `npm run build`, `npm run lint`, `npm run typecheck` and `npm run test:js` (6,616 tests passed), which matches the all-pass gates."
+  },
+  "notable": "This is a small change that reuses the existing code: the menu row calls the existing `tile()`, and three-in-thirds comes from a three-line rule in `pickGridDimensions`, with tests and docs in the same change. Note that the criteria maxima add up to 19, not the stated 20, so 19 is a perfect score."
+}

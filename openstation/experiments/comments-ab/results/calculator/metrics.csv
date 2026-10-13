@@ -1,0 +1,5 @@
+label,arm,wall_s,duration_ms,duration_api_ms,num_turns,cost_usd,input_tokens,output_tokens,cache_read_tokens,cache_create_tokens,is_error
+"R01","A","457",453922,382414,63,3.1885116,96,35028,6147718,157253,false
+"R04","B","442",438749,315643,51,2.6147018,92,28423,5084729,128616,false
+"R03","A","495",494712,429903,69,3.434982800000001,116,37245,7089374,158968,false
+"R05","B","443",441558,367700,59,2.7589297999999998,96,33444,5151329,132425,false

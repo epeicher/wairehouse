@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 2, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "C-stack is earned because a single `applyZOrder()` derived from `_stack` replaces the z-index writes in focus, raise and open. C-pin is earned because the pin is a `registerWindowControl( { id: 'core/keep-on-top', ... } )`. C-session is not earned: `snapshot()` and `SessionWindow` carry the field, but `restoreSession()` pins windows with a post-open `manager.setAlwaysOnTop( win.id, true )` loop instead of the openNew config and the `NativeWindowRestoreState`/`seedWindowRestoreState()` seed.",
+    "D": "No violations: the pin goes through the registry, both labels use `__()` ('Keep on top' / 'Stop keeping on top'), the on state is the `active` attribute rather than a hardcoded colour, and there are no version stamps or ESLint disables.",
+    "E": "Tests were added to the existing `window-child-ownership.test.ts` (stacking across focus and open, several pinned windows, unpin, child ownership) and `session-restore-duplicates.test.ts` (snapshot→restore round-trip with a z-index check).",
+    "F": "`javascript-reference.md` adds `setAlwaysOnTop()` to the manager method block, `readonly alwaysOnTop` to the Window interface, and a Keep on top section that describes the session entry field.",
+    "G": "The prompt did not ask for the new public surface it adds: the `os-window-always-on-top-changed` CustomEvent, the `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` constant, and a public `'pin'` icon key in the os-window-button type docs.",
+    "H": "The final message reports `npm run build`, `lint`, `typecheck` and `test:js` all passing, which matches the gates.",
+    "I": "Ownership is handled by `isKeptOnTop()` walking `ownerOf()` with a cycle guard, plus a child-above-owner test. Idempotence is handled by `if ( ! win || win.alwaysOnTop === next ) return;`, which also makes unknown ids a no-op. Fullscreen is claimed in the message but not visible in the diff."
+  },
+  "notable": "The best design choice is a clean single `applyZOrder()` that keeps `_stack` as focus order and also fixes the PHP sanitizer so the flag survives a real reload. The main weaknesses are the unrequested event and hook, and a session restore that pins windows after they open instead of seeding them through the existing restore path."
+}

@@ -1,0 +1,17 @@
+ docs/architecture.md                               |  2 +
+ docs/examples/window-controls.md                   |  4 +-
+ docs/hooks-reference.md                            |  2 +-
+ docs/javascript-reference.md                       | 25 ++++++-
+ includes/session.php                               |  6 ++
+ src/boot/session.ts                                |  2 +
+ src/native-windows.ts                              |  1 +
+ src/title-bar-buttons/paint-icon.ts                |  4 +-
+ src/types.ts                                       | 15 +++-
+ .../os-window-button/os-window-button.ts           | 14 ++--
+ src/window-chrome/controls/built-ins.ts            | 21 +++++-
+ src/window-chrome/controls/registry.ts             |  5 +-
+ src/window-manager/index.ts                        | 79 +++++++++++++++++++--
+ src/window/index.ts                                | 54 ++++++++++++++-
+ tests/vitest/window-child-ownership.test.ts        | 81 ++++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts | 14 ++--
+ 16 files changed, 293 insertions(+), 36 deletions(-)

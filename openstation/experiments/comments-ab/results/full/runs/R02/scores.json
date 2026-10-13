@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 2, "G": 2, "H": 1 },
+  "total": 19,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "`src/desktop.ts` adds `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` in the System rows. The new `pickGridDimensions` (`short = floor(sqrt(n))`, `long = ceil(n/short)`, cols = long on landscape) gives 2x1 for two, 3x1 for three and 2x2 for four.",
+    "C": "The row calls the existing `manager.tile()`; the only layout changes are to the grid rule in `geometry.ts` and the row-span input in `arrange.ts`, both on the existing path.",
+    "D": "There are no `assets/js/` edits, no raw fetch/confirm/alert, no `:host` tokens, no version stamps, and no new ESLint disables.",
+    "E": "Two cases were added to the existing `tests/vitest/arrange.test.ts`. 'tile() with 3 windows on a landscape area splits it in thirds' targets the changed grid rule and would fail on the old 2x2 picker.",
+    "F": "`docs/javascript-reference.md` now says \"`tile()` is the System menu's **Tile all windows**\" and moves only `cascade()`/`setSnapEnabled()` under 'no UI'. The `os.arrange.tile.dimensions` row describes the new default grid, and `docs/workspaces.md` documents it too.",
+    "G": "Six focused files changed with no `languages/` or `assets/js/` churn. The last-row width change in `arrange.ts` serves the 'use the available space' requirement.",
+    "H": "The final message says build succeeded, lint had 0 errors, typecheck passed and test:js passed 6616 tests, which matches the passing gates."
+  },
+  "notable": "The agent fixed the three-in-thirds case at the source by replacing the aspect-scoring picker with a simple sqrt rule, covered it with a regressing test, and openly flagged that this also changes the workspace `tile` layout. Two loose ends: the old 6x6 cap is gone, and `n = 0` would divide by zero if `tile()` doesn't return early on an empty desktop."
+}

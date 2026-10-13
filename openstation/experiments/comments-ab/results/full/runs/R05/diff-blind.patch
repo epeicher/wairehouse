@@ -1,0 +1,124 @@
+diff --git c/docs/javascript-reference.md w/docs/javascript-reference.md
+index 391319a0..0c388af6 100644
+--- c/docs/javascript-reference.md
++++ w/docs/javascript-reference.md
+@@ -5050 +5050 @@ Window contexts can supply `responseActions({messageId, summary, operations})` f
+-Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `cascade()`, `tile()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
++Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `cascade()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. `tile()` is the System menu's **Tile all windows** row. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
+@@ -5065 +5065 @@ The pairing holds even when a user re-enters overview inside the ~280 ms exit an
+-| `os.arrange.tile.starting` | action | Stable | `{ windowCount, cols, rows }` — before tile lays out the grid |
++| `os.arrange.tile.starting` | action | Stable | `{ windowCount, cols, rows }` — before tile lays out the grid. Up to three windows share one row (halves, thirds); past that the grid is `ceil(√n)` columns, so four is 2×2 and five is 3 over 2. A short last row shares the full width instead of leaving an empty cell |
+diff --git c/src/desktop.ts w/src/desktop.ts
+index c51a635b..1b68fe92 100644
+--- c/src/desktop.ts
++++ w/src/desktop.ts
+@@ -1472,0 +1473,5 @@ function init(): void {
++					{
++						title: 'Tile all windows',
++						url: '',
++						onSelect: () => manager.tile(),
++					},
+diff --git c/src/window-manager/arrange.ts w/src/window-manager/arrange.ts
+index f0b9d729..cca1b499 100644
+--- c/src/window-manager/arrange.ts
++++ w/src/window-manager/arrange.ts
+@@ -98,5 +98 @@ export function tile( mgr: WindowManager ): void {
+-	const auto = pickGridDimensions(
+-		eligible.length,
+-		rect.width,
+-		rect.height,
+-	);
++	const auto = pickGridDimensions( eligible.length );
+@@ -134,3 +130,4 @@ export function tile( mgr: WindowManager ): void {
+-		const mins = Array.from(
+-			{ length: cols },
+-			( _, col ) => members[ col ]?.config.minWidth || 0,
++		const spans = shareRowByMinWidth(
++			rect.width - padding * 2,
++			gap,
++			members.map( ( w ) => w.config.minWidth || 0 ),
+@@ -138 +134,0 @@ export function tile( mgr: WindowManager ): void {
+-		const spans = shareRowByMinWidth( rect.width - padding * 2, gap, mins );
+diff --git c/src/window-manager/geometry.ts w/src/window-manager/geometry.ts
+index 328b4d6c..2020db9a 100644
+--- c/src/window-manager/geometry.ts
++++ w/src/window-manager/geometry.ts
+@@ -41,7 +41,3 @@ export function isValidCellSize(
+-export function pickGridDimensions(
+-	n: number,
+-	width: number,
+-	height: number,
+-): { cols: number; rows: number } {
+-	if ( n <= 1 ) {
+-		return { cols: 1, rows: 1 };
++export function pickGridDimensions( n: number ): { cols: number; rows: number } {
++	if ( n <= 3 ) {
++		return { cols: Math.max( 1, n ), rows: 1 };
+@@ -49,17 +45,2 @@ export function pickGridDimensions(
+-	const areaAspect = width / Math.max( 1, height );
+-	const max = 6;
+-	let best = { cols: n, rows: 1, score: Infinity };
+-	for ( let cols = 1; cols <= Math.min( max, n ); cols++ ) {
+-		const rows = Math.min( max, Math.ceil( n / cols ) );
+-		if ( cols * rows < n ) {
+-			continue;
+-		}
+-		const cellAspect = ( width / cols ) / Math.max( 1, height / rows );
+-		const aspectDelta = Math.abs( cellAspect - areaAspect );
+-		const emptyCells = cols * rows - n;
+-		const score = aspectDelta + emptyCells * 0.05;
+-		if ( score < best.score ) {
+-			best = { cols, rows, score };
+-		}
+-	}
+-	return { cols: best.cols, rows: best.rows };
++	const cols = Math.ceil( Math.sqrt( n ) );
++	return { cols, rows: Math.ceil( n / cols ) };
+diff --git c/tests/vitest/arrange.test.ts w/tests/vitest/arrange.test.ts
+index 97422c85..876e1c91 100644
+--- c/tests/vitest/arrange.test.ts
++++ w/tests/vitest/arrange.test.ts
+@@ -99,0 +100,43 @@ describe( 'WindowManager — Arrange (tile + snap)', async () => {
++	test( 'tile() puts 3 windows in thirds of one row', async () => {
++		const wins = [
++			await manager.open( openConfig( 'a' ) ),
++			await manager.open( openConfig( 'b' ) ),
++			await manager.open( openConfig( 'c' ) ),
++		];
++
++		manager.tile();
++
++		expect(
++			wins.map( ( w ) => [
++				w.element.style.left,
++				w.element.style.top,
++				w.element.style.width,
++				w.element.style.height,
++			] ),
++		).toEqual( [
++			[ '16px', '16px', '514px', '868px' ],
++			[ '542px', '16px', '514px', '868px' ],
++			[ '1068px', '16px', '514px', '868px' ],
++		] );
++	} );
++
++	test( 'tile() stretches a short last row across the full width', async () => {
++		const wins = [];
++		for ( const id of [ 'a', 'b', 'c', 'd', 'e' ] ) {
++			wins.push( await manager.open( openConfig( id ) ) );
++		}
++
++		manager.tile();
++
++		expect(
++			wins.slice( 3 ).map( ( w ) => [
++				w.element.style.left,
++				w.element.style.top,
++				w.element.style.width,
++			] ),
++		).toEqual( [
++			[ '16px', '456px', '778px' ],
++			[ '806px', '456px', '778px' ],
++		] );
++	} );
++

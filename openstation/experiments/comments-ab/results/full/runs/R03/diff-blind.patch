@@ -1,0 +1,182 @@
+diff --git c/docs/javascript-reference.md w/docs/javascript-reference.md
+index 391319a0..ca8070ca 100644
+--- c/docs/javascript-reference.md
++++ w/docs/javascript-reference.md
+@@ -961,0 +962,3 @@ manager.cascade(): void;
++// The System menu's "Tile all windows": every window on the active desktop
++// in a grid over the work area. Two side by side, three in thirds, four 2x2,
++// five 3-over-2 (a short last row is widened, never left with empty cells).
+@@ -5067 +5070 @@ The pairing holds even when a user re-enters overview inside the ~280 ms exit an
+-| `os.arrange.tile.dimensions` | filter | Stable | filters `{ cols, rows }`; context `{ windowCount, areaWidth, areaHeight }`. Override the auto-chosen grid (e.g., force a 3-column newsroom layout). Returns must be positive integers and `cols * rows >= windowCount`, otherwise the filter is ignored. |
++| `os.arrange.tile.dimensions` | filter | Stable | filters `{ cols, rows }`; context `{ windowCount, areaWidth, areaHeight }`. The auto-chosen grid is `rows = floor( √windowCount )`, `cols = ceil( windowCount / rows )`. Override it (e.g., force a 3-column newsroom layout). Returns must be positive integers and `cols * rows >= windowCount`, otherwise the filter is ignored. |
+diff --git c/src/desktop.ts w/src/desktop.ts
+index 8d14d8e6..7fc8d6fd 100644
+--- c/src/desktop.ts
++++ w/src/desktop.ts
+@@ -3473 +3473,2 @@ function init(): void {
+-		// app. Six affordances, one glyph.
++		// app. Then the window-wide actions with nowhere better to
++		// live: Tile all windows and Keyboard shortcuts. One glyph.
+@@ -3504 +3505 @@ function init(): void {
+-				// (Fullscreen, Log out) leave it unset.
++				// (Fullscreen, Tile all windows, Log out) leave it unset.
+@@ -3527,0 +3529,5 @@ function init(): void {
++					{
++						title: 'Tile all windows',
++						url: '',
++						onSelect: () => manager.tile(),
++					},
+diff --git c/src/window-manager/arrange.ts w/src/window-manager/arrange.ts
+index f472c4f4..d3632741 100644
+--- c/src/window-manager/arrange.ts
++++ w/src/window-manager/arrange.ts
+@@ -4,3 +4,3 @@
+- * `cascade` and `tile` are the two "Arrange" commands exposed from the
+- * admin-bar menu; `columns` and `focus` are what a workspace's
+- * `layout` resolves to. All four touch every window on the active
++ * `cascade`, `tile`, `columns` and `focus` are what a workspace's
++ * `layout` resolves to, and `tile` is also the dock System menu's
++ * "Tile all windows". All four touch every window on the active
+@@ -132,5 +132,4 @@ export function cascade( mgr: WindowManager ): void {
+- * Tile every eligible window into a uniform grid that covers the
+- * desktop area — "Show all windows," macOS-style. The grid dimensions
+- * (cols × rows) are picked to maximise individual window size while
+- * still fitting all of them, by matching the cell aspect ratio to the
+- * desktop area's aspect ratio.
++ * Tile every eligible window into a grid that covers the work area:
++ * two side by side, three in thirds, four in a 2×2 square, and so on
++ * (see `pickGridDimensions`). What the System menu's "Tile all
++ * windows" row runs.
+@@ -166,5 +165 @@ export function tile( mgr: WindowManager ): void {
+-	const auto = pickGridDimensions(
+-		eligible.length,
+-		rect.width,
+-		rect.height,
+-	);
++	const auto = pickGridDimensions( eligible.length );
+@@ -204,3 +199,5 @@ export function tile( mgr: WindowManager ): void {
+-	// Each row shares its width by minimum widths: even cells unless a
+-	// window needs more, in which case its row-mates (and the empty
+-	// cells of a short last row) make room. See `shareRowByMinWidth`.
++	// Each row shares its width between the windows in it: even cells
++	// unless a window needs more, in which case its row-mates make
++	// room. A short last row is shared by fewer windows rather than
++	// left with empty cells, so the grid covers the whole work area.
++	// See `shareRowByMinWidth`.
+@@ -209,3 +206,4 @@ export function tile( mgr: WindowManager ): void {
+-		const mins = Array.from(
+-			{ length: cols },
+-			( _, col ) => members[ col ]?.config.minWidth || 0,
++		const spans = shareRowByMinWidth(
++			rect.width - padding * 2,
++			gap,
++			members.map( ( w ) => w.config.minWidth || 0 ),
+@@ -213 +210,0 @@ export function tile( mgr: WindowManager ): void {
+-		const spans = shareRowByMinWidth( rect.width - padding * 2, gap, mins );
+diff --git c/src/window-manager/geometry.ts w/src/window-manager/geometry.ts
+index dcf251db..c8c4a667 100644
+--- c/src/window-manager/geometry.ts
++++ w/src/window-manager/geometry.ts
+@@ -62,6 +62,4 @@ export function isValidCellSize(
+- * Choose the (cols × rows) grid for `tile()` that maximises individual
+- * window size while still fitting all `n` windows in a `width × height`
+- * area. Scoring: minimise the absolute difference between the cell
+- * aspect ratio and the area aspect ratio, with a small penalty for
+- * empty trailing cells (so 5 windows pick 3×2 over 5×1 when the area is
+- * roughly square).
++ * Choose the (cols × rows) grid for `tile()`: as few rows as keep the
++ * grid at least as wide as it is tall, so two windows sit side by side,
++ * three in thirds, four in a 2×2 square, five as three over two, six
++ * as 3×2, nine as 3×3.
+@@ -69,2 +67,4 @@ export function isValidCellSize(
+- * Capped at 6×6 — beyond that, individual windows are too small to be
+- * useful and the user is better off with cascade or overview.
++ * Rows are `floor( √n )` rather than whatever matches the area's
++ * aspect ratio: matching put three windows in a 2×2 with one quarter
++ * of the desk empty. A short last row is not left with empty cells
++ * either; `tile()` widens its windows across the row.
+@@ -72,5 +72 @@ export function isValidCellSize(
+-export function pickGridDimensions(
+-	n: number,
+-	width: number,
+-	height: number,
+-): { cols: number; rows: number } {
++export function pickGridDimensions( n: number ): { cols: number; rows: number } {
+@@ -80,17 +76,2 @@ export function pickGridDimensions(
+-	const areaAspect = width / Math.max( 1, height );
+-	const max = 6;
+-	let best = { cols: n, rows: 1, score: Infinity };
+-	for ( let cols = 1; cols <= Math.min( max, n ); cols++ ) {
+-		const rows = Math.min( max, Math.ceil( n / cols ) );
+-		if ( cols * rows < n ) {
+-			continue;
+-		}
+-		const cellAspect = ( width / cols ) / Math.max( 1, height / rows );
+-		const aspectDelta = Math.abs( cellAspect - areaAspect );
+-		const emptyCells = cols * rows - n;
+-		const score = aspectDelta + emptyCells * 0.05;
+-		if ( score < best.score ) {
+-			best = { cols, rows, score };
+-		}
+-	}
+-	return { cols: best.cols, rows: best.rows };
++	const rows = Math.floor( Math.sqrt( n ) );
++	return { cols: Math.ceil( n / rows ), rows };
+diff --git c/src/window-manager/index.ts w/src/window-manager/index.ts
+index d3c42513..81c46776 100644
+--- c/src/window-manager/index.ts
++++ w/src/window-manager/index.ts
+@@ -10 +10 @@
+- *   - `arrange.ts`   — cascade + tile commands from the Arrange menu.
++ *   - `arrange.ts`   — cascade, tile, columns and focus arrangements.
+diff --git c/tests/vitest/arrange.test.ts w/tests/vitest/arrange.test.ts
+index 61c9f201..4272786f 100644
+--- c/tests/vitest/arrange.test.ts
++++ w/tests/vitest/arrange.test.ts
+@@ -103,2 +102,0 @@ describe( 'WindowManager — Arrange (tile + snap)', async () => {
+-		// 1600x900 area — closest to areaAspect 1.78 is 2x2
+-		// (cellAspect 1.78), beating 4x1 (3.56) and 1x4 (0.44).
+@@ -108,0 +107,43 @@ describe( 'WindowManager — Arrange (tile + snap)', async () => {
++	test( 'tile() lays 3 windows out in thirds, full height', async () => {
++		const wins = [
++			await manager.open( openConfig( 'a' ) ),
++			await manager.open( openConfig( 'b' ) ),
++			await manager.open( openConfig( 'c' ) ),
++		];
++
++		manager.tile();
++
++		// floor( ( 1568 - 2 gaps of 12 ) / 3 ) = 514 each.
++		expect(
++			wins.map( ( w ) => [ w.element.style.left, w.element.style.width ] ),
++		).toEqual( [
++			[ '16px', '514px' ],
++			[ '542px', '514px' ],
++			[ '1068px', '514px' ],
++		] );
++		expect( wins.map( ( w ) => w.element.style.height ) ).toEqual( [
++			'868px',
++			'868px',
++			'868px',
++		] );
++	} );
++
++	test( 'tile() widens a short last row instead of leaving empty cells', async () => {
++		const wins = [];
++		for ( const id of [ 'a', 'b', 'c', 'd', 'e' ] ) {
++			wins.push( await manager.open( openConfig( id ) ) );
++		}
++
++		manager.tile();
++
++		// 3 over 2: the bottom pair splits the full row, 778 each.
++		expect(
++			wins
++				.slice( 3 )
++				.map( ( w ) => [ w.element.style.left, w.element.style.width ] ),
++		).toEqual( [
++			[ '16px', '778px' ],
++			[ '806px', '778px' ],
++		] );
++	} );
++

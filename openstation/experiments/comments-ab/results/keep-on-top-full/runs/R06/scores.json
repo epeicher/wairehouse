@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 22,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }` to the sanitizer, so the flag survives a real reload.",
+    "C": "C-stack: a single private `restack()` runs `paintOrder( this._stack, ... )` and replaces the inline z-index writes in focus, raise and open, without a second stack. C-pin: the pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )` registration. C-session: the flag goes through `snapshot()`, both `restoreSession()` branches (lines 119 and 163), `NativeWindowRestoreState` (`| 'alwaysOnTop'`), `WindowConfig` and `SessionWindow`.",
+    "D": "No violations found: the label is `__( 'Keep on top' )`, the pin is an `os-window-button` icon through the registry, the on state uses the `active` attribute and `aria-pressed` with no hardcoded colour, and nothing under `assets/js/` or ESLint disables is touched.",
+    "E": "Stacking across focus and open tests were added to the existing `window-manager-close-focus.test.ts` (`paintOrder()` equals `['b','c','a']`), and a session round-trip test was added to `session-restore-duplicates.test.ts`.",
+    "F": "`javascript-reference.md` adds `setAlwaysOnTop(...)` to the manager method block, the `readonly alwaysOnTop` property and a keep-on-top paragraph, and `architecture.md`'s session section documents `alwaysOnTop: true`.",
+    "G": "Beyond the fixed surface, the change adds and documents a new `WindowConfig.alwaysOnTop` open-time option (`alwaysOnTop?: boolean; // open kept on top`) and documents a new `'pin'` icon key in the `os-window-button` type.",
+    "H": "The final message says `npm run build`, `lint`, `typecheck` and `test:js` passed, which matches the passing gates.",
+    "I": "Ownership is handled by `isKeptOnTop()` walking the owner chain, with a test showing the child stays above the pinned owner. Idempotence is handled by `if ( win.alwaysOnTop === next ) return true;` with no emit, and an unknown id returns `false`. Fullscreen and minimized have no explicit handling."
+  },
+  "notable": "A clean implementation: one `restack()` pass through `paintOrder()` keeps `_stack` as the only source of truth, and the agent noticed and fixed the PHP sanitizer drop. It loses a point for exposing an extra public `WindowConfig.alwaysOnTop` open option that the prompt did not ask for."
+}

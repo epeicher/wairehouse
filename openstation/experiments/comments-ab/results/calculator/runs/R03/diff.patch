@@ -1,0 +1,496 @@
+diff --git c/apps/calculator/calculator.css w/apps/calculator/calculator.css
+new file mode 100644
+index 00000000..ea29da7d
+--- /dev/null
++++ w/apps/calculator/calculator.css
+@@ -0,0 +1,55 @@
++/*
++ * Calculator — the readout on top, the keypad filling the rest.
++ *
++ * Loaded by the App Framework as the app's stylesheet on the window's
++ * first open. Sizes only: every colour comes from the kit's own tokens,
++ * so the palette and desktop themes reach the keys unchanged.
++ */
++
++.os-calculator {
++	box-sizing: border-box;
++	display: flex;
++	flex-direction: column;
++	gap: 12px;
++	block-size: 100%;
++	padding: 12px;
++}
++
++/* The container takes focus only so typed keys reach it; the keys draw their own rings. */
++.os-calculator:focus {
++	outline: none;
++}
++
++.os-calculator__screen {
++	display: flex;
++	flex-direction: column;
++	align-items: flex-end;
++	gap: 4px;
++	min-inline-size: 0;
++}
++
++.os-calculator__expression {
++	min-block-size: 1.4em;
++	font-variant-numeric: tabular-nums;
++	color: var( --os-ui-fg-muted, #646970 );
++}
++
++.os-calculator__keys {
++	flex: 1;
++	min-block-size: 0;
++}
++
++/* Large keys: the grid's rows set the height, the label scales with it. */
++.os-calculator__keys os-button {
++	--os-ui-button-min-height: 48px;
++	font-size: 22px;
++}
++
++/*
++ * The operator waiting for its second operand reads as pressed — a
++ * stronger edge, not the accent, which the dock spends on the front
++ * window.
++ */
++.os-calculator__keys os-button[data-pending] {
++	--os-ui-button-border: 2px solid var( --os-ui-fg, #1d2327 );
++}
+diff --git c/apps/calculator/calculator.os.php w/apps/calculator/calculator.os.php
+new file mode 100644
+index 00000000..a11f6e61
+--- /dev/null
++++ w/apps/calculator/calculator.os.php
+@@ -0,0 +1,48 @@
++<?php
++/**
++ * Calculator — a basic four-function calculator, as an OpenStation app.
++ *
++ * This file is the window: title, icon, size, the dock tile, the
++ * desktop shortcut and the state schema. There is no server action
++ * and no `data()`: every key press is a `local` reducer in
++ * `calculator.os.ts`, so arithmetic never waits for a request. The
++ * state is declared here anyway because the runtime only accepts
++ * writes to declared keys.
++ *
++ * @package OpenStation
++ */
++
++namespace OpenStation\Apps\Calculator;
++
++use OpenStation\App;
++
++// Direct access, unless a standalone host is booting on bare PHP.
++if ( ! defined( 'ABSPATH' ) ) {
++	defined( 'OPENSTATION_STANDALONE' ) || exit;
++}
++
++/** A calculator body: the readout band and a 3×2 grid of keys. */
++const ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="12" y="6" width="40" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="4"/><rect x="19" y="13" width="26" height="10" rx="2" fill="currentColor"/><g fill="currentColor"><circle cx="22" cy="33" r="3"/><circle cx="32" cy="33" r="3"/><circle cx="42" cy="33" r="3"/><circle cx="22" cy="45" r="3"/><circle cx="32" cy="45" r="3"/><circle cx="42" cy="45" r="3"/></g></svg>';
++
++return App::define( 'openstation-calculator' )
++	->title( __( 'Calculator', 'desktop-mode' ) )
++	->icon( ICON )
++	->size( 340, 500 )
++	->min_size( 280, 420 )
++	// The default `dock` placement proposes the dock tile. The
++	// shortcut merges into that same launcher (one nav item per app,
++	// see `src/nav/defaults.ts`), so it does not propose a second
++	// default: it is what the wallpaper shows, at this slot, once the
++	// user adds the launcher there from the tile's context menu or
++	// Preferences → Navigation.
++	->desktop_icon( array( 'position' => 26 ) )
++	->capabilities( 'read' )
++	->state(
++		array(
++			'display' => '0',
++			'stored'  => '',
++			'op'      => '',
++			'fresh'   => true,
++			'error'   => false,
++		)
++	);
+diff --git c/apps/calculator/calculator.os.ts w/apps/calculator/calculator.os.ts
+new file mode 100644
+index 00000000..ba30d62d
+--- /dev/null
++++ w/apps/calculator/calculator.os.ts
+@@ -0,0 +1,288 @@
++/**
++ * Calculator — the client half.
++ *
++ * A basic four-function calculator: a readout, the pending operation
++ * above it, and a 4×5 keypad of `<os-button fill-cell>`s. Every key is
++ * the `local` action `press` with the key's token, so nothing here
++ * ever round-trips; `calculator.os.php` only declares the window and
++ * the state schema.
++ *
++ * Keyboard input is scoped to the window: `mounted()` listens on the
++ * mount root, not the document, so typing in another window never
++ * presses a key here. (`<os-key>` matches on the whole document, and
++ * its strict modifier match rejects the shifted `+` and `*`, which is
++ * why the keypad is built from buttons instead.)
++ *
++ * Pure model first — `press()` is the whole calculator —
++ * then the view. `calculator.test.ts` exercises both.
++ */
++
++import { __, defineApp, html } from '@openstation/app';
++
++// ------------------------------------------------------------ model
++
++export type Operator = '+' | '-' | '*' | '/';
++
++/** What a key sends: a digit, an operator, or a command. */
++export type Token =
++	| '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9'
++	| '.' | Operator | '=' | 'clear' | 'back' | 'negate' | 'percent';
++
++export interface CalcState extends Record< string, unknown > {
++	/** The readout: the number being typed, or the last result. */
++	display: string;
++	/** The left operand of the pending operation, '' when none. */
++	stored: string;
++	/** The pending operator, '' when none. */
++	op: Operator | '';
++	/** The next digit starts a new number instead of extending this one. */
++	fresh: boolean;
++	/** The last operation had no answer (a division by zero). */
++	error: boolean;
++}
++
++/** Longest number a user can type, in digits. */
++const MAX_DIGITS = 16;
++
++const OPERATORS: readonly string[] = [ '+', '-', '*', '/' ];
++
++/** The state `calculator.os.php` declares. */
++export function initialState(): CalcState {
++	return { display: '0', stored: '', op: '', fresh: true, error: false };
++}
++
++/**
++ * A number as the readout shows it: rounded to 12 significant digits
++ * so binary floating point does not leak (0.1 + 0.2 reads 0.3), or
++ * null when there is no finite answer.
++ */
++export function formatNumber( value: number ): string | null {
++	if ( ! Number.isFinite( value ) ) {
++		return null;
++	}
++	return String( Number.parseFloat( value.toPrecision( 12 ) ) );
++}
++
++function compute( left: string, op: Operator, right: string ): string | null {
++	const a = Number( left );
++	const b = Number( right );
++	switch ( op ) {
++		case '+':
++			return formatNumber( a + b );
++		case '-':
++			return formatNumber( a - b );
++		case '*':
++			return formatNumber( a * b );
++		case '/':
++			return b === 0 ? null : formatNumber( a / b );
++	}
++}
++
++function failed(): CalcState {
++	return { ...initialState(), error: true };
++}
++
++function typeDigit( state: CalcState, digit: string ): CalcState {
++	if ( state.fresh ) {
++		return { ...state, display: digit, fresh: false };
++	}
++	if ( state.display === '0' || state.display === '-0' ) {
++		return { ...state, display: state.display.replace( '0', digit ) };
++	}
++	if ( state.display.replace( /\D/g, '' ).length >= MAX_DIGITS ) {
++		return state;
++	}
++	return { ...state, display: state.display + digit };
++}
++
++function typeDecimal( state: CalcState ): CalcState {
++	if ( state.fresh ) {
++		return { ...state, display: '0.', fresh: false };
++	}
++	return state.display.includes( '.' ) ? state : { ...state, display: state.display + '.' };
++}
++
++function chooseOperator( state: CalcState, op: Operator ): CalcState {
++	// A second operator after a typed operand settles the first one,
++	// so 2 + 3 × reads 5 and multiplies it next.
++	if ( state.op && ! state.fresh ) {
++		const result = compute( state.stored, state.op, state.display );
++		return result === null ? failed() : { ...state, display: result, stored: result, op, fresh: true };
++	}
++	return { ...state, stored: state.display, op, fresh: true };
++}
++
++function equals( state: CalcState ): CalcState {
++	if ( ! state.op ) {
++		return { ...state, fresh: true };
++	}
++	const result = compute( state.stored, state.op, state.display );
++	return result === null ? failed() : { ...state, display: result, stored: '', op: '', fresh: true };
++}
++
++function backspace( state: CalcState ): CalcState {
++	if ( state.fresh ) {
++		return state;
++	}
++	const next = state.display.slice( 0, -1 );
++	return { ...state, display: next === '' || next === '-' ? '0' : next };
++}
++
++function negate( state: CalcState ): CalcState {
++	if ( state.display === '0' ) {
++		return state;
++	}
++	const display = state.display.startsWith( '-' ) ? state.display.slice( 1 ) : '-' + state.display;
++	return { ...state, display };
++}
++
++function percent( state: CalcState ): CalcState {
++	const result = formatNumber( Number( state.display ) / 100 );
++	return result === null ? failed() : { ...state, display: result, fresh: true };
++}
++
++/** The whole calculator: the state after one key. */
++export function press( state: CalcState, token: string ): CalcState {
++	if ( token === 'clear' ) {
++		return initialState();
++	}
++	// After an error only a new number (or Clear) means anything.
++	if ( state.error ) {
++		if ( /^[0-9]$/.test( token ) || token === '.' ) {
++			return press( initialState(), token );
++		}
++		return token === 'back' ? initialState() : state;
++	}
++	if ( /^[0-9]$/.test( token ) ) {
++		return typeDigit( state, token );
++	}
++	if ( OPERATORS.includes( token ) ) {
++		return chooseOperator( state, token as Operator );
++	}
++	switch ( token ) {
++		case '.':
++			return typeDecimal( state );
++		case '=':
++			return equals( state );
++		case 'back':
++			return backspace( state );
++		case 'negate':
++			return negate( state );
++		case 'percent':
++			return percent( state );
++	}
++	return state;
++}
++
++/** The token a physical key sends, or null for a key the calculator ignores. */
++export function tokenForKey( event: Pick< KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey' > ): Token | null {
++	// Leave Cmd/Ctrl/Alt chords (zoom, copy, shell shortcuts) alone.
++	if ( event.ctrlKey || event.metaKey || event.altKey ) {
++		return null;
++	}
++	const { key } = event;
++	if ( /^[0-9]$/.test( key ) || OPERATORS.includes( key ) ) {
++		return key as Token;
++	}
++	switch ( key ) {
++		case '.':
++		case ',':
++			return '.';
++		case 'x':
++		case 'X':
++			return '*';
++		case '=':
++		case 'Enter':
++			return '=';
++		case 'Escape':
++		case 'Delete':
++			return 'clear';
++		case 'Backspace':
++			return 'back';
++		case '%':
++			return 'percent';
++	}
++	return null;
++}
++
++// ------------------------------------------------------------- view
++
++const SYMBOLS: Record< Operator, string > = { '+': '+', '-': '−', '*': '×', '/': '÷' };
++
++interface Key {
++	token: Token;
++	text: string;
++	label: string;
++	variant: 'ghost' | 'secondary' | 'primary';
++}
++
++/** The keypad, row by row. Built per render so the labels follow the locale. */
++function keys(): Key[] {
++	const digit = ( token: Token ): Key => ( { token, text: token, label: token, variant: 'secondary' } );
++	const op = ( token: Operator, label: string ): Key => ( { token, text: SYMBOLS[ token ], label, variant: 'ghost' } );
++	return [
++		{ token: 'clear', text: 'C', label: __( 'Clear' ), variant: 'ghost' },
++		{ token: 'back', text: '⌫', label: __( 'Backspace' ), variant: 'ghost' },
++		{ token: 'percent', text: '%', label: __( 'Percent' ), variant: 'ghost' },
++		op( '/', __( 'Divide' ) ),
++		digit( '7' ), digit( '8' ), digit( '9' ),
++		op( '*', __( 'Multiply' ) ),
++		digit( '4' ), digit( '5' ), digit( '6' ),
++		op( '-', __( 'Subtract' ) ),
++		digit( '1' ), digit( '2' ), digit( '3' ),
++		op( '+', __( 'Add' ) ),
++		{ token: 'negate', text: '±', label: __( 'Change sign' ), variant: 'ghost' },
++		digit( '0' ),
++		{ token: '.', text: '.', label: __( 'Decimal point' ), variant: 'secondary' },
++		{ token: '=', text: '=', label: __( 'Equals' ), variant: 'primary' },
++	];
++}
++
++/** The pending operation shown above the readout ("12 ×"). */
++export function expression( state: CalcState ): string {
++	return state.op ? `${ state.stored } ${ SYMBOLS[ state.op ] }` : '';
++}
++
++export default defineApp< CalcState, unknown >( 'openstation-calculator', {
++	local: {
++		press: ( state, args ) => press( state, String( args.token ?? '' ) ),
++	},
++
++	// Nothing to fetch: paint the keypad the moment the window opens.
++	placeholder: () => null,
++
++	view: ( { state } ) => html`<div class="os-calculator" tabindex="-1">
++		<div class="os-calculator__screen">
++			<div class="os-calculator__expression">${ expression( state ) }</div>
++			<os-display size="xl" value=${ state.error ? __( 'Error' ) : state.display }></os-display>
++		</div>
++		<os-grid class="os-calculator__keys" columns="4" rows="5" gap="8">
++			${ keys().map(
++		( key ) => html`<os-button
++					fill-cell
++					variant=${ key.variant }
++					aria-label=${ key.label }
++					?data-pending=${ state.fresh && key.token === state.op }
++					os-action="press"
++					os-arg-token=${ key.token }
++				>${ key.text }</os-button>`,
++	) }
++		</os-grid>
++	</div>`,
++
++	mounted: ( ctx ) => {
++		const onKeyDown = ( event: KeyboardEvent ): void => {
++			const token = tokenForKey( event );
++			if ( token === null ) {
++				return;
++			}
++			// Also stops Enter on a focused key from clicking it as well.
++			event.preventDefault();
++			ctx.local( 'press', { token } );
++		};
++		ctx.root.addEventListener( 'keydown', onKeyDown );
++		// Focus the calculator so typing works without a click first.
++		ctx.root.querySelector< HTMLElement >( '.os-calculator' )?.focus( { preventScroll: true } );
++		return () => ctx.root.removeEventListener( 'keydown', onKeyDown );
++	},
++} );
+diff --git c/apps/calculator/calculator.test.ts w/apps/calculator/calculator.test.ts
+new file mode 100644
+index 00000000..5d7f859c
+--- /dev/null
++++ w/apps/calculator/calculator.test.ts
+@@ -0,0 +1,69 @@
++/**
++ * Calculator — the model through key sequences, the keyboard map,
++ * and one render of the view into jsdom.
++ */
++import { describe, expect, it } from 'vitest';
++import { mockViewContext } from '../../src/app-runtime/testing';
++import app, { initialState, press, tokenForKey, type CalcState } from './calculator.os';
++
++/** The state after pressing each token in turn, from a cleared calculator. */
++function run( ...tokens: string[] ): CalcState {
++	return tokens.reduce( press, initialState() );
++}
++
++describe( 'model', () => {
++	it( 'chains operations left to right and keeps float noise out of the readout', () => {
++		expect( run( '1', '2', '+', '3', '*', '2', '=' ).display ).toBe( '30' );
++		expect( run( '.', '1', '+', '0', '.', '2', '=' ).display ).toBe( '0.3' );
++		// Changing your mind about the operator replaces it.
++		expect( run( '9', '+', '-', '4', '=' ).display ).toBe( '5' );
++		// A result is replaced, not extended, by the next digit.
++		expect( run( '2', '+', '2', '=', '7' ).display ).toBe( '7' );
++	} );
++
++	it( 'edits the entry: backspace, sign, decimal point, percent', () => {
++		expect( run( '1', '2', '3', 'back' ).display ).toBe( '12' );
++		expect( run( '5', 'back' ).display ).toBe( '0' );
++		expect( run( '5', 'negate', 'back' ).display ).toBe( '0' );
++		expect( run( '5', 'negate', '3' ).display ).toBe( '-53' );
++		expect( run( '1', '.', '.', '5' ).display ).toBe( '1.5' );
++		expect( run( '5', '0', 'percent' ).display ).toBe( '0.5' );
++	} );
++
++	it( 'reports division by zero and recovers on the next number', () => {
++		const failed = run( '8', '/', '0', '=' );
++		expect( failed.error ).toBe( true );
++		expect( press( failed, '+' ) ).toBe( failed );
++		expect( press( failed, '4' ) ).toMatchObject( { display: '4', error: false } );
++	} );
++} );
++
++describe( 'keyboard', () => {
++	const key = ( k: string, mods: Partial< KeyboardEvent > = {} ) =>
++		tokenForKey( { key: k, ctrlKey: false, metaKey: false, altKey: false, ...mods } );
++
++	it( 'maps calculator keys and leaves chords and other keys alone', () => {
++		expect( [ key( '7' ), key( '*' ), key( 'Enter' ), key( ',' ), key( 'Escape' ) ] ).toEqual( [ '7', '*', '=', '.', 'clear' ] );
++		expect( key( '-', { metaKey: true } ) ).toBeNull();
++		expect( key( 'a' ) ).toBeNull();
++	} );
++} );
++
++describe( 'view', () => {
++	it( 'renders a 20-key keypad wired to the local press action, marking the pending operator', () => {
++		const root = document.createElement( 'div' );
++		const state = run( '1', '2', '*' );
++		app.render( mockViewContext( { state, data: null, root } ) );
++
++		const keys = Array.from( root.querySelectorAll( 'os-button' ) );
++		expect( keys ).toHaveLength( 20 );
++		expect( keys.every( ( k ) => k.getAttribute( 'os-action' ) === 'press' ) ).toBe( true );
++		expect( keys.every( ( k ) => k.getAttribute( 'aria-label' ) ) ).toBe( true );
++		expect( app.hasLocal( 'press' ) ).toBe( true );
++
++		const pending = keys.filter( ( k ) => k.hasAttribute( 'data-pending' ) );
++		expect( pending.map( ( k ) => k.getAttribute( 'os-arg-token' ) ) ).toEqual( [ '*' ] );
++		expect( root.querySelector( '.os-calculator__expression' )?.textContent ).toBe( '12 ×' );
++		expect( root.querySelector( 'os-display' )?.getAttribute( 'value' ) ).toBe( '12' );
++	} );
++} );
+diff --git c/docs/app-framework.md w/docs/app-framework.md
+index 2a5f5245..7acc0f30 100644
+--- c/docs/app-framework.md
++++ w/docs/app-framework.md
+@@ -535,6 +535,7 @@ apps/os-settings/               os-settings.os.php + os-settings.os.ts + parts/*
+ apps/posts/, apps/pages/        the Posts and Pages list windows (Pages imports the Posts parts); the Categories mind map and Tags cloud under apps/posts/parts/
+ apps/users/, apps/user-edit/    the Users list and the User Edit singleton; <os-user-profile> under apps/users/parts/, shared by both bundles
+ apps/plugins/, apps/comments/   the Plugins window (installed / browse / featured, admin-ajax parts) and the Comments conversation view
++apps/calculator/                calculator.os.php + calculator.os.ts + calculator.css — the smallest client view: a state schema, no data(), every key a local action
+ src/app-runtime/list-ui.ts      statusControl(), pager(), mountMenuCheckboxes() — the list-window furniture
+ ```
+ 

@@ -1,0 +1,11 @@
+ M assets/css/window-chrome.css
+ M includes/session.php
+ M src/boot/session.ts
+ M src/native-windows.ts
+ M src/types.ts
+ M src/ui/components/os-window-button/os-window-button.ts
+ M src/window-chrome/controls/built-ins.ts
+ M src/window-manager/index.ts
+ M src/window/index.ts
+ A tests/vitest/window-always-on-top.test.ts
+ M tests/vitest/window-chrome-controls-render.test.ts

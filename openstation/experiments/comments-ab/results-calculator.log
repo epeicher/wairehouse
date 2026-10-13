@@ -1,0 +1,9 @@
+== [R01] arm A (trunk) run 1
+   done in 457s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,fail
+== [R04] arm B (codex/remove-code-comments) run 1
+   done in 442s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R03] arm A (trunk) run 2
+   done in 495s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R05] arm B (codex/remove-code-comments) run 2
+   done in 443s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R06] arm A (trunk) run 3

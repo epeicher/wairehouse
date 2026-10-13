@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 1, "G": 1, "H": 1 },
+  "total": 16,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "A `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` row is added in the System submenu, placed after Fullscreen (the updated comment reads 'Fullscreen, Tile all windows, Log out'), and `pickGridDimensions` now returns `rows = floor(√n)`, `cols = ceil(n/rows)`, which gives 2x1, 3x1 and 2x2 for two, three and four windows.",
+    "C": "The row calls the existing `manager.tile()`, and the agent changed only the grid rule in `geometry.ts` and the row sharing in `arrange.ts`, so no new tiling algorithm was written.",
+    "D": "No files under `assets/js/` were touched, there are no raw fetch/confirm/alert calls, no `:host` tokens, no `@since` stamps and no new ESLint disables.",
+    "E": "Two cases were added to the existing `tests/vitest/arrange.test.ts`: 'tile() lays 3 windows out in thirds, full height' and 'widens a short last row'. Both exercise the changed grid rule.",
+    "F": "`docs/javascript-reference.md` gains a note under `manager.tile()` about the System menu row and documents the new auto grid in the `os.arrange.tile.dimensions` row, but the 961 hunk only adds lines, so the existing 'no UI of their own' claim is never removed.",
+    "G": "Besides the needed files, the agent rewrote unrelated comments about the old admin-bar 'Arrange' menu in the `arrange.ts` header and `index.ts`, and narrowed the exported `pickGridDimensions` signature by dropping the width/height parameters.",
+    "H": "The final message says build, lint, typecheck and test:js were run and passed, which matches the harness results."
+  },
+  "notable": "The three-in-thirds requirement is met cleanly by switching the picker to floor(√n) rows and widening a short last row, with regression tests in the existing file. The weakness is that the docs still say tile() has no UI, and the grid change also alters workspaces that use the 'tile' layout (the agent did flag this)."
+}

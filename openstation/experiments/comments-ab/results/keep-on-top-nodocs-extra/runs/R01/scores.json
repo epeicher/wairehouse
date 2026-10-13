@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 2, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "All five hidden cases pass, and `includes/session.php` now keeps the flag (`if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`), so the flag really survives a page reload.",
+    "C": "C-stack earned: one `applyZOrder()` reads `_stack` and replaces the z-index loops in focus, raise and open. C-pin earned: the pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )` entry. C-session not earned: `restoreSession()` re-pins with a separate `manager.setAlwaysOnTop( win.id, true )` loop after every window is open, instead of passing the flag through the `openNew()` config or `NativeWindowRestoreState`/`seedWindowRestoreState()`. The final message admits that a native window taking more than 5 seconds to restore comes back unpinned.",
+    "D": "No violations: no edits under `assets/js/`, the label is wrapped as `__( 'Keep on top' )`, the button is a registry control rendered as `<os-window-button>` with a new `pin` icon, and the on state uses `active`/`aria-pressed` with no hardcoded colour.",
+    "E": "Stacking tests for focus, open, several pinned windows and a pinned owner's child were added to the existing `window-child-ownership.test.ts`, and a snapshot→restore test was added to the existing `session-restore-duplicates.test.ts`.",
+    "F": "`docs/javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, `readonly alwaysOnTop` to the Window interface and a 'Keep on top' paragraph. `docs/architecture.md` documents the `alwaysOnTop: true` session field next to `gridSpan`.",
+    "G": "It adds public surface the prompt did not ask for: a new hook constant `WINDOW_ALWAYS_ON_TOP_CHANGED` documented as 'Stable', a public `win.setAlwaysOnTop()` method on Window, and an `os-window--always-on-top` class. The hook was added, not proposed to the maintainer first.",
+    "H": "The final message says build, lint, typecheck and test:js were run and passed, which matches the gate results.",
+    "I": "Ownership is handled: `isKeptOnTop()` walks the owner chain with a cycle guard and has a test. Idempotence is handled: `if ( next === this._alwaysOnTop ) return;` and an optional-chained `getById( windowId )?.` make repeats and unknown ids no-ops. Fullscreen is only claimed in prose, with no code or test for it."
+  },
+  "notable": "The stacking and the server-side sanitizer are solid: one `applyZOrder()` pass, owner-chain handling, and a real reload round-trip. The weak spots are the restore path, which re-pins windows after they open instead of passing the flag through the restore seed, and a new 'Stable' hook that was added without being proposed first."
+}

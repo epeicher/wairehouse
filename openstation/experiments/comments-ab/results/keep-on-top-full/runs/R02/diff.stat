@@ -1,0 +1,18 @@
+ docs/architecture.md                               |  2 +
+ docs/event-driven-framework.md                     |  2 +-
+ docs/examples/window-controls.md                   |  2 +-
+ docs/hooks-reference.md                            |  2 +-
+ docs/javascript-reference.md                       | 23 +++++-
+ includes/session.php                               |  6 ++
+ src/boot/session.ts                                |  2 +
+ src/native-windows.ts                              |  1 +
+ src/types.ts                                       | 11 +++
+ .../os-window-button/os-window-button.ts           |  6 +-
+ src/window-chrome/controls/built-ins.ts            | 22 +++++-
+ src/window-chrome/controls/registry.ts             |  5 +-
+ src/window-manager/index.ts                        | 45 +++++++++---
+ src/window-manager/stacking.ts                     | 58 +++++++++++++++
+ src/window/index.ts                                | 45 +++++++++++-
+ tests/vitest/window-child-ownership.test.ts        | 82 ++++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts | 22 +++---
+ 17 files changed, 305 insertions(+), 31 deletions(-)

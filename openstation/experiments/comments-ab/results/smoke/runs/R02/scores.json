@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1 },
+  "total": 18,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "A row `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` was added in the systemTile block. The new picker (`short = floor(√n)`, `long = ceil(n/short)`) gives 2→2x1, 3→3x1 (thirds) and 4→2x2 on a landscape area, so all three cases behave as asked.",
+    "C": "The menu row calls the existing `manager.tile()`, and the grid change lives in `pickGridDimensions()` rather than in a new algorithm.",
+    "D": "There are no edits under `assets/js/`, no raw fetch/confirm/alert, no `:host` tokens, no version stamps and no new eslint-disables.",
+    "E": "Two tests were added to the existing `tests/vitest/arrange.test.ts`, including 'tile() lays 3 windows out in full-height thirds', which would fail on the old 2x2 picker.",
+    "F": "`docs/javascript-reference.md` now says `tile()` \"is also the System tile's **Tile all windows** row\", and the new grid rule is documented on the `os.arrange.tile.starting` row.",
+    "G": "The `arrange.ts` change (`usedRows`, and short last rows stretching to full width) and removing the picker's 6-cap and aspect scoring go beyond what the task required, and they change behaviour for every tile/columns caller.",
+    "H": "The final message says it ran `npm run build`, `lint`, `typecheck` and `test:js`, and that matches the passing gates."
+  },
+  "notable": "The agent correctly saw that the existing picker gives 2x2 for three windows and fixed it with tests and docs, but it also changed last-row stretching and replaced the whole aspect-based picker, a wider behaviour change to a Stable API than the task needed (though it did flag this clearly)."
+}

@@ -1,0 +1,6 @@
+ apps/calculator/calculator.css     |  51 +++++++++
+ apps/calculator/calculator.os.php  |  27 +++++
+ apps/calculator/calculator.os.ts   | 222 +++++++++++++++++++++++++++++++++++++
+ apps/calculator/calculator.test.ts |  61 ++++++++++
+ docs/app-framework.md              |   1 +
+ 5 files changed, 362 insertions(+)

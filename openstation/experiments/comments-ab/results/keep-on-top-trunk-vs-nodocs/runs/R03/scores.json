@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 0, "G": 1, "H": 0, "I": 2 },
+  "total": 19,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }` to `openstation_sanitize_session()`, so the flag survives a real reload.",
+    "C": "C-stack: a single `applyZIndices()` pass partitions `_stack` and replaces the inline `setZIndex( BASE_Z_INDEX + i )` loops in open, `focus()` and `raise()`. C-pin: the pin is registered through `registerWindowControl( { id: 'core/keep-on-top', ... placement: 'controls' } )`. C-session: the flag follows the `gridSpan` path through `snapshot()`, both `restoreSession()` branches, `NativeWindowRestoreState` and the `WindowConfig`/`SessionWindow` types, and the native seed path is exercised by a test.",
+    "D": "No violations found: nothing under `assets/js/` was touched, the label is `__( 'Keep on top' )`, the pressed state uses the `active` attribute and `aria-pressed` rather than a hardcoded colour, and no version stamps or ESLint disables were added.",
+    "E": "The tests cover the stacking rule across `manager.focus()` calls and the snapshot → `restoreSession()` round-trip, including the native seed. They sit in a new file (`window-always-on-top.test.ts`) instead of an existing window-manager or session file, which goes against the guide's stated preference; I still gave 2 because the tests are substantive, not trivial.",
+    "F": "There is no change under `docs/`, so `setAlwaysOnTop()` and `alwaysOnTop` are not documented in `javascript-reference.md`.",
+    "G": "The change adds public surface the prompt did not ask for: a new `WindowConfig.alwaysOnTop` open-time option, two theming CSS variables (`--os-titlebar-keep-on-top-order` and `--os-titlebar-keep-on-top-display`), a new `pin` icon key in the public `os-window-button` type, and an `os-window--always-on-top` class.",
+    "H": "The final message reports lint, `npx tsc --noEmit` and `npm run test:js`, but it never says `npm run build` was run.",
+    "I": "Ownership: `isKeptOnTop()` walks the owner chain so a child of a pinned owner paints in the top layer, and a test checks this. Idempotence: `_setAlwaysOnTop` returns false when the value is unchanged so nothing is emitted, an unknown id returns false, and both are tested."
+  },
+  "notable": "The stacking change is clean: one `applyZIndices()` pass leaves `_stack` and focus semantics untouched, it respects ownership, and the PHP sanitizer was updated so reload really works. The main weaknesses are the missing docs and extra public surface (a `WindowConfig` option and theming CSS variables) added without a proposal."
+}

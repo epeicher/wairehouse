@@ -1,0 +1,408 @@
+diff --git c/apps/calculator/calculator.css w/apps/calculator/calculator.css
+new file mode 100644
+index 00000000..9c29b473
+--- /dev/null
++++ w/apps/calculator/calculator.css
+@@ -0,0 +1,47 @@
++.os-calc {
++	display: flex;
++	flex-direction: column;
++	gap: 12px;
++	block-size: 100%;
++	padding: 12px;
++	box-sizing: border-box;
++	outline: none;
++}
++
++.os-calc__screen {
++	display: flex;
++	flex-direction: column;
++	align-items: flex-end;
++	flex: none;
++	padding: 8px 0;
++	border-block-end: 1px solid var( --os-ui-border, #c3c4c7 );
++}
++
++.os-calc__pending {
++	min-block-size: 1.4em;
++	padding-inline: 14px;
++	font-size: 14px;
++	font-variant-numeric: tabular-nums;
++	color: var( --os-ui-fg-muted, #50575e );
++}
++
++.os-calc__keys {
++	display: grid;
++	flex: 1;
++	grid-template-columns: repeat( 4, minmax( 0, 1fr ) );
++	grid-template-rows: repeat( 5, minmax( 0, 1fr ) );
++	gap: 8px;
++	min-block-size: 0;
++}
++
++.os-calc__key {
++	--os-ui-button-min-height: 48px;
++	--os-ui-button-border-radius: 10px;
++	--os-ui-button-padding: 0;
++	font-size: 22px;
++	font-variant-numeric: tabular-nums;
++}
++
++.os-calc__key--operator[aria-pressed="true"] {
++	--os-ui-button-border: 2px solid var( --os-ui-border-strong, #8c8f94 );
++}
+diff --git c/apps/calculator/calculator.os.php w/apps/calculator/calculator.os.php
+new file mode 100644
+index 00000000..77b9a633
+--- /dev/null
++++ w/apps/calculator/calculator.os.php
+@@ -0,0 +1,29 @@
++<?php
++
++namespace OpenStation\Apps\Calculator;
++
++use OpenStation\App;
++
++if ( ! defined( 'ABSPATH' ) ) {
++	defined( 'OPENSTATION_STANDALONE' ) || exit;
++}
++
++const ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="12" y="4" width="40" height="56" rx="7" fill="none" stroke="currentColor" stroke-width="4"/><rect x="19" y="12" width="26" height="11" rx="2" fill="currentColor"/><circle cx="22" cy="33" r="3.5" fill="currentColor"/><circle cx="32" cy="33" r="3.5" fill="currentColor"/><circle cx="42" cy="33" r="3.5" fill="currentColor"/><circle cx="22" cy="43" r="3.5" fill="currentColor"/><circle cx="32" cy="43" r="3.5" fill="currentColor"/><circle cx="42" cy="43" r="3.5" fill="currentColor"/><circle cx="22" cy="52" r="3.5" fill="currentColor"/><circle cx="32" cy="52" r="3.5" fill="currentColor"/><circle cx="42" cy="52" r="3.5" fill="currentColor"/></svg>';
++
++return App::define( 'openstation-calculator' )
++	->title( __( 'Calculator', 'desktop-mode' ) )
++	->icon( ICON )
++	->size( 320, 480 )
++	->min_size( 260, 380 )
++	->autofocus( '.os-calc' )
++	->desktop_icon()
++	->capabilities( 'read' )
++	->state(
++		array(
++			'display'     => '0',
++			'accumulator' => '',
++			'operator'    => '',
++			'overwrite'   => false,
++			'error'       => false,
++		)
++	);
+diff --git c/apps/calculator/calculator.os.ts w/apps/calculator/calculator.os.ts
+new file mode 100644
+index 00000000..b790d051
+--- /dev/null
++++ w/apps/calculator/calculator.os.ts
+@@ -0,0 +1,230 @@
++import { __, defineApp, html } from '@openstation/app';
++
++export type Operator = '' | '+' | '-' | '*' | '/';
++
++export interface CalcState extends Record< string, unknown > {
++	display: string;
++	accumulator: string;
++	operator: Operator;
++	overwrite: boolean;
++	error: boolean;
++}
++
++type Data = Record< string, never >;
++
++interface Key {
++	key: string;
++	label: string;
++	name?: string;
++	kind: 'digit' | 'function' | 'operator' | 'equals';
++}
++
++const MAX_DIGITS = 15;
++
++export const INITIAL: CalcState = { display: '0', accumulator: '', operator: '', overwrite: false, error: false };
++
++const OPERATORS: readonly string[] = [ '+', '-', '*', '/' ];
++
++const SYMBOLS: Record< string, string > = { '+': '+', '-': '−', '*': '×', '/': '÷' };
++
++const KEYS = (): Key[] => [
++	{ key: 'clear', label: 'AC', name: __( 'All clear' ), kind: 'function' },
++	{ key: 'negate', label: '±', name: __( 'Change sign' ), kind: 'function' },
++	{ key: '%', label: '%', name: __( 'Percent' ), kind: 'function' },
++	{ key: '/', label: '÷', name: __( 'Divide' ), kind: 'operator' },
++	{ key: '7', label: '7', kind: 'digit' },
++	{ key: '8', label: '8', kind: 'digit' },
++	{ key: '9', label: '9', kind: 'digit' },
++	{ key: '*', label: '×', name: __( 'Multiply' ), kind: 'operator' },
++	{ key: '4', label: '4', kind: 'digit' },
++	{ key: '5', label: '5', kind: 'digit' },
++	{ key: '6', label: '6', kind: 'digit' },
++	{ key: '-', label: '−', name: __( 'Subtract' ), kind: 'operator' },
++	{ key: '1', label: '1', kind: 'digit' },
++	{ key: '2', label: '2', kind: 'digit' },
++	{ key: '3', label: '3', kind: 'digit' },
++	{ key: '+', label: '+', name: __( 'Add' ), kind: 'operator' },
++	{ key: 'back', label: '⌫', name: __( 'Backspace' ), kind: 'function' },
++	{ key: '0', label: '0', kind: 'digit' },
++	{ key: '.', label: '.', name: __( 'Decimal point' ), kind: 'digit' },
++	{ key: '=', label: '=', name: __( 'Equals' ), kind: 'equals' },
++];
++
++const KEYBOARD: Record< string, string > = {
++	Enter: '=',
++	'=': '=',
++	',': '.',
++	x: '*',
++	X: '*',
++	Backspace: 'back',
++	Escape: 'clear',
++	Delete: 'clear',
++};
++
++export function formatNumber( value: number ): string {
++	return String( parseFloat( value.toPrecision( 12 ) ) );
++}
++
++export function compute( a: number, operator: Operator, b: number ): number {
++	switch ( operator ) {
++		case '+':
++			return a + b;
++		case '-':
++			return a - b;
++		case '*':
++			return a * b;
++		case '/':
++			return a / b;
++		default:
++			return b;
++	}
++}
++
++function settle( state: CalcState, value: number ): CalcState {
++	if ( ! Number.isFinite( value ) ) {
++		return { ...INITIAL, error: true, overwrite: true };
++	}
++	return { ...state, display: String( value ), overwrite: true };
++}
++
++export function readout( state: CalcState ): string {
++	if ( state.error ) {
++		return __( 'Error' );
++	}
++	const shown = state.overwrite ? formatNumber( Number( state.display ) ) : state.display;
++	return shown.replace( '-', '−' );
++}
++
++export function press( state: CalcState, key: string ): CalcState {
++	if ( key === 'clear' ) {
++		return { ...INITIAL };
++	}
++	if ( state.error ) {
++		if ( /^[0-9.]$/.test( key ) ) {
++			return press( { ...INITIAL }, key );
++		}
++		return key === 'back' ? { ...INITIAL } : state;
++	}
++
++	if ( /^[0-9]$/.test( key ) ) {
++		if ( state.overwrite || state.display === '0' ) {
++			return { ...state, display: key, overwrite: false };
++		}
++		if ( state.display.replace( /[^0-9]/g, '' ).length >= MAX_DIGITS ) {
++			return state;
++		}
++		return { ...state, display: state.display + key };
++	}
++
++	if ( key === '.' ) {
++		if ( state.overwrite ) {
++			return { ...state, display: '0.', overwrite: false };
++		}
++		return state.display.includes( '.' ) ? state : { ...state, display: `${ state.display }.` };
++	}
++
++	if ( OPERATORS.includes( key ) ) {
++		const operator = key as Operator;
++		if ( state.operator !== '' && state.accumulator !== '' && ! state.overwrite ) {
++			const next = settle( state, compute( Number( state.accumulator ), state.operator, Number( state.display ) ) );
++			return next.error ? next : { ...next, accumulator: next.display, operator };
++		}
++		return { ...state, accumulator: state.display, operator, overwrite: true };
++	}
++
++	if ( key === '=' ) {
++		if ( state.operator === '' || state.accumulator === '' ) {
++			return state;
++		}
++		const next = settle( state, compute( Number( state.accumulator ), state.operator, Number( state.display ) ) );
++		return { ...next, accumulator: '', operator: '' };
++	}
++
++	if ( key === 'negate' ) {
++		if ( state.display === '0' ) {
++			return state;
++		}
++		const display = state.display.startsWith( '-' ) ? state.display.slice( 1 ) : `-${ state.display }`;
++		return { ...state, display };
++	}
++
++	if ( key === '%' ) {
++		return settle( state, Number( state.display ) / 100 );
++	}
++
++	if ( key === 'back' ) {
++		if ( state.overwrite ) {
++			return state;
++		}
++		const display = state.display.slice( 0, -1 );
++		return { ...state, display: display === '' || display === '-' ? '0' : display };
++	}
++
++	return state;
++}
++
++export function keyFor( ev: KeyboardEvent ): string | null {
++	if ( ev.ctrlKey || ev.metaKey || ev.altKey ) {
++		return null;
++	}
++	const mapped = KEYBOARD[ ev.key ] ?? ev.key;
++	return /^[0-9.%]$/.test( mapped ) || OPERATORS.includes( mapped ) || [ '=', 'back', 'clear' ].includes( mapped )
++		? mapped
++		: null;
++}
++
++function pending( state: CalcState ): string {
++	if ( state.error || state.operator === '' || state.accumulator === '' ) {
++		return '';
++	}
++	return `${ formatNumber( Number( state.accumulator ) ).replace( '-', '−' ) } ${ SYMBOLS[ state.operator ] }`;
++}
++
++function variant( key: Key ): string {
++	if ( key.kind === 'equals' ) {
++		return 'primary';
++	}
++	return key.kind === 'function' ? 'ghost' : 'secondary';
++}
++
++export default defineApp< CalcState, Data >( 'openstation-calculator', {
++	local: {
++		key: ( state, args ) => press( state, String( args.key ?? '' ) ),
++	},
++
++	placeholder: () => ( {} ),
++
++	view: ( { state } ) => html`<div class="os-calc" tabindex="-1">
++		<div class="os-calc__screen">
++			<div class="os-calc__pending" aria-hidden="true">${ pending( state ) }</div>
++			<os-display size="xl" value=${ readout( state ) }></os-display>
++		</div>
++		<div class="os-calc__keys">
++			${ KEYS().map( ( key ) => html`<os-button
++				fill-cell
++				class=${ `os-calc__key os-calc__key--${ key.kind }` }
++				variant=${ variant( key ) }
++				aria-label=${ key.name ?? key.label }
++				aria-pressed=${ key.kind === 'operator' ? String( state.overwrite && state.operator === key.key && ! state.error ) : null }
++				os-action="key"
++				os-arg-key=${ key.key }
++			>${ key.label }</os-button>` ) }
++		</div>
++	</div>`,
++
++	mounted: ( ctx ) => {
++		const onKey = ( ev: KeyboardEvent ): void => {
++			const key = keyFor( ev );
++			if ( key === null ) {
++				return;
++			}
++			if ( ev.key === 'Enter' && ( ev.target as Element | null )?.closest?.( 'os-button' ) ) {
++				return;
++			}
++			ev.preventDefault();
++			ctx.local( 'key', { key } );
++		};
++		ctx.root.addEventListener( 'keydown', onKey );
++		return () => ctx.root.removeEventListener( 'keydown', onKey );
++	},
++} );
+diff --git c/apps/calculator/calculator.test.ts w/apps/calculator/calculator.test.ts
+new file mode 100644
+index 00000000..90c12998
+--- /dev/null
++++ w/apps/calculator/calculator.test.ts
+@@ -0,0 +1,63 @@
++import { describe, expect, it } from 'vitest';
++import { mockViewContext } from '../../src/app-runtime/testing';
++import app, { INITIAL, keyFor, press, readout, type CalcState } from './calculator.os';
++
++function run( keys: string[], from: CalcState = INITIAL ): CalcState {
++	return keys.reduce( press, { ...from } );
++}
++
++const shown = ( keys: string[] ): string => readout( run( keys ) );
++
++describe( 'press', () => {
++	it( 'chains operators left to right and starts fresh after equals', () => {
++		expect( shown( [ '1', '2', '+', '3', '*', '2', '=' ] ) ).toBe( '30' );
++		expect( shown( [ '9', '-', '-', '+', '1', '=' ] ) ).toBe( '10' );
++		expect( run( [ '2', '+', '2', '=', '7' ] ) ).toMatchObject( { display: '7', accumulator: '', operator: '' } );
++	} );
++
++	it( 'rounds what it shows but keeps full precision for the next step', () => {
++		expect( shown( [ '.', '1', '+', '.', '2', '=' ] ) ).toBe( '0.3' );
++		expect( shown( [ '1', '/', '3', '=' ] ) ).toBe( '0.333333333333' );
++		expect( shown( [ '1', '/', '3', '=', '*', '3', '=' ] ) ).toBe( '1' );
++		expect( shown( [ '5', '-', '8', '=' ] ) ).toBe( '−3' );
++	} );
++
++	it( 'reports division by zero and recovers on the next entry', () => {
++		const error = run( [ '5', '/', '0', '=' ] );
++		expect( readout( error ) ).toBe( 'Error' );
++		expect( press( error, '+' ) ).toBe( error );
++		expect( press( error, '4' ) ).toMatchObject( { display: '4', error: false } );
++	} );
++
++	it( 'edits the entry with backspace, sign, decimal point and percent', () => {
++		expect( shown( [ '1', '2', '3', 'back' ] ) ).toBe( '12' );
++		expect( shown( [ '7', 'negate', 'back' ] ) ).toBe( '0' );
++		expect( shown( [ '4', '+', '4', '=', 'back' ] ) ).toBe( '8' );
++		expect( shown( [ '1', '.', '.', '5' ] ) ).toBe( '1.5' );
++		expect( shown( [ '5', '0', '%' ] ) ).toBe( '0.5' );
++		expect( shown( Array( 20 ).fill( '9' ) ) ).toHaveLength( 15 );
++	} );
++} );
++
++describe( 'keyboard', () => {
++	it( 'maps keys to calculator keys and leaves shortcuts alone', () => {
++		const ev = ( key: string, init: KeyboardEventInit = {} ) => new KeyboardEvent( 'keydown', { key, ...init } );
++		expect( keyFor( ev( '7' ) ) ).toBe( '7' );
++		expect( keyFor( ev( 'Enter' ) ) ).toBe( '=' );
++		expect( keyFor( ev( ',' ) ) ).toBe( '.' );
++		expect( keyFor( ev( 'Escape' ) ) ).toBe( 'clear' );
++		expect( keyFor( ev( 'c', { metaKey: true } ) ) ).toBeNull();
++		expect( keyFor( ev( 'a' ) ) ).toBeNull();
++	} );
++} );
++
++describe( 'view', () => {
++	it( 'shows the pending operation and marks only the armed operator', () => {
++		const root = document.createElement( 'div' );
++		app.render( mockViewContext( { state: run( [ '1', '2', '*' ] ), data: {}, root } ) );
++		expect( root.querySelector( '.os-calc__pending' )?.textContent ).toBe( '12 ×' );
++		const pressed = Array.from( root.querySelectorAll( '[aria-pressed="true"]' ) );
++		expect( pressed.map( ( el ) => el.getAttribute( 'os-arg-key' ) ) ).toEqual( [ '*' ] );
++		expect( root.querySelector( '[os-arg-key="7"]' )?.hasAttribute( 'aria-pressed' ) ).toBe( false );
++	} );
++} );
+diff --git c/bin/build-i18n.sh w/bin/build-i18n.sh
+index ccbbb687..61646f48 100755
+--- c/bin/build-i18n.sh
++++ w/bin/build-i18n.sh
+@@ -54,0 +55 @@ declare -a HANDLE_MAP=(
++	"apps/calculator/=openstation-app-openstation-calculator-client"
+diff --git c/docs/app-framework.md w/docs/app-framework.md
+index 2a5f5245..e4bdce8e 100644
+--- c/docs/app-framework.md
++++ w/docs/app-framework.md
+@@ -37 +37 @@ An app has two possible halves. The **`.os.php`** is always there: the window, t
+-Eleven of OpenStation's own windows are apps — the three reference apps below, Trash and WP Explorer (`apps/trash/`, `apps/my-wordpress/`), and the six list windows ported together (see [`migration-list-apps.md`](./migration-list-apps.md)): **Posts** and **Pages** (`apps/posts/`, `apps/pages/` — the list-window shape: a `data()` over `openstation_app_rest_page()`, paging / filtering / sorting as state, the table an `os-preserve`d element driven from `updated()`, and two PixiJS canvases mounted lazily into preserved hosts; Pages reuses the Posts parts), **Users** and **User Edit** (`apps/users/`, `apps/user-edit/` — the singleton that retargets through `reopen` on its `userId` param, and a custom element shared by two bundles), **Plugins** (`apps/plugins/` — in-process Core REST for the mutations, admin-ajax for what needs `wp-admin`, the landing tab a param) and **Comments** (`apps/comments/` — a conversation view whose scope is its `post` param). **Code Blue** — `apps/code-blue/` — is the error-log reader, rebuilt from a PHP module plus a 1,726-line TypeScript bundle into an `.os.php` (window, actions, data) and an `.os.ts` (the body, with range / search / sort / legend / expand running locally): same features, under half the lines, every filter instant. **Station Home** — `apps/station-home/` — is the native Dashboard, and the one to read for the *server* view: an `.os.php`, a snapshot model and a body painted in PHP, no client script at all — Refresh is the built-in, the Customize picker is one state key, a switch is an action, a restore is the `show` lifecycle. **OpenStation Preferences** — `apps/os-settings/` — is the one to read for an app that *edits shell state*: the settings are not its state (they are applied before the first paint and written by more than one window), so its client view reads them through `wp.os.getOsSettings()` and writes them through `wp.os.updateOsSettings()`, the same public API a third-party settings tab uses; its declared state is the page, and its server surface is the handful of writes that are site truth rather than a preference. Read one of them after this page.
++Twelve of OpenStation's own windows are apps — the three reference apps below, Trash and WP Explorer (`apps/trash/`, `apps/my-wordpress/`), **Calculator** (`apps/calculator/` — the smallest client view: a state schema and no server action at all, every key a `local` reducer, keyboard input wired in `mounted()`), and the six list windows ported together (see [`migration-list-apps.md`](./migration-list-apps.md)): **Posts** and **Pages** (`apps/posts/`, `apps/pages/` — the list-window shape: a `data()` over `openstation_app_rest_page()`, paging / filtering / sorting as state, the table an `os-preserve`d element driven from `updated()`, and two PixiJS canvases mounted lazily into preserved hosts; Pages reuses the Posts parts), **Users** and **User Edit** (`apps/users/`, `apps/user-edit/` — the singleton that retargets through `reopen` on its `userId` param, and a custom element shared by two bundles), **Plugins** (`apps/plugins/` — in-process Core REST for the mutations, admin-ajax for what needs `wp-admin`, the landing tab a param) and **Comments** (`apps/comments/` — a conversation view whose scope is its `post` param). **Code Blue** — `apps/code-blue/` — is the error-log reader, rebuilt from a PHP module plus a 1,726-line TypeScript bundle into an `.os.php` (window, actions, data) and an `.os.ts` (the body, with range / search / sort / legend / expand running locally): same features, under half the lines, every filter instant. **Station Home** — `apps/station-home/` — is the native Dashboard, and the one to read for the *server* view: an `.os.php`, a snapshot model and a body painted in PHP, no client script at all — Refresh is the built-in, the Customize picker is one state key, a switch is an action, a restore is the `show` lifecycle. **OpenStation Preferences** — `apps/os-settings/` — is the one to read for an app that *edits shell state*: the settings are not its state (they are applied before the first paint and written by more than one window), so its client view reads them through `wp.os.getOsSettings()` and writes them through `wp.os.updateOsSettings()`, the same public API a third-party settings tab uses; its declared state is the page, and its server surface is the handful of writes that are site truth rather than a preference. Read one of them after this page.
+@@ -533,0 +534 @@ apps/my-wordpress/, apps/trash/ the WP Explorer and Recycle Bin apps
++apps/calculator/                calculator.os.php + calculator.os.ts + calculator.css — a client view with no server actions

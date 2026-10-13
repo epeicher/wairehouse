@@ -1,0 +1,15 @@
+ docs/event-driven-framework.md                     |  2 +-
+ docs/examples/window-controls.md                   |  2 +-
+ docs/hooks-reference.md                            |  2 +-
+ docs/javascript-reference.md                       | 23 +++++-
+ includes/session.php                               |  4 +
+ src/boot/session.ts                                |  2 +
+ src/native-windows.ts                              |  1 +
+ src/types.ts                                       |  2 +
+ .../os-window-button/os-window-button.ts           |  6 +-
+ src/window-chrome/controls/built-ins.ts            | 13 +++
+ src/window-manager/index.ts                        | 54 ++++++++++--
+ src/window/index.ts                                | 36 ++++++++
+ tests/vitest/window-chrome-controls-render.test.ts | 18 +++-
+ tests/vitest/window-manager-close-focus.test.ts    | 96 +++++++++++++++++++++-
+ 14 files changed, 247 insertions(+), 14 deletions(-)

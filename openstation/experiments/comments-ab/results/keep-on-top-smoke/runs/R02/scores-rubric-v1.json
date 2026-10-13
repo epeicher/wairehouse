@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 2, "H": 1 },
+  "total": 21,
+  "max": 21,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` now has `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives the server-side sanitizer and a real reload.",
+    "C": "The rule runs in a single `applyZOrder()` pass that replaced the z-index writes in focus/raise/open and derives drawn order from `_stack` without separate arithmetic. The pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )` registration. The flag goes through `snapshot()`, `SessionWindow` and `restoreSession()`, although native windows get it via `setAlwaysOnTop()` after `waitForWindow` rather than through the `NativeWindowRestoreState` seed, which is a small deviation from the gridSpan path.",
+    "D": "No violations: no `assets/js/` edits, labels use `__( 'Keep on top' )` / `__( 'Stop keeping on top' )`, the pressed state uses the component's `active` attribute rather than a hardcoded colour, and there are no version stamps or ESLint disables.",
+    "E": "The existing `window-child-ownership.test.ts` gains a 'keep on top' block that covers stacking across `focus()` and open, focus-order stacking among pinned windows, and a `snapshot()` → `restoreSession()` round-trip.",
+    "F": "`javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, `readonly alwaysOnTop: boolean` to the Window interface and a Keep on top section, and `architecture.md` documents the `alwaysOnTop: true` session field next to `gridSpan`.",
+    "G": "Every changed file supports the feature: the pin glyph, registry docs, the hook constant, docs, and the updated built-in controls test. The extra event and hook are slightly beyond the prompt but cohesive, and there is no reformatting or regenerated `languages/` output.",
+    "H": "The final message reports running `npm run build`, `lint`, `typecheck` and `test:js`, all consistent with the passing gates, and it says plainly that PHPCS was not run."
+  },
+  "notable": "The attempt meets the real reload requirement by adding the sanitizer line in `includes/session.php`, and it keeps `_stack` as pure focus order while drawing a stable kept-on-top band that also handles child ownership. The only deviation is that native restore uses a post-open `setAlwaysOnTop()` call instead of the restore seed."
+}

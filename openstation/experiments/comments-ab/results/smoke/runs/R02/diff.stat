@@ -1,0 +1,6 @@
+ docs/javascript-reference.md   |  4 ++--
+ src/desktop.ts                 |  5 +++++
+ src/window-manager/arrange.ts  | 13 +++++++------
+ src/window-manager/geometry.ts | 22 +++++----------------
+ tests/vitest/arrange.test.ts   | 44 ++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 63 insertions(+), 25 deletions(-)

@@ -1,0 +1,15 @@
+ assets/css/window-chrome.css                       |   4 +
+ includes/desktop-themes/store.php                  |   1 +
+ includes/session.php                               |   4 +
+ src/boot/session.ts                                |   2 +
+ src/desktop-themes/slots.ts                        |   1 +
+ src/native-windows.ts                              |   1 +
+ src/types.ts                                       |   2 +
+ .../os-window-button/os-window-button.ts           |   6 +-
+ src/window-chrome/controls/built-ins.ts            |  13 ++
+ src/window-manager/index.ts                        |  44 ++++-
+ src/window/index.ts                                |  44 ++++-
+ tests/phpunit/tests/openStationSession.php         |  42 ++++
+ tests/vitest/window-always-on-top.test.ts          | 217 +++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts |   6 +-
+ 14 files changed, 380 insertions(+), 7 deletions(-)

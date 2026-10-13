@@ -1,0 +1,9 @@
+== [R02] arm A (trunk) run 1
+   deleted agent branch feature/window-keep-on-top
+   done in 652s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R01] arm B (codex/remove-code-comments) run 1
+   deleted agent branch feature/window-keep-on-top
+   done in 606s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+
+Results in /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-smoke
+Next: ./judge.sh /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-smoke   then   python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-smoke

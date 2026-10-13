@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 22,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "All five hidden cases pass. `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "C-stack: a single `applyZOrder()` reads `_stack` and replaces the z-index writes in `focus()`, `raise()` and the open restack. C-pin: the pin is `registerWindowControl( { id: 'core/always-on-top', ... } )` in built-ins.ts. C-session: the flag is threaded through `snapshot()`, both `restoreSession()` branches (lines 214 and 307), `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`.",
+    "D": "No violations found: no `assets/js` edits, both labels go through `__()` ('Keep on top' / 'Stop keeping on top'), the on state uses the `active` attribute rather than a hardcoded colour, and there are no version stamps or ESLint disables.",
+    "E": "Five cases are added to the existing `window-child-ownership.test.ts`, including pinned-stays-above-across-focus and the snapshot round-trip.",
+    "F": "`javascript-reference.md` adds `setAlwaysOnTop()` to the manager block, `readonly alwaysOnTop` on Window and the config field, and `architecture.md` documents the session key.",
+    "G": "The change adds public surface the prompt did not ask for: a new `os-window-always-on-top-changed` CustomEvent, a `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` constant, a documented `alwaysOnTop` open-time `WindowConfig` option, and a documented `pin` icon key.",
+    "H": "The final message reports build, lint, typecheck and test:js (534 files, 6658 tests) all passing, which matches the gates.",
+    "I": "Ownership is handled by `isKeptOnTop()`, which walks the owner chain and has a dedicated test. Idempotence is explicit: `if ( ! win || win.alwaysOnTop === on ) return;`. The fullscreen behaviour is only asserted in docs, not handled in code."
+  },
+  "notable": "A clean, well-integrated implementation: one `applyZOrder()` pass partitions `_stack` without disturbing focus order, and the PHP sanitizer line makes reload persistence real. Its main weakness is unrequested public surface (a new event, a hook constant and an open-time config option) added without proposing it first."
+}

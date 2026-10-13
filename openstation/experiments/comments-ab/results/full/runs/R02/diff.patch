@@ -1,0 +1,142 @@
+diff --git c/docs/javascript-reference.md w/docs/javascript-reference.md
+index 391319a0..db9487fa 100644
+--- c/docs/javascript-reference.md
++++ w/docs/javascript-reference.md
+@@ -5047,7 +5047,7 @@ Window contexts can supply `responseActions({messageId, summary, operations})` f
+ 
+ #### Arrange & Workspaces
+ 
+-Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `cascade()`, `tile()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
++Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `tile()` is the System menu's **Tile all windows**; `cascade()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
+ 
+ The pairing holds even when a user re-enters overview inside the ~280 ms exit animation (a double-tap of the trigger): the outgoing session is settled first, so `exited` arrives ahead of the next `entering` rather than landing partway into the new session. A listener can rely on the sequence never interleaving.
+ 
+@@ -5064,7 +5064,7 @@ The pairing holds even when a user re-enters overview inside the ~280 ms exit an
+ | `os.arrange.cascade.applied` | action | Stable | `{ windowCount }` |
+ | `os.arrange.tile.starting` | action | Stable | `{ windowCount, cols, rows }` — before tile lays out the grid |
+ | `os.arrange.tile.applied` | action | Stable | `{ windowCount, cols, rows }` |
+-| `os.arrange.tile.dimensions` | filter | Stable | filters `{ cols, rows }`; context `{ windowCount, areaWidth, areaHeight }`. Override the auto-chosen grid (e.g., force a 3-column newsroom layout). Returns must be positive integers and `cols * rows >= windowCount`, otherwise the filter is ignored. |
++| `os.arrange.tile.dimensions` | filter | Stable | filters `{ cols, rows }`; context `{ windowCount, areaWidth, areaHeight }`. Override the auto-chosen grid (e.g., force a 3-column newsroom layout). The default is `floor( sqrt( n ) )` along the area's shorter side and enough along the longer side to fit `n`: on a landscape area, two windows side by side, three in thirds, four in a 2×2, five as three over two. A last row with fewer windows than `cols` shares the full row width. Returns must be positive integers and `cols * rows >= windowCount`, otherwise the filter is ignored. |
+ | `os.arrange.snap.changed` | action | Stable | `{ enabled }` — fires on `windowManager.setSnapEnabled()` |
+ | `os.arrange.snap.cell-size` | filter | Stable | filters `{ cellWidth, cellHeight }`; context `{ areaWidth, areaHeight }`. Override the auto-computed snap cell size (e.g., enforce a fixed 100×100 grid). Non-positive returns are ignored. |
+ 
+diff --git c/docs/workspaces.md w/docs/workspaces.md
+index ba258ddf..8fb80967 100644
+--- c/docs/workspaces.md
++++ w/docs/workspaces.md
+@@ -179,6 +179,8 @@ wp.os.windowManager.focusLayout();  // one leading, the rest stacked in the marg
+ 
+ **`columns`** hands off to `tile()` past four windows — a fifth column is narrower than an admin table's own minimum width, and every window would grow a horizontal scrollbar.
+ 
++**`tile`** is a grid as close to square as the count allows, with the extra columns along the area's longer side: two windows side by side, three in thirds, four in a 2×2, five as three over two. A shorter last row shares its full width rather than leaving empty cells. It is also the System menu's **Tile all windows**.
++
+ **`focus`** leads with the **focused** window, not the first in the stack, so re-applying after clicking into the reference list does not demote the thing you just reached for. A workspace opening its launch list, Restore putting it back, or a reload reopening one of its windows leads with the list's first entry instead: the Publishing template's blank draft, with the Posts list in the margin. With one window it degrades to "maximize politely". Its split is `0.64`, filterable through `os.arrange.focus.split`; a return outside `[0.3, 0.9]` falls back rather than being clamped.
+ 
+ **Every arrangement respects minimum widths**, and so does an edge snap. `columns`, each row of `tile()`, and the two halves of a snap split evenly only while every window's share covers its registered `minWidth`; a window that needs more takes it, and the others share what is left. `focus` moves its split the same way: the lead never goes below its own minimum, and leaves the stack the widest minimum among the windows in it. When the minimums cannot all fit, each window keeps its own anyway and stays inside the work area, the first against the left edge and the last against the right, overlapping its neighbours rather than going below its floor.
+diff --git c/src/desktop.ts w/src/desktop.ts
+index c51a635b..1b68fe92 100644
+--- c/src/desktop.ts
++++ w/src/desktop.ts
+@@ -1470,6 +1470,11 @@ function init(): void {
+ 						url: '',
+ 						onSelect: toggleFullscreen,
+ 					},
++					{
++						title: 'Tile all windows',
++						url: '',
++						onSelect: () => manager.tile(),
++					},
+ 					{
+ 						title: 'Keyboard shortcuts',
+ 						url: '',
+diff --git c/src/window-manager/arrange.ts w/src/window-manager/arrange.ts
+index f0b9d729..4f1c63ec 100644
+--- c/src/window-manager/arrange.ts
++++ w/src/window-manager/arrange.ts
+@@ -131,11 +131,11 @@ export function tile( mgr: WindowManager ): void {
+ 
+ 	for ( let row = 0; row * cols < eligible.length; row++ ) {
+ 		const members = eligible.slice( row * cols, row * cols + cols );
+-		const mins = Array.from(
+-			{ length: cols },
+-			( _, col ) => members[ col ]?.config.minWidth || 0,
++		const spans = shareRowByMinWidth(
++			rect.width - padding * 2,
++			gap,
++			members.map( ( w ) => w.config.minWidth || 0 ),
+ 		);
+-		const spans = shareRowByMinWidth( rect.width - padding * 2, gap, mins );
+ 		members.forEach( ( w, col ) => {
+ 			w._gridSpan = null;
+ 			w.element.style.left = `${ rect.x + padding + spans[ col ].x }px`;
+diff --git c/src/window-manager/geometry.ts w/src/window-manager/geometry.ts
+index 328b4d6c..7feed1e2 100644
+--- c/src/window-manager/geometry.ts
++++ w/src/window-manager/geometry.ts
+@@ -46,23 +46,11 @@ export function pickGridDimensions(
+ 	if ( n <= 1 ) {
+ 		return { cols: 1, rows: 1 };
+ 	}
+-	const areaAspect = width / Math.max( 1, height );
+-	const max = 6;
+-	let best = { cols: n, rows: 1, score: Infinity };
+-	for ( let cols = 1; cols <= Math.min( max, n ); cols++ ) {
+-		const rows = Math.min( max, Math.ceil( n / cols ) );
+-		if ( cols * rows < n ) {
+-			continue;
+-		}
+-		const cellAspect = ( width / cols ) / Math.max( 1, height / rows );
+-		const aspectDelta = Math.abs( cellAspect - areaAspect );
+-		const emptyCells = cols * rows - n;
+-		const score = aspectDelta + emptyCells * 0.05;
+-		if ( score < best.score ) {
+-			best = { cols, rows, score };
+-		}
+-	}
+-	return { cols: best.cols, rows: best.rows };
++	const short = Math.floor( Math.sqrt( n ) );
++	const long = Math.ceil( n / short );
++	return width >= height
++		? { cols: long, rows: short }
++		: { cols: short, rows: long };
+ }
+ 
+ export interface RowSpan {
+diff --git c/tests/vitest/arrange.test.ts w/tests/vitest/arrange.test.ts
+index 97422c85..7521770d 100644
+--- c/tests/vitest/arrange.test.ts
++++ w/tests/vitest/arrange.test.ts
+@@ -97,6 +97,33 @@ describe( 'WindowManager — Arrange (tile + snap)', async () => {
+ 		expect( payload.rows ).toBe( 2 );
+ 	} );
+ 
++	test( 'tile() with 3 windows on a landscape area splits it in thirds', async () => {
++		const wins = [
++			await manager.open( openConfig( 'a' ) ),
++			await manager.open( openConfig( 'b' ) ),
++			await manager.open( openConfig( 'c' ) ),
++		];
++
++		manager.tile();
++
++		expect( wins.map( ( w ) => w.element.style.top ) ).toEqual( [ '16px', '16px', '16px' ] );
++		expect( wins.map( ( w ) => w.element.style.height ) ).toEqual( [ '868px', '868px', '868px' ] );
++		expect( new Set( wins.map( ( w ) => w.element.style.width ) ).size ).toBe( 1 );
++	} );
++
++	test( 'tile() stretches a shorter last row across the full width', async () => {
++		const wins = [];
++		for ( const id of [ 'a', 'b', 'c', 'd', 'e' ] ) {
++			wins.push( await manager.open( openConfig( id ) ) );
++		}
++
++		manager.tile();
++
++		const last = wins.slice( 3 );
++		expect( last.map( ( w ) => w.element.style.left ) ).toEqual( [ '16px', '806px' ] );
++		expect( last.map( ( w ) => w.element.style.width ) ).toEqual( [ '778px', '778px' ] );
++	} );
++
+ 	test( 'tile() gives a window its minimum width out of its row', async () => {
+ 		const wide = await manager.open( { ...openConfig( 'wide' ), minWidth: 1000 } );
+ 		const other = await manager.open( openConfig( 'other' ) );

@@ -1,0 +1,7 @@
+== [R01] arm A (trunk) run 1
+   done in 236s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+== [R02] arm B (codex/remove-code-comments) run 1
+   done in 206s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+
+Results in /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/smoke
+Next: ./judge.sh /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/smoke   then   python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/smoke

@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 0, "G": 1, "H": 0, "I": 2 },
+  "total": 19,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` now keeps the flag (`if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`), so the flag also survives a real reload.",
+    "C": "C-stack: the new `applyZIndices()` reads `_stack` and replaces every inline `BASE_Z_INDEX + i` loop that focus/raise/open run. C-pin: the pin is a `registerWindowControl( { id: 'core/pin', ... } )`. C-session: the flag goes through `snapshot()`, both `restoreSession()` branches (lines 214 and 307), `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`, with no parallel storage or second stack.",
+    "D": "No violations found: the label is wrapped as `__( 'Keep on top' )`, the on state uses the `active` attribute rather than a hardcoded colour, the icon goes through `<os-window-button>`, nothing under `assets/js/` was edited, and there are no ESLint disables.",
+    "E": "The tests cover the pinned window staying above across `manager.focus( b )`, and a snapshot/restore round trip for both iframe and native windows. They sit in a new `window-always-on-top.test.ts` rather than an existing window-manager test file, but they are substantive, not trivial.",
+    "F": "There is no change to `docs/javascript-reference.md` or any other doc. The agent says the checkout had no `docs/`.",
+    "G": "It adds public surface the prompt did not ask for: a new hook `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED`, a new `WindowConfig.alwaysOnTop` open-time option, and a new theme icon slot `WINDOW_CONTROL_PIN` in both TS and PHP.",
+    "H": "The final message says it ran test:js, typecheck and lint, but states plainly \"I also didn't run `npm run build`\", so the full build/lint/test/typecheck workflow wasn't claimed.",
+    "I": "Ownership is handled: `isInTopBand()` walks the owner chain, and a test covers a child of a pinned owner. Idempotence is handled: there is an early return when `next === this._alwaysOnTop`, unknown ids return false, and the event-once test covers both."
+  },
+  "notable": "The stacking design is clean. One pass paints a top band from `_stack` while `_stack` itself stays in focus order, and the PHP sanitizer line makes the reload work for real. The weak points are new public surface (a hook, a config option, a theme slot) added without asking first, no docs, and no build run."
+}

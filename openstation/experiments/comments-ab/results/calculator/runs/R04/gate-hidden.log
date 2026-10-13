@@ -1,0 +1,15 @@
+
+ RUN  v4.1.5 /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04
+
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > adds from the keypad without a request 22ms
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > subtracts, multiplies and divides 9ms
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > clears back to zero 4ms
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > hides binary rounding noise 6ms
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > never shows Infinity or NaN after dividing by zero, and recovers 7ms
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > takes keyboard input while focused 5ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  19:29:08
+   Duration  554ms (transform 203ms, setup 209ms, import 25ms, tests 115ms, environment 142ms)
+

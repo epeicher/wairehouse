@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 22,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs as all passing.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag is kept when the session is saved and survives a real reload.",
+    "C": "`applyStackOrder( this )` replaces every `BASE_Z_INDEX + i` loop in focus/raise/open and splits `mgr._stack` into below/above, so it reads `_stack` instead of keeping its own stack. The pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )`. The flag follows the whole `gridSpan` path: `snapshot()`, both `restoreSession()` branches, `NativeWindowRestoreState`, and `WindowConfig`/`SessionWindow`.",
+    "D": "No violations: labels go through `__( 'Keep on top' )` / `__( 'Stop keeping on top' )`, the on state uses the `active` attribute and `aria-pressed` with no hardcoded colour, and nothing under `assets/js/` was edited.",
+    "E": "Five tests were added to the existing `window-child-ownership.test.ts`. They cover the paint order across `manager.focus( a )` and a later open, several pinned windows ordered by focus, unpinning, and `snapshot()` recording the flag.",
+    "F": "`javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, a `readonly alwaysOnTop` property and a Keep on top section. `architecture.md` describes the `alwaysOnTop: true` field in the session `windows[]` entry.",
+    "G": "It adds public surface the prompt did not ask for: a new `os-window-always-on-top-changed` CustomEvent, a `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` constant, an `alwaysOnTop?` open-time `WindowConfig` option, and the documented `os-window--always-on-top` class. It names the event and hook as additions but does not hold them back for approval.",
+    "H": "The final message says build, typecheck and test:js passed and lint had 0 errors, which matches the gate results.",
+    "I": "Ownership is handled: `isKeptOnTop()` walks the `ownerOf` chain and a test checks it. Idempotence is handled: `_applyAlwaysOnTop` returns false when the value is unchanged, so no event fires, and an unknown id returns false."
+  },
+  "notable": "The best part is a single `applyStackOrder` pass over `_stack` that every restack site calls, with the session flag added to the PHP sanitizer so it really survives a reload. The main weakness is the extra public surface it was not asked for: a new event, a new hook and a new open-time config option."
+}

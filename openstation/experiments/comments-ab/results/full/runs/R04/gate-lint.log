@@ -1,0 +1,91 @@
+
+> openstation@1.1.12 lint
+> eslint 'src/**/*.ts' 'apps/**/*.ts' src/chromeless-bridge.js
+
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/apps/my-wordpress/my-wordpress.test.ts
+  1:1  warning  This file is 1092 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/ai-assistant/impl.ts
+  1:1  warning  This file is 2082 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/chromeless-bridge.js
+  1:1  warning  This file is 3959 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/content-graph/panel.ts
+  1:1  warning  This file is 1480 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/content-graph/scene.ts
+  1:1  warning  This file is 2271 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/desktop-files/layer.ts
+  1:1  warning  This file is 2315 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/desktop.ts
+  1:1  warning  This file is 5977 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/dock-constellation/index.ts
+  1:1  warning  This file is 1348 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/dock.ts
+  1:1  warning  This file is 2925 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/games/alphabet-soup/game.ts
+  1:1  warning  This file is 1059 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/hooks.ts
+  1:1  warning  This file is 1768 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/iframe-bridge-standalone.ts
+  1:1  warning  This file is 2125 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/mio/mio.ts
+  1:1  warning  This file is 1238 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/mio/render.ts
+  1:1  warning  This file is 1147 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/mio/soft-body.ts
+  1:1  warning  This file is 1201 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/native-windows.ts
+  1:1  warning  This file is 2227 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/notes/layer.ts
+  1:1  warning  This file is 1309 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/plugins/my-wordpress-woocommerce/index.ts
+  1:1  warning  This file is 2442 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/plugins/snow-wallpaper/scene.ts
+  1:1  warning  This file is 1110 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/types.ts
+  1:1  warning  This file is 2942 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/ui/components/os-category-picker/os-category-picker.ts
+  1:1  warning  This file is 1251 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/ui/components/os-table/os-table.ts
+  1:1  warning  This file is 2148 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/window-manager/index.ts
+  1:1  warning  This file is 2866 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/window-manager/overview.ts
+  1:1  warning  This file is 1226 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/window/iframe-bridge.test.ts
+  1:1  warning  This file is 1416 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/window/iframe-bridge.ts
+  1:1  warning  This file is 1284 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/window/index.ts
+  1:1  warning  This file is 4825 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R04/src/workspaces/wizard.ts
+  1:1  warning  This file is 1116 lines — past the 1000-line comfort zone. Be smart, build robust software: modules of ~300–600 lines are easier to read, test, review and reuse. Consider splitting this one along its natural seams — future you will say thanks  local-rules/os-file-length
+
+✖ 28 problems (0 errors, 28 warnings)
+

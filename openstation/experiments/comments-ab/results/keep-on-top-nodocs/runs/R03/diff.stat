@@ -1,0 +1,17 @@
+ assets/css/window-chrome.css                       |   4 +
+ docs/architecture.md                               |   2 +
+ docs/examples/window-controls.md                   |   2 +-
+ docs/hooks-reference.md                            |   2 +-
+ docs/javascript-reference.md                       |  18 +++-
+ includes/session.php                               |   6 ++
+ src/boot/session.ts                                |   9 +-
+ src/types.ts                                       |   5 +
+ .../os-window-button/os-window-button.ts           |   4 +-
+ src/window-chrome/controls/built-ins.ts            |  24 ++++-
+ src/window-chrome/controls/registry.ts             |   2 +-
+ src/window-manager/index.ts                        |  98 +++++++++++++++++--
+ src/window/index.ts                                |  66 ++++++++++++-
+ tests/vitest/session-restore-duplicates.test.ts    |  18 ++++
+ tests/vitest/window-child-ownership.test.ts        | 108 +++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts |  14 +--
+ 16 files changed, 353 insertions(+), 29 deletions(-)

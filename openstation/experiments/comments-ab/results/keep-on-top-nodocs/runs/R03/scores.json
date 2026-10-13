@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 2, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "C-stack is met: one `restack()` built on `paintedOrder()` (a stable partition of `_stack`) now replaces the z-index loops in `focus()`, `raise()` and open. C-pin is met: the pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )` registration. C-session is not met: the native branch calls `manager.setAlwaysOnTop( restored.id, true )` after `waitForWindow`, and neither `NativeWindowRestoreState` nor `seedWindowRestoreState()` is touched.",
+    "D": "No violations found: no `assets/js` edits, the label is `__( 'Keep on top' )`, the pin goes through the registry and `<os-window-button>`, and the on state uses the existing `active` attribute plus `aria-pressed` rather than a hardcoded colour.",
+    "E": "`window-child-ownership.test.ts` gains focus/open stacking cases (`paintOrder` equals `[ 'other', 'fresh', 'pinned' ]`), and `session-restore-duplicates.test.ts` gains a restore round-trip case. Both are existing files.",
+    "F": "`javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, a `readonly alwaysOnTop` property and a prose section, and `architecture.md` documents the `alwaysOnTop: true` session field next to `gridSpan`.",
+    "G": "It adds public surface the prompt did not ask for: a documented `os-window--always-on-top` class, a new `pin` icon key in the `os-window-button` type, new `--os-titlebar-always-on-top-*` CSS variables, and a documented change to the order `getVisibleRects()` returns. The new hook/event, by contrast, was correctly listed as a decision for the maintainer.",
+    "H": "The final message reports that build, typecheck, lint (0 errors) and test:js (6,658 pass) all ran, which matches the passing gates.",
+    "I": "Ownership is handled: `isKeptOnTop()` walks the owner chain, and a test checks `[ 'other', 'owner', 'child' ]`. Idempotence is handled: `if ( win.alwaysOnTop !== next )` skips both the restack and the emit, and an unknown id returns `false` (tested). The fullscreen claim has no supporting code in the diff."
+  },
+  "notable": "The stacking design is clean: a stable partition of `_stack` at paint time leaves focus semantics alone and composes with ownership, and the PHP sanitizer line makes reload really work. The weakness is the native session path, which pins after open instead of going through the restore seed."
+}

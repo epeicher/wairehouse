@@ -1,0 +1,17 @@
+ M docs/event-driven-framework.md
+ M docs/examples/window-controls.md
+ M docs/examples/window-lifecycle.md
+ M docs/hooks-reference.md
+ M docs/javascript-reference.md
+ M includes/session.php
+ M src/boot/session.ts
+ M src/hooks.ts
+ M src/native-windows.ts
+ M src/types.ts
+ M src/ui/components/os-window-button/os-window-button.ts
+ M src/window-chrome/controls/built-ins.ts
+ M src/window-chrome/controls/registry.ts
+ M src/window-manager/index.ts
+ M src/window/index.ts
+ M tests/vitest/window-child-ownership.test.ts
+ M tests/vitest/window-chrome-controls-render.test.ts

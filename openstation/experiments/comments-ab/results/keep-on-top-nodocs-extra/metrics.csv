@@ -1,0 +1,2 @@
+label,arm,wall_s,duration_ms,duration_api_ms,num_turns,cost_usd,input_tokens,output_tokens,cache_read_tokens,cache_create_tokens,is_error
+"R01","A","638",636454,484662,135,4.8229500000000005,194,42387,12720810,178784,false

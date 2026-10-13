@@ -1,0 +1,142 @@
+diff --git c/docs/javascript-reference.md w/docs/javascript-reference.md
+index 391319a0..e4a56047 100644
+--- c/docs/javascript-reference.md
++++ w/docs/javascript-reference.md
+@@ -5050 +5050 @@ Window contexts can supply `responseActions({messageId, summary, operations})` f
+-Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `cascade()`, `tile()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
++Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `tile()` is the dock System menu's **Tile all windows** row; `cascade()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
+@@ -5067 +5067 @@ The pairing holds even when a user re-enters overview inside the ~280 ms exit an
+-| `os.arrange.tile.dimensions` | filter | Stable | filters `{ cols, rows }`; context `{ windowCount, areaWidth, areaHeight }`. Override the auto-chosen grid (e.g., force a 3-column newsroom layout). Returns must be positive integers and `cols * rows >= windowCount`, otherwise the filter is ignored. |
++| `os.arrange.tile.dimensions` | filter | Stable | filters `{ cols, rows }`; context `{ windowCount, areaWidth, areaHeight }`. Override the auto-chosen grid (e.g., force a 3-column newsroom layout). The auto grid is `floor(√n)` rows of as many windows as that takes (2 → halves, 3 → thirds, 4 → 2×2, 5–6 → 3×2), turned on its side on a portrait area. Windows fill the grid row by row, and a short last row shares the full width between the windows it holds. Returns must be positive integers and `cols * rows >= windowCount`, otherwise the filter is ignored. |
+diff --git c/src/desktop.ts w/src/desktop.ts
+index 8d14d8e6..0901145f 100644
+--- c/src/desktop.ts
++++ w/src/desktop.ts
+@@ -3504 +3504 @@ function init(): void {
+-				// (Fullscreen, Log out) leave it unset.
++				// (Fullscreen, Tile all windows, Log out) leave it unset.
+@@ -3527,0 +3528,5 @@ function init(): void {
++					{
++						title: 'Tile all windows',
++						url: '',
++						onSelect: () => manager.tile(),
++					},
+diff --git c/src/window-manager/arrange.ts w/src/window-manager/arrange.ts
+index f472c4f4..6b747779 100644
+--- c/src/window-manager/arrange.ts
++++ w/src/window-manager/arrange.ts
+@@ -4,3 +4,3 @@
+- * `cascade` and `tile` are the two "Arrange" commands exposed from the
+- * admin-bar menu; `columns` and `focus` are what a workspace's
+- * `layout` resolves to. All four touch every window on the active
++ * `tile` is the System menu's "Tile all windows", and with `cascade`
++ * also a workspace `layout`, as are `columns` and `focus`. All four
++ * touch every window on the active
+@@ -132,5 +132,4 @@ export function cascade( mgr: WindowManager ): void {
+- * Tile every eligible window into a uniform grid that covers the
+- * desktop area — "Show all windows," macOS-style. The grid dimensions
+- * (cols × rows) are picked to maximise individual window size while
+- * still fitting all of them, by matching the cell aspect ratio to the
+- * desktop area's aspect ratio.
++ * Tile every eligible window into a grid that covers the work area —
++ * the System menu's "Tile all windows". Two windows split it in
++ * halves, three in thirds, four in a 2×2 square; `pickGridDimensions`
++ * has the rule for more.
+@@ -205,2 +204,3 @@ export function tile( mgr: WindowManager ): void {
+-	// window needs more, in which case its row-mates (and the empty
+-	// cells of a short last row) make room. See `shareRowByMinWidth`.
++	// window needs more, in which case its row-mates make room. A short
++	// last row shares the whole width between the windows it has, so
++	// five windows leave no empty sixth cell. See `shareRowByMinWidth`.
+@@ -209,3 +209,4 @@ export function tile( mgr: WindowManager ): void {
+-		const mins = Array.from(
+-			{ length: cols },
+-			( _, col ) => members[ col ]?.config.minWidth || 0,
++		const spans = shareRowByMinWidth(
++			rect.width - padding * 2,
++			gap,
++			members.map( ( w ) => w.config.minWidth || 0 ),
+@@ -213 +213,0 @@ export function tile( mgr: WindowManager ): void {
+-		const spans = shareRowByMinWidth( rect.width - padding * 2, gap, mins );
+diff --git c/src/window-manager/geometry.ts w/src/window-manager/geometry.ts
+index dcf251db..e36d9bf5 100644
+--- c/src/window-manager/geometry.ts
++++ w/src/window-manager/geometry.ts
+@@ -62,6 +62,3 @@ export function isValidCellSize(
+- * Choose the (cols × rows) grid for `tile()` that maximises individual
+- * window size while still fitting all `n` windows in a `width × height`
+- * area. Scoring: minimise the absolute difference between the cell
+- * aspect ratio and the area aspect ratio, with a small penalty for
+- * empty trailing cells (so 5 windows pick 3×2 over 5×1 when the area is
+- * roughly square).
++ * Choose the (cols × rows) grid for `tile()`: `floor( √n )` lines, and
++ * as many windows per line as that takes, laid along the area's long
++ * side.
+@@ -69,2 +66,5 @@ export function isValidCellSize(
+- * Capped at 6×6 — beyond that, individual windows are too small to be
+- * useful and the user is better off with cascade or overview.
++ * On a landscape area that is 2 side by side, 3 in thirds, 4 in a 2×2
++ * square, 5 and 6 in 3×2, 7 and 8 in 4×2, 9 in 3×3. Never an empty
++ * line, so every row the grid declares is a row the windows fill; a
++ * short last row is `tile()`'s to spread, not a hole. A portrait area
++ * gets the same grid turned on its side.
+@@ -80,17 +80,5 @@ export function pickGridDimensions(
+-	const areaAspect = width / Math.max( 1, height );
+-	const max = 6;
+-	let best = { cols: n, rows: 1, score: Infinity };
+-	for ( let cols = 1; cols <= Math.min( max, n ); cols++ ) {
+-		const rows = Math.min( max, Math.ceil( n / cols ) );
+-		if ( cols * rows < n ) {
+-			continue;
+-		}
+-		const cellAspect = ( width / cols ) / Math.max( 1, height / rows );
+-		const aspectDelta = Math.abs( cellAspect - areaAspect );
+-		const emptyCells = cols * rows - n;
+-		const score = aspectDelta + emptyCells * 0.05;
+-		if ( score < best.score ) {
+-			best = { cols, rows, score };
+-		}
+-	}
+-	return { cols: best.cols, rows: best.rows };
++	const lines = Math.floor( Math.sqrt( n ) );
++	const perLine = Math.ceil( n / lines );
++	return width >= height
++		? { cols: perLine, rows: lines }
++		: { cols: lines, rows: perLine };
+diff --git c/tests/vitest/arrange.test.ts w/tests/vitest/arrange.test.ts
+index 61c9f201..394860d7 100644
+--- c/tests/vitest/arrange.test.ts
++++ w/tests/vitest/arrange.test.ts
+@@ -108,0 +109,32 @@ describe( 'WindowManager — Arrange (tile + snap)', async () => {
++	test( 'tile() splits 3 windows into thirds, not a 2x2 with a hole', async () => {
++		const wins = [
++			await manager.open( openConfig( 'a' ) ),
++			await manager.open( openConfig( 'b' ) ),
++			await manager.open( openConfig( 'c' ) ),
++		];
++
++		manager.tile();
++
++		// 1568 wide after padding, minus two 12px gaps: 514 each.
++		expect( wins.map( ( w ) => [ w.element.style.left, w.element.style.width ] ) ).toEqual( [
++			[ '16px', '514px' ],
++			[ '542px', '514px' ],
++			[ '1068px', '514px' ],
++		] );
++		expect( wins.map( ( w ) => w.element.style.height ) ).toEqual( [ '868px', '868px', '868px' ] );
++	} );
++
++	test( 'tile() spreads a short last row across the full width', async () => {
++		const wins = [];
++		for ( const id of [ 'a', 'b', 'c', 'd', 'e' ] ) {
++			wins.push( await manager.open( openConfig( id ) ) );
++		}
++
++		manager.tile();
++
++		// 3x2: the second row holds two windows sharing 1568 - 12.
++		const [ d, e ] = wins.slice( 3 );
++		expect( [ d.element.style.left, d.element.style.top, d.element.style.width ] ).toEqual( [ '16px', '456px', '778px' ] );
++		expect( [ e.element.style.left, e.element.style.width ] ).toEqual( [ '806px', '778px' ] );
++	} );
++

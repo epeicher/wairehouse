@@ -1,0 +1,59 @@
+== [R01] arm A (trunk) run 1
+   done in 570s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R04] arm B (codex/remove-docs) run 1
+   done in 699s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R06] arm A (trunk) run 2
+   done in 670s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R02] arm B (codex/remove-docs) run 2
+   done in 458s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R05] arm A (trunk) run 3
+   done in 681s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R03] arm B (codex/remove-docs) run 3
+   done in 468s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+
+Results in /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-trunk-vs-nodocs
+Next: ./judge.sh /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-trunk-vs-nodocs   then   python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-trunk-vs-nodocs
+run exit 0
+task: keep-on-top (rubric /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/tasks/keep-on-top/rubric.md)
+== [R01] judging
+   total 22/23
+== [R02] judging
+   total 18/23
+== [R03] judging
+   total 19/23
+== [R04] judging
+   total 19/23
+== [R05] judging
+   total 21/23
+== [R06] judging
+   total 21/23
+
+Next: python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-trunk-vs-nodocs
+----- summary
+label  arm score gates  wall_s turns   cost$       in     out   cache_rd  cache_cr err
+R01    A      22 5/5       570   119    4.30      164   45205   10107957    171358 false
+R02    B      18 5/5       458   118    4.25      148   41850    9480507    190151 false
+R03    B      19 5/5       468   109    3.80      142   40000    8110721    172420 false
+R04    B      19 5/5       699    96    4.70      130   36407    5064897    118156 false
+R05    A      21 5/5       681   127    4.50      140   45712   10048316    197221 false
+R06    A      21 5/5       670   147    5.50      180   52992   13803988    210336 false
+
+arm branch                              n       score        wall_s     turns       cost$           total_tokens
+A   trunk                               3  21.3±0.6      640±61      131±14    4.77±0.65     11561190±2170589   
+B   codex/remove-docs                   3  18.7±0.6      542±136     108±11    4.25±0.45      7751843±2300395   
+
+(total_tokens = input + output + cache read + cache create; cost is Claude Code's list-price estimate)
+----- summary without F
+label  arm score gates  wall_s turns   cost$       in     out   cache_rd  cache_cr err
+R01    A      20 5/5       570   119    4.30      164   45205   10107957    171358 false
+R02    B      18 5/5       458   118    4.25      148   41850    9480507    190151 false
+R03    B      19 5/5       468   109    3.80      142   40000    8110721    172420 false
+R04    B      19 5/5       699    96    4.70      130   36407    5064897    118156 false
+R05    A      19 5/5       681   127    4.50      140   45712   10048316    197221 false
+R06    A      19 5/5       670   147    5.50      180   52992   13803988    210336 false
+
+arm branch                              n       score        wall_s     turns       cost$           total_tokens
+A   trunk                               3  19.3±0.6      640±61      131±14    4.77±0.65     11561190±2170589   
+B   codex/remove-docs                   3  18.7±0.6      542±136     108±11    4.25±0.45      7751843±2300395   
+
+(total_tokens = input + output + cache read + cache create; cost is Claude Code's list-price estimate; score excludes F)

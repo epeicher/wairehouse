@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 1, "F": 0, "G": 1, "H": 0, "I": 2 },
+  "total": 18,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports pass for all four gates: lint, typecheck, test_js and phpcs.",
+    "B": "All five hidden cases pass, and `includes/session.php` now keeps the flag with `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "C-stack: one new `applyZOrder()` reads `_stack` and replaces the inline z-index loops in focus(), raise() and the open/restack path. C-pin: the pin is a `registerWindowControl( { id: 'core/pin', ... } )` registration. C-session: the flag is added to `snapshot()`, to both `restoreSession()` branches, to `NativeWindowRestoreState` and to the `SessionWindow`/`WindowConfig` types, and it is applied before the window joins the stack instead of by a later call.",
+    "D": "No violations found: no edits under `assets/js/`, the label goes through `__( 'Keep on top' )`, the button comes from the registry and `os-window-button`, and the on state uses the existing `active` attribute rather than a hardcoded colour.",
+    "E": "The tests are real: stacking across focus, raise, the ownership case and the snapshot/restoreSession round-trip. But they sit in a new `tests/vitest/window-always-on-top.test.ts` instead of an existing window-manager or session test file, and the rubric gives 2 only for tests added to an existing file.",
+    "F": "There is no change under `docs/`, so `setAlwaysOnTop()` and the session field are not documented.",
+    "G": "It adds public surface the prompt did not ask for: a new `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` hook, a new `os-window-always-on-top-changed` CustomEvent, a new `WINDOW_CONTROL_PIN` theme icon slot in TS and PHP, and an extra mobile.css rule.",
+    "H": "The final message reports lint, `npx tsc --noEmit` and `npm run test:js`, all consistent with the gates, but it never says `npm run build` was run.",
+    "I": "Ownership is handled: `isInTopLayer()` walks the owner chain and a test checks `[ 'other', 'owner', 'child' ]`. Idempotence is handled: setting the value a window already has returns early without notifying, an unknown id returns false, and both are tested. Fullscreen and minimized windows are not handled."
+  },
+  "notable": "The behaviour is complete: the flag is kept in the PHP sanitizer, the z-order is done in one pass over `_stack`, and a pinned owner's child windows go up with it. The weak points are a new hook, a new DOM event and a new theme slot that nobody asked for, and no docs update."
+}

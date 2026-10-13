@@ -1,0 +1,118 @@
+diff --git i/docs/javascript-reference.md w/docs/javascript-reference.md
+index 391319a0..db1279bb 100644
+--- i/docs/javascript-reference.md
++++ w/docs/javascript-reference.md
+@@ -5050 +5050 @@ Window contexts can supply `responseActions({messageId, summary, operations})` f
+-Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `cascade()`, `tile()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods with no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
++Fired by the shell's layout algorithms. The zoom-out grid is labelled **Workspaces** in the UI and has the dock's Workspaces tile as its front door — the tile id (`os-overview`), the `enterOverview()` / `exitOverview()` methods and the `os.overview.*` hook names are unchanged, because saved preferences and third-party plugins key off them; `cascade()`, `tile()` and `setSnapEnabled()` ship as [`windowManager`](#windowmanager--stable) methods; `tile()` is also the System tile's **Tile all windows** row, and the other two have no UI of their own, so a plugin that wants them on a surface builds one. The overview hooks come in pairs (enter/exit, hover/unhover) so plugins can maintain accurate state counts.
+@@ -5065 +5065 @@ The pairing holds even when a user re-enters overview inside the ~280 ms exit an
+-| `os.arrange.tile.starting` | action | Stable | `{ windowCount, cols, rows }` — before tile lays out the grid |
++| `os.arrange.tile.starting` | action | Stable | `{ windowCount, cols, rows }` — before tile lays out the grid. The default grid has `floor(√n)` rows and as many columns as that needs, swapped on a portrait area: two windows side by side, three in thirds, four in a 2×2, five and six in 3×2. Each row, a short last one included, shares the full width among its own windows, and the rows in use share the full height |
+diff --git i/src/desktop.ts w/src/desktop.ts
+index c51a635b..1b68fe92 100644
+--- i/src/desktop.ts
++++ w/src/desktop.ts
+@@ -1472,0 +1473,5 @@ function init(): void {
++					{
++						title: 'Tile all windows',
++						url: '',
++						onSelect: () => manager.tile(),
++					},
+diff --git i/src/window-manager/arrange.ts w/src/window-manager/arrange.ts
+index f0b9d729..55f89d4e 100644
+--- i/src/window-manager/arrange.ts
++++ w/src/window-manager/arrange.ts
+@@ -127,0 +128 @@ export function tile( mgr: WindowManager ): void {
++	const usedRows = Math.ceil( eligible.length / cols );
+@@ -129 +130 @@ export function tile( mgr: WindowManager ): void {
+-		( rect.height - padding * 2 - gap * ( rows - 1 ) ) / rows,
++		( rect.height - padding * 2 - gap * ( usedRows - 1 ) ) / usedRows,
+@@ -132 +133 @@ export function tile( mgr: WindowManager ): void {
+-	for ( let row = 0; row * cols < eligible.length; row++ ) {
++	for ( let row = 0; row < usedRows; row++ ) {
+@@ -134,3 +135,4 @@ export function tile( mgr: WindowManager ): void {
+-		const mins = Array.from(
+-			{ length: cols },
+-			( _, col ) => members[ col ]?.config.minWidth || 0,
++		const spans = shareRowByMinWidth(
++			rect.width - padding * 2,
++			gap,
++			members.map( ( w ) => w.config.minWidth || 0 ),
+@@ -138 +139,0 @@ export function tile( mgr: WindowManager ): void {
+-		const spans = shareRowByMinWidth( rect.width - padding * 2, gap, mins );
+diff --git i/src/window-manager/geometry.ts w/src/window-manager/geometry.ts
+index 328b4d6c..c40caebc 100644
+--- i/src/window-manager/geometry.ts
++++ w/src/window-manager/geometry.ts
+@@ -49,17 +49,5 @@ export function pickGridDimensions(
+-	const areaAspect = width / Math.max( 1, height );
+-	const max = 6;
+-	let best = { cols: n, rows: 1, score: Infinity };
+-	for ( let cols = 1; cols <= Math.min( max, n ); cols++ ) {
+-		const rows = Math.min( max, Math.ceil( n / cols ) );
+-		if ( cols * rows < n ) {
+-			continue;
+-		}
+-		const cellAspect = ( width / cols ) / Math.max( 1, height / rows );
+-		const aspectDelta = Math.abs( cellAspect - areaAspect );
+-		const emptyCells = cols * rows - n;
+-		const score = aspectDelta + emptyCells * 0.05;
+-		if ( score < best.score ) {
+-			best = { cols, rows, score };
+-		}
+-	}
+-	return { cols: best.cols, rows: best.rows };
++	const short = Math.floor( Math.sqrt( n ) );
++	const long = Math.ceil( n / short );
++	return height > width
++		? { cols: short, rows: long }
++		: { cols: long, rows: short };
+diff --git i/tests/vitest/arrange.test.ts w/tests/vitest/arrange.test.ts
+index 97422c85..b96e3d9f 100644
+--- i/tests/vitest/arrange.test.ts
++++ w/tests/vitest/arrange.test.ts
+@@ -99,0 +100,44 @@ describe( 'WindowManager — Arrange (tile + snap)', async () => {
++	test( 'tile() lays 3 windows out in full-height thirds', async () => {
++		const wins = [
++			await manager.open( openConfig( 'a' ) ),
++			await manager.open( openConfig( 'b' ) ),
++			await manager.open( openConfig( 'c' ) ),
++		];
++
++		manager.tile();
++
++		expect(
++			wins.map( ( w ) => [
++				w.element.style.left,
++				w.element.style.top,
++				w.element.style.width,
++				w.element.style.height,
++			] ),
++		).toEqual( [
++			[ '16px', '16px', '514px', '868px' ],
++			[ '542px', '16px', '514px', '868px' ],
++			[ '1068px', '16px', '514px', '868px' ],
++		] );
++	} );
++
++	test( 'tile() stretches a short last row across the full width', async () => {
++		const wins = [];
++		for ( const id of [ 'a', 'b', 'c', 'd', 'e' ] ) {
++			wins.push( await manager.open( openConfig( id ) ) );
++		}
++
++		manager.tile();
++
++		expect(
++			wins.slice( 3 ).map( ( w ) => [
++				w.element.style.left,
++				w.element.style.top,
++				w.element.style.width,
++				w.element.style.height,
++			] ),
++		).toEqual( [
++			[ '16px', '456px', '778px', '428px' ],
++			[ '806px', '456px', '778px', '428px' ],
++		] );
++	} );
++

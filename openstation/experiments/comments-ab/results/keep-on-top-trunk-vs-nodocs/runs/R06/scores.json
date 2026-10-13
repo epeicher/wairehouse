@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 1, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` now keeps the flag (`if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`), so it survives a real reload.",
+    "C": "C-stack: `applyStackZIndices( this, BASE_Z_INDEX )` replaces the z-index writes in `focus()`, `raise()` and the open restack, and reads `mgr._stack`. C-pin: the pin is a `registerWindowControl( { id: 'core/keep-on-top', ... } )` built-in. C-session: the flag follows the gridSpan path through `snapshot()`, both `restoreSession()` branches (lines 214 and 307), `NativeWindowRestoreState` (`| 'alwaysOnTop'`), `WindowConfig` and `SessionWindow`.",
+    "D": "No violations: the label and the toggled `aria-label` use `__()`, the on state is the existing `active` attribute with no hardcoded colour, the CSS variable is not on a `:host`, and nothing under `assets/js/` was edited.",
+    "E": "The tests are substantive and cover stacking across focus (`painted( manager )` after `manager.focus( a )`) and the session round-trip, but they sit in a new file `tests/vitest/window-keep-on-top.test.ts`, while the guide and the rubric's top band ask for an existing window-manager or session test file.",
+    "F": "`docs/javascript-reference.md` adds `manager.setAlwaysOnTop(...)` to the method block, `readonly alwaysOnTop: boolean` to the Window interface and `alwaysOnTop?:` to the config block, and `docs/architecture.md` documents the session field.",
+    "G": "It adds public surface the prompt did not ask for: a new CustomEvent `os-window-always-on-top-changed`, the hook constant `WINDOW_ALWAYS_ON_TOP_CHANGED`, a `WindowConfig.alwaysOnTop` open-time option and a new theme slot `WINDOW_CONTROL_KEEP_ON_TOP`, rather than proposing them to the maintainer first.",
+    "H": "The final message reports that `npm run build`, `lint`, `typecheck` and `test:js` all passed, which matches the gates, and it is candid that PHPCS was not run locally.",
+    "I": "Ownership is handled by `inTopLayer()`, which walks `mgr.ownerOf()` with a cycle guard and is tested ('a child of a kept window is never buried under its owner'), and idempotence is handled by `if ( ! win || win.alwaysOnTop === on ) return;` and tested ('announces a change once')."
+  },
+  "notable": "It keeps `_stack` as pure focus order and applies the kept-on-top layer in one z-index pass shared by every restack, it walks the owner chain, and it fixes the PHP sanitizer so reload really works. The main weakness is new public surface (an event, a hook, a config option, a theme slot) added without proposing it first."
+}

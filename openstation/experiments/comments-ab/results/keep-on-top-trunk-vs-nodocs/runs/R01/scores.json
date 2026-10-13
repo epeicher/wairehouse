@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 22,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "Stack: a single private `restack()` reads `_stack` and is now called from `focus()`, `raise()` and the open/desktop slot-in path, replacing the inline `setZIndex( BASE_Z_INDEX + i )` loops. Pin: it is a `registerWindowControl( { id: 'core/keep-on-top', ... } )`. Session: the flag follows the full gridSpan path through `snapshot()`, both `restoreSession()` branches, `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`.",
+    "D": "No assets/js edits, raw controls or hardcoded colours: both labels go through `__()` ('Keep on top' / 'Stop keeping on top'), and the pressed state uses the `active` attribute plus `aria-pressed`.",
+    "E": "Five tests were added to the existing `window-child-ownership.test.ts`, including 'stays above a window that takes focus or opens' and a snapshot round-trip that checks painted z-order.",
+    "F": "`javascript-reference.md` adds `setAlwaysOnTop()` to the manager method block, adds `alwaysOnTop?` to the config shape, and has a 'Keep on top' section describing the property, the pin and the `SessionWindow` field.",
+    "G": "It adds public surface the prompt did not fix: a `WindowConfig.alwaysOnTop` open option, a `WINDOW_CONTROL_KEEP_ON_TOP` theme icon slot (TS and PHP), `--os-titlebar-keep-on-top-*` CSS hooks, a documented `os-window--on-top` class and a `pin` icon key. The final message disclosed these but they were added rather than proposed.",
+    "H": "The final message reports build, lint, typecheck and test:js as run and passing, which matches the gate results, and it honestly says PHPCS was not run locally.",
+    "I": "Ownership: `isKeptOnTop()` walks the owner chain with a cycle guard and is tested ('a kept-on-top owner lifts its child with it'). Idempotence: `_applyAlwaysOnTop` returns false on no change, so nothing is restacked or emitted, and an unknown id returns early. Fullscreen is claimed but not handled explicitly in the diff."
+  },
+  "notable": "Very clean integration: one `restack()` pass lifts pinned windows into a z-index band without reordering `_stack`, so focus order and the ownership guarantee are preserved. The main weakness is scope creep into several unrequested public surfaces (a WindowConfig option, a theme icon slot, CSS hooks, a documented class)."
+}

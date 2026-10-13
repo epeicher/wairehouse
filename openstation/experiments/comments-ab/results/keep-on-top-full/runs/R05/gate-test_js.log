@@ -1,0 +1,33 @@
+
+> openstation@1.1.12 test:js
+> vitest run
+
+
+ RUN  v4.1.5 /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05
+
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at pickForegroundColor (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/components/os-crumb-chain/os-crumb-chain.ts:436:30)
+    at /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/components/os-crumb-chain/os-crumb-chain.ts:172:59
+    at Array.map (<anonymous>)
+    at OsCrumbChain.render (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/components/os-crumb-chain/os-crumb-chain.ts:145:17)
+    at /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/core/component.ts:274:17
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at pickForegroundColor (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/components/os-crumb-chain/os-crumb-chain.ts:436:30)
+    at /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/components/os-crumb-chain/os-crumb-chain.ts:172:59
+    at Array.map (<anonymous>)
+    at OsCrumbChain.render (/private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/components/os-crumb-chain/os-crumb-chain.ts:145:17)
+    at /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R05/src/ui/core/component.ts:274:17
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) undefined
+
+ Test Files  529 passed (529)
+      Tests  6619 passed (6619)
+   Start at  14:48:48
+   Duration  18.26s (transform 15.35s, setup 64.52s, import 17.77s, tests 40.34s, environment 105.70s)
+

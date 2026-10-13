@@ -1,0 +1,21 @@
+== [R04] arm A (trunk) run 1
+   deleted agent branch add/system-menu-tile-all-windows
+   done in 261s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+== [R02] arm B (codex/remove-code-comments) run 1
+   deleted agent branch feature/tile-all-windows
+   done in 228s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+== [R06] arm A (trunk) run 2
+   deleted agent branch add/system-menu-tile-all-windows
+   done in 236s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+== [R05] arm B (codex/remove-code-comments) run 2
+   deleted agent branch add/system-menu-tile-all-windows
+   done in 172s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+== [R03] arm A (trunk) run 3
+   deleted agent branch feature/system-tile-all-windows
+   done in 240s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+== [R01] arm B (codex/remove-code-comments) run 3
+   deleted agent branch add/tile-all-windows
+   done in 171s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass
+
+Results in /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/full
+Next: ./judge.sh /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/full   then   python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/full

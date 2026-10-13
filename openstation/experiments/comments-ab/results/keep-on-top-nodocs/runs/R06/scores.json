@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 1, "F": 0, "G": 1, "H": 1, "I": 2 },
+  "total": 19,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs as all passing.",
+    "B": "All five hidden cases pass. `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag also survives a real reload.",
+    "C": "A single private `restack()` sorts `_stack` into `[ ...normal, ...onTop ]`, and focus, raise and the open path all call it in place of the old `setZIndex` loops. The pin is a `registerWindowControl( { id: 'core/pin', ... } )` registration. The flag goes through `snapshot()`, both `restoreSession()` branches, `NativeWindowRestoreState` (`| 'alwaysOnTop'`), `WindowConfig` and `SessionWindow`.",
+    "D": "No violations: nothing under `assets/js/` was edited, both labels use `__()` ('Keep on top', 'Stop keeping on top'), the on state is shown with the `active` attribute and `aria-pressed` rather than a hardcoded colour, and there are no `--os-ui-*` declarations on `:host`, no version stamps and no ESLint disables.",
+    "E": "The tests are meaningful: the paint order is checked across `manager.focus( b )`, and a session round-trip runs through `restoreSession`. But they sit in the brand-new `tests/vitest/window-always-on-top.test.ts` rather than an existing window-manager or session test file, so this misses the bar for 2.",
+    "F": "No change under `docs/`: `setAlwaysOnTop()`, `alwaysOnTop` and the session field are not documented.",
+    "G": "The diff adds public surface the prompt did not ask for: a `WINDOW_CONTROL_PIN` desktop-theme slot in both TS and PHP, a public `pin` icon key in the `os-window-button` docs, an `os-window--always-on-top` class, and `--os-titlebar-pin-order` / `--os-titlebar-pin-display` CSS variables. None of these is raised as a maintainer decision.",
+    "H": "The final message lists `npm run lint`, `typecheck`, `test:js` and `build` as run and clean, which matches the passing gates.",
+    "I": "Ownership is handled: `isKeptOnTop()` walks the owner chain and a test checks `[ 'other', 'owner', 'child' ]`. Idempotence is handled too: `_setAlwaysOnTop` returns false with no emit when the value is unchanged, an unknown id returns early, and a test asserts a single `always-on-top` reason."
+  },
+  "notable": "The strongest point is that the agent noticed the PHP sanitizer drops unknown keys and fixed it, so the reload requirement is really met. The stacking rule is also a single pass that respects ownership. The main weaknesses are that no docs were updated and that unrequested public surface was added (theme slot, icon key, CSS variables)."
+}

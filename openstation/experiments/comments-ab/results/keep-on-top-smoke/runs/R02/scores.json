@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 2, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` now keeps the flag (`if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`), so the flag survives a real reload.",
+    "C": "C-stack is met: one `applyZOrder()` pass reads `_stack` and replaces the z-index writes in focus, raise and open. C-pin is met: the pin is a `registerWindowControl( { id: 'core/always-on-top', ... } )` registration. C-session is not met: both restore branches call `manager.setAlwaysOnTop( restored.id, true )` after the window opens instead of passing the flag through `NativeWindowRestoreState` and `seedWindowRestoreState()`, and only `SessionWindow` gets the new type.",
+    "D": "No violations found: no `assets/js` edits, both labels are wrapped (`__( 'Keep on top' )`, `__( 'Stop keeping on top' )`), the pin uses `<os-window-button>` through the registry, and the on state is shown with the `active` attribute rather than a hardcoded colour.",
+    "E": "Five cases were added to the existing `window-child-ownership.test.ts`, including stacking across `manager.focus( other )` and opening a new window, and a full `snapshot()` → `restoreSession()` round-trip.",
+    "F": "`javascript-reference.md` adds `setAlwaysOnTop` to the manager method block and `readonly alwaysOnTop` to the `Window` interface, and `architecture.md` mentions `alwaysOnTop: true` next to the existing `gridSpan` session field.",
+    "G": "The change adds public surface the prompt did not ask for: a new `os-window-always-on-top-changed` CustomEvent, a `HOOKS.WINDOW_ALWAYS_ON_TOP_CHANGED` constant, a documented `os-window--always-on-top` class and a new `pin` icon key.",
+    "H": "The final message says build, lint, typecheck and `test:js` were run and passed, which matches the gates, and it is open that PHPCS was not run.",
+    "I": "Ownership is handled by `isInTopBand()`, which walks the owner chain, and a test checks it (`[ 'other', 'owner', 'child' ]`). Idempotence is handled by `win.alwaysOnTop === !! enabled` returning early, and the 'only a real change fires the change event' test checks it, unknown id included."
+  },
+  "notable": "The stacking design is good: `_stack` stays in pure focus order, and one `applyZOrder()` pass draws the pinned windows (and their children) last, while the PHP sanitizer change makes the reload requirement really work. The weaknesses are that native windows are pinned by a separate call after opening instead of through the restore seed, and that a new event, hook and class were added without asking the maintainer first."
+}

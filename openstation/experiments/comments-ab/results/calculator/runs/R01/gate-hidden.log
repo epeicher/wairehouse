@@ -1,0 +1,123 @@
+
+ RUN  v4.1.5 /private/var/folders/7_/t47txvkd3h72ccs2sr7sbgzr0000gn/T/comments-ab-wt/R01
+
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > adds from the keypad without a request 15ms
+   → a keypad button for "7": expected undefined to be truthy
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > subtracts, multiplies and divides 4ms
+   → a keypad button for "9": expected undefined to be truthy
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > clears back to zero 4ms
+   → a keypad button for "4": expected undefined to be truthy
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > hides binary rounding noise 2ms
+   → a keypad button for "0": expected undefined to be truthy
+ × tests/vitest/zz-hidden-calculator.test.ts > calculator app > never shows Infinity or NaN after dividing by zero, and recovers 6ms
+   → a keypad button for "8": expected undefined to be truthy
+ ✓ tests/vitest/zz-hidden-calculator.test.ts > calculator app > takes keyboard input while focused 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/vitest/zz-hidden-calculator.test.ts > calculator app > adds from the keypad without a request
+AssertionError: a keypad button for "7": expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ press tests/vitest/zz-hidden-calculator.test.ts:132:55
+    130|    const wanted = LABELS[ key ] ?? [ key ];
+    131|    const button = buttons().find( ( b ) => names( b ).some( ( n ) => w…
+    132|    expect( button, `a keypad button for "${ key }"` ).toBeTruthy();
+       |                                                       ^
+    133|    button!.click();
+    134|   }
+ ❯ tests/vitest/zz-hidden-calculator.test.ts:167:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  tests/vitest/zz-hidden-calculator.test.ts > calculator app > subtracts, multiplies and divides
+AssertionError: a keypad button for "9": expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ press tests/vitest/zz-hidden-calculator.test.ts:132:55
+    130|    const wanted = LABELS[ key ] ?? [ key ];
+    131|    const button = buttons().find( ( b ) => names( b ).some( ( n ) => w…
+    132|    expect( button, `a keypad button for "${ key }"` ).toBeTruthy();
+       |                                                       ^
+    133|    button!.click();
+    134|   }
+ ❯ tests/vitest/zz-hidden-calculator.test.ts:174:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  tests/vitest/zz-hidden-calculator.test.ts > calculator app > clears back to zero
+AssertionError: a keypad button for "4": expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ press tests/vitest/zz-hidden-calculator.test.ts:132:55
+    130|    const wanted = LABELS[ key ] ?? [ key ];
+    131|    const button = buttons().find( ( b ) => names( b ).some( ( n ) => w…
+    132|    expect( button, `a keypad button for "${ key }"` ).toBeTruthy();
+       |                                                       ^
+    133|    button!.click();
+    134|   }
+ ❯ tests/vitest/zz-hidden-calculator.test.ts:184:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  tests/vitest/zz-hidden-calculator.test.ts > calculator app > hides binary rounding noise
+AssertionError: a keypad button for "0": expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ press tests/vitest/zz-hidden-calculator.test.ts:132:55
+    130|    const wanted = LABELS[ key ] ?? [ key ];
+    131|    const button = buttons().find( ( b ) => names( b ).some( ( n ) => w…
+    132|    expect( button, `a keypad button for "${ key }"` ).toBeTruthy();
+       |                                                       ^
+    133|    button!.click();
+    134|   }
+ ❯ tests/vitest/zz-hidden-calculator.test.ts:190:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  tests/vitest/zz-hidden-calculator.test.ts > calculator app > never shows Infinity or NaN after dividing by zero, and recovers
+AssertionError: a keypad button for "8": expected undefined to be truthy
+
+- Expected:
+true
+
++ Received:
+undefined
+
+ ❯ press tests/vitest/zz-hidden-calculator.test.ts:132:55
+    130|    const wanted = LABELS[ key ] ?? [ key ];
+    131|    const button = buttons().find( ( b ) => names( b ).some( ( n ) => w…
+    132|    expect( button, `a keypad button for "${ key }"` ).toBeTruthy();
+       |                                                       ^
+    133|    button!.click();
+    134|   }
+ ❯ tests/vitest/zz-hidden-calculator.test.ts:196:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+   Start at  19:20:57
+   Duration  599ms (transform 259ms, setup 271ms, import 27ms, tests 100ms, environment 138ms)
+

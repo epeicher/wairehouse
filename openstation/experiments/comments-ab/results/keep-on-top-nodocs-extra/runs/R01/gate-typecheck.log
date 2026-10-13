@@ -1,0 +1,4 @@
+
+> openstation@1.1.13 typecheck
+> tsc --noEmit
+

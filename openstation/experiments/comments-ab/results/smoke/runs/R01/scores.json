@@ -1,0 +1,16 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 3, "C": 2, "D": 3, "E": 2, "F": 2, "G": 2, "H": 1 },
+  "total": 20,
+  "max": 20,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "A `{ title: 'Tile all windows', url: '', onSelect: () => manager.tile() }` row is added to the System rows, and the updated comment `(Fullscreen, Tile all windows, Log out)` confirms its order; `pickGridDimensions` now returns `n <= 3 ? n` columns, so three windows go in thirds, two in halves and four in 2×2.",
+    "C": "The row calls the existing `manager.tile()`, and only the grid rule in `geometry.ts` and the row spans in `arrange.ts` were changed, still through `shareRowByMinWidth` and the work-area rect.",
+    "D": "No `assets/js/` edits, no raw fetch/confirm/alert, no `:host` tokens, no `@since` or version stamps, and no new ESLint disables appear in the diff.",
+    "E": "Two cases were added to the existing `tests/vitest/arrange.test.ts`: 'three windows in thirds on one row' with exact pixel geometry, and the five-window short-row case, which cover the changed grid rule.",
+    "F": "`docs/javascript-reference.md` now says `tile()` is the System menu's **Tile all windows** row, keeps the 'no UI' claim only for `cascade()`/`setSnapEnabled()`, and describes the new grid rule.",
+    "G": "Changes are limited to the menu row, the grid picker, the row-span logic, one test file and one doc paragraph; the only extra churn is a rewrapped header comment in `arrange.ts`.",
+    "H": "The final message says it ran `npm run build`, `lint`, `typecheck` and `test:js` (6616 tests passing), which matches the passing gates."
+  },
+  "notable": "Fixing the three-window case in `pickGridDimensions` with a simple, documented rule, backed by an exact-geometry test, is the main strength. The rewrite does drop the old 6×6 cap, and it also changes the Tile layout used by workspaces, a side effect the agent disclosed openly."
+}

@@ -1,0 +1,3 @@
+task=keep-on-top
+note=arm A run 3 of keep-on-top-nodocs; trunk had moved to 67944f97 mid-run (644a9976 intended), so it is reported separately
+arm_A=trunk @ 67944f97

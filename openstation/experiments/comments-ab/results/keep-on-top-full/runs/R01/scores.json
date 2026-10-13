@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 22,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag also survives a real reload.",
+    "C": "Stack: a single `applyZOrder()` reads `_stack` and replaces every `setZIndex( BASE_Z_INDEX + i )` loop in focus, raise and restack. Pin: added with `registerWindowControl( { id: 'core/keep-on-top', placement: 'controls', order: 8 ... } )`. Session: covers `snapshot()`, both `restoreSession()` branches (lines 119 and 163), `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`.",
+    "D": "No violations found: labels use `__( 'Keep on top' )` / `__( 'Stop keeping on top' )`, the pin goes through the registry and `os-window-button` icons, no `assets/js` edits, no hardcoded colours, no version stamps.",
+    "E": "Adds stacking-across-focus, multiple-pinned/unpin, child-of-pinned-owner and snapshot round-trip tests to the existing `window-manager-close-focus.test.ts`.",
+    "F": "`docs/javascript-reference.md` lists `manager.setAlwaysOnTop(...)` in the method block, adds `readonly alwaysOnTop` to the Window interface, adds `alwaysOnTop?` to the open config fields, and has a new Keep on top section covering session behaviour.",
+    "G": "Reusing `os-window-changed` with reason `'always-on-top'` is fine, but it adds an unrequested public open-time `WindowConfig` option (`open()` / `openNew()` accept an `alwaysOnTop` key) and a documented `'pin'` icon value on `os-window-button`.",
+    "H": "The final message reports build, typecheck, lint and test:js passing (6619 tests), which matches the gate results; it states honestly that PHP lint was not run.",
+    "I": "Ownership: `isKeptOnTop()` walks the owner chain and is tested by 'a child of a pinned owner stays above'. Idempotence: `if ( win.alwaysOnTop === next ) return true;` and an unknown id returns false. The fullscreen claim in the final message has no explicit code in the diff."
+  },
+  "notable": "A clean, well-integrated change: one `applyZOrder()` pass over `_stack` that respects ownership, the full `gridSpan`-style session path, and the PHP sanitizer line that makes reload really work. The only weakness is unrequested public surface (an `alwaysOnTop` open-time config option and a documented `pin` icon)."
+}

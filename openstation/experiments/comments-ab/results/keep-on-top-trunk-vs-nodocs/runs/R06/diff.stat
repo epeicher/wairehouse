@@ -1,0 +1,24 @@
+ assets/css/window-chrome.css                       |   4 +
+ docs/api-index.md                                  |   1 +
+ docs/architecture.md                               |   2 +
+ docs/desktop-themes.md                             |   2 +-
+ docs/event-driven-framework.md                     |   5 +-
+ docs/hooks-reference.md                            |   2 +-
+ docs/javascript-reference.md                       |  41 ++++-
+ includes/desktop-themes/store.php                  |   1 +
+ includes/session.php                               |   6 +
+ src/boot/session.ts                                |   2 +
+ src/desktop-themes/slots.ts                        |   1 +
+ src/hooks.ts                                       |   7 +
+ src/native-windows.ts                              |   1 +
+ src/title-bar-buttons/paint-icon.ts                |   4 +-
+ src/types.ts                                       |  13 ++
+ .../os-window-button/os-window-button.ts           |   9 +-
+ src/window-chrome/controls/built-ins.ts            |  24 ++-
+ src/window-chrome/controls/registry.ts             |   6 +-
+ src/window-manager/index.ts                        |  38 ++++-
+ src/window-manager/keep-on-top.ts                  |  94 +++++++++++
+ src/window/index.ts                                |  61 ++++++-
+ tests/vitest/window-chrome-controls-render.test.ts |  14 +-
+ tests/vitest/window-keep-on-top.test.ts            | 185 +++++++++++++++++++++
+ 23 files changed, 492 insertions(+), 31 deletions(-)

@@ -1,0 +1,16 @@
+ assets/css/mobile.css                              |  10 +
+ includes/desktop-themes/store.php                  |   1 +
+ includes/session.php                               |   6 +
+ src/boot/session.ts                                |   2 +
+ src/desktop-themes/slots.ts                        |   1 +
+ src/hooks.ts                                       |   5 +
+ src/native-windows.ts                              |   1 +
+ src/types.ts                                       |  17 +-
+ .../os-window-button/os-window-button.ts           |   8 +-
+ src/window-chrome/controls/built-ins.ts            |  22 +-
+ src/window-chrome/controls/registry.ts             |   5 +-
+ src/window-manager/index.ts                        |  98 +++++-
+ src/window/index.ts                                |  74 +++-
+ tests/vitest/window-always-on-top.test.ts          | 376 +++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts |  32 +-
+ 15 files changed, 637 insertions(+), 21 deletions(-)

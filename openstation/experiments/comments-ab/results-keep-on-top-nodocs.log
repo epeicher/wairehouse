@@ -1,0 +1,76 @@
+== [R05] arm A (trunk) run 1
+   deleted agent branch add/window-keep-on-top
+   done in 726s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R02] arm B (codex/remove-code-comments-and-docs) run 1
+   deleted agent branch add/window-keep-on-top
+   done in 422s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R03] arm A (trunk) run 2
+   deleted agent branch feature/window-keep-on-top
+   done in 749s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R06] arm B (codex/remove-code-comments-and-docs) run 2
+   done in 547s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R01] arm A (trunk) run 3
+   deleted agent branch add/window-keep-on-top
+== [R07] arm A (trunk) run 3
+   done in 556s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+== [R04] arm B (codex/remove-code-comments-and-docs) run 3
+   done in 415s; gates: lint,pass typecheck,pass test_js,pass phpcs,pass hidden,pass
+
+Results in /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-nodocs
+Next: ./judge.sh /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-nodocs   then   python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-nodocs
+task: keep-on-top (rubric /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/tasks/keep-on-top/rubric.md)
+== [R02] judging
+   total 19/23
+== [R03] judging
+   total 21/23
+== [R04] judging
+   total 18/23
+== [R05] judging
+   total 22/23
+== [R06] judging
+   total 19/23
+== [R07] judging
+   total 21/23
+
+Next: python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-nodocs
+task: keep-on-top (rubric /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/tasks/keep-on-top/rubric.md)
+== [R01] judging
+   total 21/23
+
+Next: python3 -I summarize.py /Users/robertoaranda/github/wairehouse/openstation/experiments/comments-ab/results/keep-on-top-nodocs-extra
+----- summary
+label  arm score gates  wall_s turns   cost$       in     out   cache_rd  cache_cr err
+R02    B      19 5/5       422    91    2.83      124   30425    6070922    126048 false
+R03    A      21 5/5       749   114    4.88      146   45309   11466916    210161 false
+R04    B      18 5/5       415    86    2.85      118   33511    5632790    131641 false
+R05    A      22 5/5       726   143    5.74      184   53403   14567328    219299 false
+R06    B      19 5/5       547    95    2.95      142   33910    6336594    124912 false
+R07    A      21 5/5       556   112    3.89      130   41721    8126439    179240 false
+
+arm branch                              n       score        wall_s     turns       cost$           total_tokens
+A   trunk                               3  21.3±0.6      677±105     123±17    4.84±0.92     11636759±3247192   
+B   codex/remove-code-comments-and-docs  3  18.7±0.6      461±74       91±5     2.88±0.06      6173712±351848    
+
+(total_tokens = input + output + cache read + cache create; cost is Claude Code's list-price estimate)
+----- summary without F
+label  arm score gates  wall_s turns   cost$       in     out   cache_rd  cache_cr err
+R02    B      19 5/5       422    91    2.83      124   30425    6070922    126048 false
+R03    A      19 5/5       749   114    4.88      146   45309   11466916    210161 false
+R04    B      18 5/5       415    86    2.85      118   33511    5632790    131641 false
+R05    A      20 5/5       726   143    5.74      184   53403   14567328    219299 false
+R06    B      19 5/5       547    95    2.95      142   33910    6336594    124912 false
+R07    A      19 5/5       556   112    3.89      130   41721    8126439    179240 false
+
+arm branch                              n       score        wall_s     turns       cost$           total_tokens
+A   trunk                               3  19.3±0.6      677±105     123±17    4.84±0.92     11636759±3247192   
+B   codex/remove-code-comments-and-docs  3  18.7±0.6      461±74       91±5     2.88±0.06      6173712±351848    
+
+(total_tokens = input + output + cache read + cache create; cost is Claude Code's list-price estimate; score excludes F)
+----- extra (trunk @ 67944f97)
+label  arm score gates  wall_s turns   cost$       in     out   cache_rd  cache_cr err
+R01    A      21 5/5       638   135    4.82      194   42387   12720810    178784 false
+
+arm branch                              n       score        wall_s     turns       cost$           total_tokens
+A   trunk                               1  21.0±0.0      638±0       135±0     4.82±0.00     12942175±0         
+
+(total_tokens = input + output + cache read + cache create; cost is Claude Code's list-price estimate)

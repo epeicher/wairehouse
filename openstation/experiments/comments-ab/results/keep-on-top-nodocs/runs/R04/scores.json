@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 1, "F": 0, "G": 1, "H": 0, "I": 2 },
+  "total": 18,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload.",
+    "C": "Stack: a single `applyZOrder()` partitions `_stack` into normal and onTop and replaces the three `setZIndex( BASE_Z_INDEX + i )` loops used by focus, raise and open. Pin: it is a `registerWindowControl( { id: 'core/always-on-top', placement: 'controls', ... } )` registration. Session: the flag follows `snapshot()`, both `restoreSession()` branches, `NativeWindowRestoreState`, `WindowConfig` and `SessionWindow`.",
+    "D": "No violations: no `assets/js/` edits, the label is wrapped as `__( 'Keep on top' )`, the button goes through the registry and `os-window-button`, and the on state uses the `os-window__btn--active` / `active` attribute rather than a hardcoded colour.",
+    "E": "The tests do cover stacking across focus and the session round-trip, but they sit in a brand-new `tests/vitest/window-always-on-top.test.ts` instead of an existing window-manager or session test file; the only existing file touched is the controls-render list.",
+    "F": "No change to `docs/javascript-reference.md` or any other doc.",
+    "G": "The change adds public surface the prompt did not ask for: a `WindowConfig.alwaysOnTop` open-time option, new `--os-titlebar-always-on-top-order/display` CSS variables, a new `'pin'` icon key in the documented `os-window-button` type union, and a public `toggleAlwaysOnTop()` method.",
+    "H": "The final message reports `npm run lint`, `npx tsc --noEmit` and `npm run test:js`, but it does not claim `npm run build`, so the full workflow is not evidenced.",
+    "I": "Ownership is handled: `isKeptOnTop()` walks the owner chain and is tested ('a child of a kept-on-top window still sits above its owner'). Idempotence is handled: `_applyAlwaysOnTop` returns false when the value is unchanged, the unknown-id path is a no-op, and both are tested. Fullscreen is only mentioned as a limit and minimized is not addressed."
+  },
+  "notable": "The strongest point is that the stacking rule lives in one `applyZOrder()` pass over `_stack` that respects owner chains, and the PHP sanitizer line makes the reload requirement real. The main weaknesses are the missing docs and the extra unrequested public surface (CSS variables, a `WindowConfig` option, an icon key)."
+}

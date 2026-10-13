@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 1, "F": 0, "G": 1, "H": 1, "I": 2 },
+  "total": 19,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs all passing.",
+    "B": "All five hidden cases pass. `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the flag survives a real reload rather than only an in-page snapshot.",
+    "C": "C-stack: a single `applyZOrder()` replaces the three `setZIndex( BASE_Z_INDEX + i )` loops and partitions `_stack` into normal and on-top windows. C-pin: the pin is a `registerWindowControl( { id: 'core/always-on-top', placement: 'controls', ... } )` built-in. C-session: the flag is added to `snapshot()`, to both `restoreSession()` branches (lines 119 and 163), to `NativeWindowRestoreState`, and to `WindowConfig`/`SessionWindow`.",
+    "D": "No violations: no `assets/js` edits, the label is `__( 'Keep on top' )`, the on state uses the `active` attribute and `aria-pressed` with no hardcoded colour, and the CSS variables sit on `.os-window__controls` rather than a component `:host`.",
+    "E": "The stacking-across-focus and `restoreSession` round-trip tests are substantive, but they are in a brand-new `window-manager-always-on-top.test.ts` instead of an existing window-manager or session test file. The click test added to the render file only asserts `toggleAlwaysOnTop` was called.",
+    "F": "There is no change under `docs/`; `docs/javascript-reference.md` does not list `setAlwaysOnTop()` or the session field.",
+    "G": "The change adds public surface the prompt did not ask for: a `WindowConfig.alwaysOnTop` open-time option, public `toggleAlwaysOnTop()`/`onAlwaysOnTopChange` on `Window`, a documented `pin` icon key in the `os-window-button` description, and new `--os-titlebar-always-on-top-*` theme variables.",
+    "H": "The final message says lint, typecheck, the full JS suite and `npm run build` all pass, which matches the gates.",
+    "I": "Ownership: `isInTopLayer()` walks `ownerOf()` so children of a pinned owner ride above it, with a test. Idempotence: `next === this._alwaysOnTop` returns early and an unknown id returns `false`, with a test. Fullscreen and minimized are not handled."
+  },
+  "notable": "The implementation is solid end to end: one `applyZOrder()` pass over `_stack`, owner-chain awareness, and the PHP sanitizer line that makes the reload requirement real. It falls short on docs (none) and adds unrequested public surface such as the `WindowConfig` option, the icon key and the theme variables."
+}

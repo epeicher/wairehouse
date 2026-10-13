@@ -1,0 +1,12 @@
+ assets/css/window-chrome.css                       |   4 +
+ includes/session.php                               |   4 +
+ src/boot/session.ts                                |   2 +
+ src/native-windows.ts                              |   1 +
+ src/types.ts                                       |   2 +
+ .../os-window-button/os-window-button.ts           |   4 +-
+ src/window-chrome/controls/built-ins.ts            |  13 ++
+ src/window-manager/index.ts                        |  50 ++++-
+ src/window/index.ts                                |  47 +++-
+ tests/vitest/window-always-on-top.test.ts          | 246 +++++++++++++++++++++
+ tests/vitest/window-chrome-controls-render.test.ts |   6 +-
+ 11 files changed, 371 insertions(+), 8 deletions(-)

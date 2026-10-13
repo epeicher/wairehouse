@@ -1,0 +1,17 @@
+{
+  "scores": { "A1": 1, "A2": 1, "A3": 1, "A4": 1, "B": 4, "C": 3, "D": 3, "E": 2, "F": 2, "G": 1, "H": 1, "I": 2 },
+  "total": 21,
+  "max": 23,
+  "justifications": {
+    "A": "The harness reports lint, typecheck, test_js and phpcs as pass.",
+    "B": "All five hidden cases pass, and `includes/session.php` adds `if ( ! empty( $win['alwaysOnTop'] ) ) { $entry['alwaysOnTop'] = true; }`, so the sanitizer keeps the flag and it survives a real reload.",
+    "C": "The stack point holds because `applyZOrder( this )` replaces the existing `BASE_Z_INDEX + i` loops in the focus, raise and open restack paths and filters `manager._stack` with no second stack. The pin point holds because it is a `registerWindowControl( { id: 'core/keep-on-top', placement: 'controls', order: 8, ... } )` registration. The session point holds because the flag goes through `snapshot()`, both `restoreSession()` branches (lines 119 and 163), `NativeWindowRestoreState` (`| 'alwaysOnTop'`), `WindowConfig` and `SessionWindow`.",
+    "D": "No violations: no edits under `assets/js/`, the label is wrapped as `__( 'Keep on top' )`, the button goes through the registry and `os-window-button` with a new `pin` icon, and the on state is shown with the `active` attribute and `aria-pressed` rather than a hardcoded colour.",
+    "E": "Tests added to the existing `window-child-ownership.test.ts` cover the rule across a focus (`[ 'other', 'late', 'pinned' ]`), several pinned windows ordering by focus, unpinning, and the snapshot round-trip.",
+    "F": "`javascript-reference.md` lists `manager.setAlwaysOnTop(...)` in the method block, adds `readonly alwaysOnTop` to the Window interface and has a 'Keep on top' paragraph, and `architecture.md` documents the `alwaysOnTop: true` session key.",
+    "G": "Prompt-fixed surface is exceeded: `alwaysOnTop?: boolean; // open already kept on top` is documented as a new `WindowConfig` open-time option, and the new `'pin'` icon key is added to the public `os-window-button` icon type. The agent did correctly leave a dedicated hook for the maintainer to decide.",
+    "H": "The final message says typecheck, test:js, lint and build were run, and the passing gates agree. It also says plainly that the PHP checks were not run.",
+    "I": "Ownership is handled because `isKeptOnTop` walks `manager.ownerOf( current )` and a test asserts `[ 'other', 'owner', 'child' ]`. Idempotence is handled because `_applyAlwaysOnTop` returns false when the value is unchanged, so no event is dispatched, and an unknown id returns `false` (with a test). Fullscreen is claimed in the message but not handled explicitly in the diff."
+  },
+  "notable": "Strongest point: the stacking rule goes through a single `applyZOrder` pass over `_stack` that every restack runs, so the existing order is kept and child windows travel with their pinned owner. The PHP sanitizer line makes the reload requirement real. Main weakness: `alwaysOnTop` is documented as a public `WindowConfig` open option, which is wider than the public surface the prompt fixed."
+}
