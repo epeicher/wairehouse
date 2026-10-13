@@ -121,7 +121,7 @@ function render(name) {
       const prompt = read(`tasks/${t}/prompt.md`);
       const rubricRaw = fs.existsSync(path.join(tasksDir, t, 'rubric.md')) ? read(`tasks/${t}/rubric.md`) : '';
       // Rubric H1 reads: # Judge rubric: "Keep on top" task
-      const label = (rubricRaw.match(/^#[^\n]*"([^"]+)"/) || [])[1] || t;
+      const label = (rubricRaw.match(/^#[^\n"]*"([^"\n]+)"/) || [])[1] || t;
       const max = (rubricRaw.match(/"max":\s*(\d+)/) || [])[1];
       const rubric = rubricRaw.split('\n').slice(1).join('\n'); // drop its H1
       toc.push({ level: 3, id: `task-${t}`, text: label });
